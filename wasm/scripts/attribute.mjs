@@ -122,6 +122,14 @@ const decodeZ = (s) =>
 // always carries "zi" -- the z-encoding of the dot in a module path. C and RTS
 // symbols never do, which cleanly separates stg_MUT_ARR_PTRS_CLEAN_entry from
 // ghczminternal_GHCziInternalziBase_foo_entry.
+// Unit ids carry a version and cabal's build hash (or "-inplace" for a local
+// package); neither adds anything to a size breakdown.
+const clean = (pkg) =>
+  pkg
+    .replace(/-inplace$/, "")
+    .replace(/-[0-9a-f]{4,}$/, "")
+    .replace(/-[0-9][0-9.]*$/, "");
+
 const HASKELL = /^([^_]+)_([A-Z][^_]*zi[^_]*)_/;
 const JSFFI = /ZC0ZC(.+?)ZC/;
 const LOCAL = /^(_blk_|[a-z][A-Za-z0-9]*_(entry|info)$)/;
@@ -130,9 +138,9 @@ const packageOf = (name) => {
   if (!name) return null;
   if (LOCAL.test(name)) return null;
   const hs = HASKELL.exec(name);
-  if (hs) return decodeZ(hs[1]).replace(/-[0-9][0-9.]*$/, "");
+  if (hs) return clean(decodeZ(hs[1]));
   const js = JSFFI.exec(name);
-  if (js) return decodeZ(js[1]).replace(/-[0-9][0-9.]*$/, "");
+  if (js) return clean(decodeZ(js[1]));
   return "(rts/C)";
 };
 

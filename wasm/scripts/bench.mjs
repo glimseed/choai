@@ -6,7 +6,15 @@
 // numbers here and the numbers in the browser describe the same code path.
 
 import { readFileSync } from "node:fs";
-import { WASI, File, OpenFile, PreopenDirectory, ConsoleStdout } from "@bjorn3/browser_wasi_shim";
+// Imported by path rather than by package name so that this and web/app.mjs
+// load the very same shim file, not two copies that could drift apart.
+import {
+  WASI,
+  File,
+  OpenFile,
+  PreopenDirectory,
+  ConsoleStdout,
+} from "../web/node_modules/@bjorn3/browser_wasi_shim/dist/index.js";
 
 const [, , wasmPath, jsffiPath, journalPath, runsArg] = process.argv;
 if (!wasmPath || !jsffiPath || !journalPath) {
@@ -42,7 +50,14 @@ const instance = await WebAssembly.instantiate(module, {
 });
 Object.assign(exportsRef, instance.exports);
 wasi.initialize(instance);
-if (typeof instance.exports.hs_init === "function") instance.exports.hs_init(0, 0);
+// _initialize does not start the Haskell runtime; without this the first call
+// into Haskell aborts the instance with "RTS is not initialised". Missing
+// hs_init means the module was linked without --export=hs_init, so fail loudly
+// rather than skipping it and hitting a confusing trap later.
+if (typeof instance.exports.hs_init !== "function") {
+  throw new Error("module does not export hs_init; relink with -optl-Wl,--export=hs_init");
+}
+instance.exports.hs_init(0, 0);
 const tInstantiate = performance.now() - t1;
 
 const available = Object.keys(instance.exports).filter((k) => typeof instance.exports[k] === "function");

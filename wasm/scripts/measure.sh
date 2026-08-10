@@ -18,6 +18,11 @@
 # against the unstripped stage A afterwards.
 set -euo pipefail
 
+# Sourced here rather than left to the caller so the script works standalone,
+# not only when build.sh has already set the environment up.
+# shellcheck disable=SC1091
+. "$HOME/.ghc-wasm/env"
+
 label="${1:?usage: measure.sh <label> <module.wasm>}"
 input="${2:?usage: measure.sh <label> <module.wasm>}"
 outdir="$(dirname "$input")"

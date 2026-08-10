@@ -1,0 +1,29 @@
+; Small enough to check by hand, which is the point.
+;
+; assets:bank:checking  1000.00 - 45.50 + 2500.00 - 800.00 - 12.25 = 2642.25
+; equity:opening                                                   = -1000.00
+; expenses:food                             45.50 + 12.25          =    57.75
+; expenses:rent                                                    =   800.00
+; income:salary                                                    = -2500.00
+;                                                                    --------
+; total                                                            =     0.00
+
+2024-01-01 opening balance
+    assets:bank:checking     $1000.00
+    equity:opening
+
+2024-01-05 groceries
+    expenses:food              $45.50
+    assets:bank:checking
+
+2024-01-10 salary
+    assets:bank:checking     $2500.00
+    income:salary
+
+2024-01-15 rent
+    expenses:rent             $800.00
+    assets:bank:checking
+
+2024-01-20 coffee
+    expenses:food              $12.25
+    assets:bank:checking

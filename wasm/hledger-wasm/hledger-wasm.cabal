@@ -23,6 +23,16 @@ executable probe-cli
     , hledger-lib
     , text
 
+-- The ceiling: references every report and writer, so nothing is discardable.
+-- Bounds how far the shipped module could grow as the UI uses more of hledger.
+executable probe-full
+  import:           probe
+  main-is:          MainFull.hs
+  build-depends:
+    , base
+    , hledger-lib
+    , text
+
 -- The shape the PWA would ship: a reactor module driven from JavaScript.
 executable probe-reactor
   import:           probe
@@ -33,7 +43,7 @@ executable probe-reactor
     , ghc-experimental
     , hledger-lib
     , text
-  ghc-options:      -optl-mexec-model=reactor
+  ghc-options:      -optl-mexec-model=reactor -optl-Wl,--export=hs_init
 
 -- Same shape as probe-reactor, no hledger. The baseline everything else is
 -- measured against.
@@ -43,4 +53,4 @@ executable floor
   build-depends:
     , base
     , ghc-experimental
-  ghc-options:      -optl-mexec-model=reactor
+  ghc-options:      -optl-mexec-model=reactor -optl-Wl,--export=hs_init

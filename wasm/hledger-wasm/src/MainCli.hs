@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | WASI command probe. Run under wasmtime to check that the wasm build
 -- produces the same balances a native hledger would.
 --

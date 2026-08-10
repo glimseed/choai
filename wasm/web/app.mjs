@@ -21,7 +21,9 @@ const log = (line, cls) => {
 };
 
 try {
-  const journal = await (await fetch("./sample.journal")).text();
+  const name = new URLSearchParams(location.search).get("journal") ?? "sample.journal";
+  const journal = await (await fetch(`./${name}`)).text();
+  log(`journal:     ${name} (${journal.length} bytes)`);
 
   const t0 = performance.now();
   const module = await WebAssembly.compileStreaming(fetch("./probe.wasm"));
@@ -48,12 +50,25 @@ try {
   });
   Object.assign(exportsRef, instance.exports);
   wasi.initialize(instance);
-  if (typeof instance.exports.hs_init === "function") instance.exports.hs_init(0, 0);
+  // _initialize does not start the Haskell runtime; see bench.mjs.
+  if (typeof instance.exports.hs_init !== "function") {
+    throw new Error("module does not export hs_init; relink with -optl-Wl,--export=hs_init");
+  }
+  instance.exports.hs_init(0, 0);
   log(`instantiate: ${(performance.now() - t1).toFixed(1)} ms`);
 
-  const t2 = performance.now();
-  const out = await instance.exports.hledgerBalanceFromFile("/journal");
-  log(`balance:     ${(performance.now() - t2).toFixed(1)} ms`);
+  // Several runs, reported as a median: the first call through a cold wasm
+  // instance is not the number a user would experience on subsequent reports.
+  const samples = [];
+  let out;
+  for (let i = 0; i < 5; i++) {
+    const t2 = performance.now();
+    out = await instance.exports.hledgerBalanceFromFile("/journal");
+    samples.push(performance.now() - t2);
+  }
+  samples.sort((a, b) => a - b);
+  log(`balance:     median ${samples[2].toFixed(1)} ms ` +
+    `(first ${samples[samples.length - 1].toFixed(1)}, best ${samples[0].toFixed(1)})`);
   log("");
   log("--- balance report ---");
   log(out);
