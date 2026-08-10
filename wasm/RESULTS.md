@@ -142,6 +142,59 @@ the desktop numbers by the usual 4× for mid-range phones puts a full reparse at
 somewhat over a second, and a PWA would not be reparsing from scratch on every
 interaction anyway.
 
+## Follow-up: where the time actually goes
+
+The 346 ms figure above conflated two different costs, because the probe re-reads
+and re-parses the journal on every call. The engine keeps the parsed journal, so
+the two can be measured apart. On an idle machine, 1001 transactions:
+
+| | |
+|---|---:|
+| load (parse), paid once per journal | **288 ms** |
+| entries, 50 rows | **17 ms** |
+| entries, 200 rows | 64 ms |
+| register, 50 rows | 24 ms |
+| balance sheet | **10 ms** |
+| income statement | **12 ms** |
+| balance | 17 ms |
+| account list | 0.7 ms |
+| entries, all 1001 rows (1.2 MB of JSON) | 306 ms |
+| register, all rows (769 KB of JSON) | 219 ms |
+
+**The reports are cheap; serialising them is not.** A balance sheet costs 10 ms,
+while handing over every transaction costs 306 ms — and the difference tracks
+output size, not computation. Windowing the row-per-item reports turns the main
+screen from 306 ms into 17 ms.
+
+So responsiveness is governed by parse-once plus paging, not by compiler flags.
+
+### Optimisation levels, measured rather than assumed
+
+The obvious idea — the module uses under a third of the size budget, so spend the
+surplus on speed — was tested and does not pay.
+
+| build | stripped size | parse + balance, 1000 txns |
+|---|---:|---:|
+| GHC `-O1` (default) | 16.50 MB | 269 ms |
+| GHC `-O2` | 26.66 MB (**+62%**) | 258 ms (−4%) |
+
+| wasm-opt level | size | parse + balance |
+|---|---:|---:|
+| none | 16.50 MB | 262 ms |
+| `-O2` | 10.32 MB | 257 ms |
+| `-O3` | 10.16 MB | 264 ms |
+| **`-Oz`** | **7.02 MB** | 270 ms |
+
+`-O2` costs 62% more bytes for 4% more speed. The wasm-opt levels are all within
+noise of each other, so the smallest wins. **The original settings were already
+the right ones**, and the size surplus has no better use than staying unspent.
+
+A note for anyone changing `optimization` in `cabal.project`: doing so makes
+cabal build into a parallel `opt/` tree without discarding the old one, and
+building against the mixture produces misleading "No instance for ToJSON …"
+errors for instances that plainly exist. Remove `dist-newstyle` after flipping
+the flag.
+
 ## Cost against upstream
 
 This is the gate that would have killed the approach quietly, so it is worth

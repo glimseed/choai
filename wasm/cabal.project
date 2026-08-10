@@ -99,3 +99,9 @@ allow-newer:
   all:time,
   all:transformers,
   all:unix
+
+-- Optimisation is left at ghc-wasm-meta's default (-O1), which was measured
+-- rather than assumed. Building everything at -O2 grew the stripped module from
+-- 16.5 MB to 26.7 MB, 62% larger, and bought 4% (269 ms -> 258 ms parsing a
+-- thousand transactions). There is size headroom to spend, but not at that
+-- exchange rate. See RESULTS.md.

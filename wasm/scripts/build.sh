@@ -12,13 +12,17 @@ cd "$WASM_DIR"
 . "$HOME/.ghc-wasm/env"
 
 POST_LINK="$HOME/.ghc-wasm/wasm32-wasi-ghc/lib/post-link.mjs"
-targets=("${@:-probe-cli probe-reactor floor}")
+targets=("${@:-engine probe-cli probe-reactor floor}")
 read -ra targets <<<"${targets[*]}"
 
 mkdir -p out
 
+# Changing optimisation level makes cabal write to a second location (…/opt/…)
+# without removing the first, so more than one build of a target can exist at
+# once. Take the most recently written rather than whichever find reaches first.
 artifact() {
-  find dist-newstyle -type f -path "*/x/$1/build/$1/$1.wasm" -print -quit
+  find dist-newstyle -type f -path "*/x/$1/*/$1.wasm" -printf '%T@ %p\n' \
+    | sort -rn | head -1 | cut -d' ' -f2-
 }
 
 for target in "${targets[@]}"; do

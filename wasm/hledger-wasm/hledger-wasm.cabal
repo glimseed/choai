@@ -23,6 +23,18 @@ executable probe-cli
     , hledger-lib
     , text
 
+-- The engine the app actually ships: parse once, answer many reports.
+executable engine
+  import:           probe
+  main-is:          Engine.hs
+  build-depends:
+    , aeson
+    , base
+    , ghc-experimental
+    , hledger-lib
+    , text
+  ghc-options:      -optl-mexec-model=reactor -optl-Wl,--export=hs_init
+
 -- The ceiling: references every report and writer, so nothing is discardable.
 -- Bounds how far the shipped module could grow as the UI uses more of hledger.
 executable probe-full
