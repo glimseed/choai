@@ -9,3 +9,9 @@ node_modules/
 # staged into web/ by scripts/serve.sh
 wasm/web/probe.jsffi.mjs
 wasm/web/*.journal
+
+# built engine, copied in by apps/web/scripts/sync-engine.mjs
+apps/web/public/engine.wasm
+apps/web/src/engine/ghc-jsffi.mjs
+apps/web/dist/
+apps/web/dev-dist/
