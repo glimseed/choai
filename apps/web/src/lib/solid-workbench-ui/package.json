@@ -1,0 +1,46 @@
+{
+  "name": "solid-workbench-ui",
+  "version": "0.1.0",
+  "description": "A headless VSCode-like application shell for SolidJS — title bar, activity bar, side/aux panels and a main region, with resizable splitters. Bring your own content.",
+  "type": "module",
+  "license": "MIT",
+  "author": "mrksye",
+  "sideEffects": false,
+  "keywords": [
+    "solid-js",
+    "solidjs",
+    "shell",
+    "workbench",
+    "layout",
+    "vscode",
+    "panels",
+    "dock",
+    "resizable",
+    "headless"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "solid-js": ">=1.6.0"
+  },
+  "files": [
+    "Shell.tsx",
+    "TitlesBar.tsx",
+    "ActivityBar.tsx",
+    "SidePanel.tsx",
+    "AuxPanel.tsx",
+    "MainContent.tsx",
+    "Splitter.tsx",
+    "resize.ts",
+    "icons/",
+    "index.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  }
+}

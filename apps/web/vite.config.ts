@@ -5,6 +5,17 @@ import tailwindcss from "@tailwindcss/vite"
 import { VitePWA } from "vite-plugin-pwa"
 
 export default defineConfig({
+  server: {
+    // Fixed rather than auto-assigned, so the address stays the same between
+    // restarts. 8-3-9-6 is a Japanese number mnemonic: the digits are read
+    // ha-soo-koo-roo, which is Haskell -- what does the work behind this app.
+    port: 8396,
+    strictPort: true,
+  },
+  preview: {
+    port: 8396,
+    strictPort: true,
+  },
   resolve: {
     alias: {
       "~": fileURLToPath(new URL("./src", import.meta.url)),
