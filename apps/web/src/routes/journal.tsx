@@ -1,45 +1,32 @@
-import { For, Show, createResource, createSignal } from "solid-js"
+import { For, Show, createEffect, createResource, createSignal, on } from "solid-js"
 
-import { query } from "~/engine/client"
+import { query as runQuery } from "~/engine/client"
 import { formatMixed, type Transaction } from "~/engine/protocol"
-import { error, info, loading, openDemo, openLocalFiles, source } from "~/lib/journal"
+import { error, info, loading, openDemo, openLocalFiles } from "~/lib/journal"
+import { useQuery } from "~/lib/query"
 import { Button } from "~/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table"
-import { TextField, TextFieldInput } from "~/components/ui/text-field"
 
 const PAGE = 50
 
 export default function Journal() {
-  const [filter, setFilter] = createSignal("")
+  const [filter] = useQuery()
   const [offset, setOffset] = createSignal(0)
 
-  // Re-runs when the journal changes or the query does. The engine keeps the
-  // parsed journal, so these are the cheap calls, not the expensive one.
+  // Re-runs when the journal or the query changes. The engine keeps the parsed
+  // journal, so these are the cheap calls, not the expensive one.
   const [page] = createResource(
-    () => (info() ? { q: filter(), offset: offset(), n: info()!.transactions } : null),
-    (key) => query({ kind: "entries", query: key.q, limit: PAGE, offset: key.offset }),
+    () => (info() ? { q: filter(), offset: offset() } : null),
+    (key) => runQuery({ kind: "entries", query: key.q, limit: PAGE, offset: key.offset }),
   )
 
-  return (
-    <div class="flex flex-col gap-4">
-      <Show when={info()} fallback={<Welcome />}>
-        <div class="flex flex-wrap items-center gap-3">
-          <TextField class="min-w-64 flex-1">
-            <TextFieldInput
-              type="text"
-              placeholder="hledger query, eg  acct:food date:2026-02"
-              value={filter()}
-              onInput={(e) => {
-                setOffset(0)
-                setFilter(e.currentTarget.value)
-              }}
-            />
-          </TextField>
-          <span class="text-sm text-muted-foreground">
-            {source()?.label} · {info()!.transactions} transactions
-          </span>
-        </div>
+  // A new query means the old page number means nothing. Deferred, so opening
+  // a link that already carries a query does not immediately fight it.
+  createEffect(on(filter, () => setOffset(0), { defer: true }))
 
+  return (
+    <Show when={info()} fallback={<Welcome />}>
+      <div class="flex flex-col gap-4">
         <Show when={page.error}>
           <p class="text-sm text-error-foreground">{String(page.error)}</p>
         </Show>
@@ -88,8 +75,8 @@ export default function Journal() {
             </>
           )}
         </Show>
-      </Show>
-    </div>
+      </div>
+    </Show>
   )
 }
 

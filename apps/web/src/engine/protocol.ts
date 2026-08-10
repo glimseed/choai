@@ -51,9 +51,15 @@ export interface Transaction {
   tpostings: Posting[]
 }
 
-/** One account's row in a balance report. */
+/**
+ * One row of a balance report.
+ *
+ * `prrName` is the full account name for an account row. hledger's DisplayName
+ * serialises to the bare string rather than an object, and the totals row has no
+ * account at all, which arrives as an empty array.
+ */
 export interface ReportRow {
-  prrName: { displayName: string; fullName: string; depth: number } | null
+  prrName: string | []
   prrAmounts: MixedAmount[]
   prrTotal: MixedAmount
   prrAverage: MixedAmount
