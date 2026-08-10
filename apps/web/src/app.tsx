@@ -53,7 +53,7 @@ export function Layout(props: ParentProps) {
               >
                 <PanelLeftIcon class="h-4 w-4" />
               </button>
-              <span class="px-1 font-semibold tracking-tight">ownhledger</span>
+              <span class="px-1 font-semibold tracking-tight">hledger-pwa</span>
             </>
           }
           right={

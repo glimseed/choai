@@ -1,4 +1,4 @@
-# ownhledger
+# hledger-pwa
 
 A PWA for keeping [hledger](https://hledger.org/) journals in a GitHub repository.
 

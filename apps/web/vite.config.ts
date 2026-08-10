@@ -28,8 +28,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       manifest: {
-        name: "ownhledger",
-        short_name: "ownhledger",
+        name: "hledger-pwa",
+        short_name: "hledger-pwa",
         description: "Your hledger journal, in the browser",
         theme_color: "#0a0a0a",
         background_color: "#0a0a0a",
