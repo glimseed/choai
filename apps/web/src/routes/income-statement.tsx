@@ -1,10 +1,9 @@
-import { For, createSignal } from "solid-js"
+import { For, createSignal, type JSX } from "solid-js"
 
 import { BalanceReportView } from "~/components/balance-report"
 import { Button } from "~/components/ui/button"
 
-// Periods are expressed as hledger query terms, so hledger decides what they
-// mean rather than this file reimplementing date arithmetic.
+/** Periods are hledger query terms, so hledger decides what they mean. */
 const PERIODS = [
   { label: "This month", term: "date:thismonth" },
   { label: "This year", term: "date:thisyear" },
@@ -12,7 +11,7 @@ const PERIODS = [
   { label: "All time", term: "" },
 ] as const
 
-export default function IncomeStatement() {
+export default function IncomeStatement(): JSX.Element {
   const [period, setPeriod] = createSignal<string>("")
 
   return (
@@ -38,8 +37,8 @@ export default function IncomeStatement() {
 
       <BalanceReportView
         kind="incomestatement"
-        filter={period()}
-        emptyMessage="Nothing in this period."
+        narrowing={period()}
+        nothingToShow="Nothing in this period."
       />
     </div>
   )

@@ -1,14 +1,15 @@
 import type { ParentProps } from "solid-js"
 import { Show, createSignal } from "solid-js"
 import { useLocation, useNavigate } from "@solidjs/router"
+import { getOrUndefined } from "~/lib/monad"
 
 import { ActivityBar, Shell, SidePanel, TitlesBar, type ActivityItem } from "~/lib/solid-workbench-ui"
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
 import { PanelLeftIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
 import { AccountsPanel } from "~/components/accounts-panel"
-import { info, source } from "~/lib/journal"
-import { useQuery } from "~/lib/query"
+import { journal } from "~/journal/store"
+import { useQuery } from "~/journal/query"
 
 // The daily journal comes first because that is what the app is opened for;
 // the statements are things you go and look at, not things you live in.
@@ -57,16 +58,18 @@ export function Layout(props: ParentProps) {
             </>
           }
           right={
-            <Show when={info()}>
-              <span class="whitespace-nowrap px-1 text-xs text-muted-foreground">
-                {source()?.label} · {info()!.transactions} txns
-              </span>
+            <Show when={getOrUndefined(journal())}>
+              {(open) => (
+                <span class="whitespace-nowrap px-1 text-xs text-muted-foreground">
+                  {open().source.label} · {open().summary.transactions} txns
+                </span>
+              )}
             </Show>
           }
         >
           {/* One query for whichever report is open, the way the hledger
               command line takes one. */}
-          <Show when={info()}>
+          <Show when={getOrUndefined(journal())}>
             <TextField class="w-full max-w-xl">
               <TextFieldInput
                 type="text"

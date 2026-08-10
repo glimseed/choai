@@ -1,144 +1,97 @@
-import { For, Show, createEffect, createResource, createSignal, on } from "solid-js"
+import { For, Show, createEffect, createResource, createSignal, on, type JSX } from "solid-js"
 
-import { query as runQuery } from "~/engine/client"
-import { formatMixed, type Transaction } from "~/engine/protocol"
-import { error, info, loading, openDemo, openLocalFiles } from "~/lib/journal"
-import { useQuery } from "~/lib/query"
+import { ask } from "~/hledger/client"
+import { formatMixed } from "~/hledger/amount"
+import type { Posting, Transaction } from "~/hledger/wire"
+import { journal } from "~/journal/store"
+import { useQuery } from "~/journal/query"
+import { getOrUndefined, matchResource } from "~/lib/monad"
 import { Button } from "~/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table"
+import { TroubleNote } from "~/components/trouble-note"
+import { Welcome } from "~/components/welcome"
 
 const PAGE = 50
 
-export default function Journal() {
-  const [filter] = useQuery()
+export default function Journal(): JSX.Element {
+  const [query] = useQuery()
   const [offset, setOffset] = createSignal(0)
 
-  // Re-runs when the journal or the query changes. The engine keeps the parsed
-  // journal, so these are the cheap calls, not the expensive one.
   const [page] = createResource(
-    () => (info() ? { q: filter(), offset: offset() } : null),
-    (key) => runQuery({ kind: "entries", query: key.q, limit: PAGE, offset: key.offset }),
+    () => (getOrUndefined(journal()) === undefined ? undefined : { query: query(), offset: offset() }),
+    (asked) => ask({ kind: "entries", query: asked.query, limit: PAGE, offset: asked.offset }),
   )
 
-  // A new query means the old page number means nothing. Deferred, so opening
-  // a link that already carries a query does not immediately fight it.
-  createEffect(on(filter, () => setOffset(0), { defer: true }))
+  createEffect(on(query, () => setOffset(0), { defer: true }))
 
   return (
-    <Show when={info()} fallback={<Welcome />}>
-      <div class="flex flex-col gap-4">
-        <Show when={page.error}>
-          <p class="text-sm text-error-foreground">{String(page.error)}</p>
-        </Show>
+    <Show when={getOrUndefined(journal())} fallback={<Welcome />}>
+      {matchResource(page(), {
+        Loading: () => <p class="text-sm text-muted-foreground">Reading…</p>,
+        Err: (trouble) => <TroubleNote trouble={trouble} />,
+        Ok: (found) => (
+          <div class="flex flex-col gap-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead class="w-28">Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Postings</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <For each={found.items}>{(entry) => <Entry transaction={entry} />}</For>
+              </TableBody>
+            </Table>
 
-        <Show when={page()} keyed>
-          {(result) => (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead class="w-28">Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Postings</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <For each={result.items}>{(txn) => <Entry txn={txn} />}</For>
-                </TableBody>
-              </Table>
-
-              <div class="flex items-center justify-between text-sm text-muted-foreground">
-                <span>
-                  {result.total === 0
-                    ? "nothing matches"
-                    : `${result.offset + 1}–${Math.min(result.offset + PAGE, result.total)} of ${result.total}`}
-                </span>
-                <span class="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={result.offset === 0}
-                    onClick={() => setOffset(Math.max(0, offset() - PAGE))}
-                  >
-                    Newer
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={result.offset + PAGE >= result.total}
-                    onClick={() => setOffset(offset() + PAGE)}
-                  >
-                    Older
-                  </Button>
-                </span>
-              </div>
-            </>
-          )}
-        </Show>
-      </div>
+            <div class="flex items-center justify-between text-sm text-muted-foreground">
+              <span>{describeRange(found.offset, found.total)}</span>
+              <span class="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={found.offset === 0}
+                  onClick={() => setOffset(Math.max(0, offset() - PAGE))}
+                >
+                  Newer
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={found.offset + PAGE >= found.total}
+                  onClick={() => setOffset(offset() + PAGE)}
+                >
+                  Older
+                </Button>
+              </span>
+            </div>
+          </div>
+        ),
+      })}
     </Show>
   )
 }
 
-function Entry(props: { txn: Transaction }) {
+const describeRange = (offset: number, total: number): string =>
+  total === 0 ? "nothing matches" : `${offset + 1}–${Math.min(offset + PAGE, total)} of ${total}`
+
+function Entry(props: { transaction: Transaction }): JSX.Element {
   return (
     <TableRow>
-      <TableCell class="align-top font-mono text-xs">{props.txn.tdate}</TableCell>
-      <TableCell class="align-top font-medium">{props.txn.tdescription}</TableCell>
+      <TableCell class="align-top font-mono text-xs">{props.transaction.tdate}</TableCell>
+      <TableCell class="align-top font-medium">{props.transaction.tdescription}</TableCell>
       <TableCell class="align-top">
-        <For each={props.txn.tpostings}>
-          {(posting) => (
-            <div class="flex justify-between gap-6 py-0.5">
-              <span class="text-muted-foreground">{posting.paccount}</span>
-              <span class="font-mono tabular-nums">{formatMixed(posting.pamount)}</span>
-            </div>
-          )}
-        </For>
+        <For each={props.transaction.tpostings}>{(posting) => <PostingLine posting={posting} />}</For>
       </TableCell>
     </TableRow>
   )
 }
 
-function Welcome() {
-  let input!: HTMLInputElement
-
+function PostingLine(props: { posting: Posting }): JSX.Element {
   return (
-    <div class="mx-auto flex max-w-md flex-col items-start gap-4 py-16">
-      <div>
-        <h2 class="text-lg font-semibold">No journal open</h2>
-        <p class="mt-1 text-sm text-muted-foreground">
-          Everything runs here in the browser — hledger itself, compiled to WebAssembly.
-          Nothing you open is uploaded anywhere.
-        </p>
-      </div>
-
-      <div class="flex gap-2">
-        <Button onClick={() => input.click()} disabled={loading()}>
-          Open journal files
-        </Button>
-        <Button variant="outline" onClick={() => openDemo()} disabled={loading()}>
-          Try the demo
-        </Button>
-      </div>
-
-      <input
-        ref={input}
-        type="file"
-        class="hidden"
-        multiple
-        accept=".journal,.hledger,.ledger,.txt"
-        onChange={(e) => {
-          const files = e.currentTarget.files
-          if (files && files.length > 0) void openLocalFiles(files)
-        }}
-      />
-
-      <Show when={loading()}>
-        <p class="text-sm text-muted-foreground">Starting the engine…</p>
-      </Show>
-      <Show when={error()}>
-        <p class="text-sm text-error-foreground">{error()}</p>
-      </Show>
+    <div class="flex justify-between gap-6 py-0.5">
+      <span class="text-muted-foreground">{props.posting.paccount}</span>
+      <span class="font-mono tabular-nums">{formatMixed(props.posting.pamount)}</span>
     </div>
   )
 }

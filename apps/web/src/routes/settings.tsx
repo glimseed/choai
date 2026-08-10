@@ -1,3 +1,5 @@
-export default function Settings() {
-  return <p class="text-sm text-muted-foreground">Settings — not built yet.</p>
+import type { JSX } from "solid-js"
+
+export default function Settings(): JSX.Element {
+  return <p class="text-sm text-muted-foreground">Nothing to set yet.</p>
 }

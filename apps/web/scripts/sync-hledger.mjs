@@ -1,6 +1,6 @@
-// Copy the built hledger engine into the app.
+// Copy the built hledger wasm into the app.
 //
-//   node scripts/sync-engine.mjs
+//   node scripts/sync-hledger.mjs
 //
 // The wasm module and its generated JSFFI glue are build outputs of ../../wasm,
 // not source, so they are not checked in. The wasm goes to public/ to be served
@@ -11,17 +11,17 @@ import { copyFile, mkdir } from "node:fs/promises";
 
 const WASM_OUT = "../../wasm/out";
 const copies = [
-  [`${WASM_OUT}/engine-D.wasm`, "public/engine.wasm"],
-  [`${WASM_OUT}/engine.jsffi.mjs`, "src/engine/ghc-jsffi.mjs"],
+  [`${WASM_OUT}/hledger-D.wasm`, "public/hledger.wasm"],
+  [`${WASM_OUT}/hledger.jsffi.mjs`, "src/hledger/ghc-jsffi.mjs"],
 ];
 
-await mkdir("src/engine", { recursive: true });
+await mkdir("src/hledger", { recursive: true });
 for (const [from, to] of copies) {
   try {
     await copyFile(from, to);
     console.log(`${from} -> ${to}`);
   } catch (e) {
-    console.error(`missing ${from}; run ../../wasm/scripts/build.sh engine first`);
+    console.error(`missing ${from}; run ../../wasm/scripts/build.sh hledger-bindings first`);
     process.exitCode = 1;
   }
 }
