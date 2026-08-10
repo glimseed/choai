@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bjorn3/browser_wasi_shim": "^0.4.2",
     "@kobalte/core": "^0.13.7",
     "@solidjs/router": "^1.0.0",
     "class-variance-authority": "^0.7.1",
