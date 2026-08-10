@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>hledger wasm probe</title>
+    <style>
+      body { font: 14px/1.5 ui-monospace, monospace; margin: 2rem; max-width: 60rem; }
+      pre { background: #f4f4f4; padding: 1rem; overflow-x: auto; }
+      .fail { color: #b00; }
+      .pass { color: #070; }
+    </style>
+  </head>
+  <body>
+    <h1>hledger wasm probe</h1>
+    <p>Loads the reactor module, balances the sample journal, and reports timings.</p>
+    <pre id="log">running...</pre>
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+dist-newstyle/
+wasm/vendor/
+wasm/out/
+node_modules/
+*.wasm
+*.hi
+*.o

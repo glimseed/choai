@@ -1,0 +1,46 @@
+cabal-version:      2.4
+name:               hledger-wasm
+version:            0.1.0.0
+synopsis:           Feasibility probe for hledger-lib on wasm32-wasi
+description:
+  Not a library. Three small binaries whose only purpose is to be measured:
+  a WASI command probe, a browser reactor probe, and a hledger-free reactor
+  module that establishes the size floor of the Haskell runtime itself.
+build-type:         Simple
+
+common probe
+  hs-source-dirs:   src
+  default-language: GHC2021
+  ghc-options:      -Wall
+
+-- Run under wasmtime to verify the wasm build agrees with native hledger.
+executable probe-cli
+  import:           probe
+  main-is:          MainCli.hs
+  other-modules:    Probe
+  build-depends:
+    , base
+    , hledger-lib
+    , text
+
+-- The shape the PWA would ship: a reactor module driven from JavaScript.
+executable probe-reactor
+  import:           probe
+  main-is:          MainReactor.hs
+  other-modules:    Probe
+  build-depends:
+    , base
+    , ghc-experimental
+    , hledger-lib
+    , text
+  ghc-options:      -optl-mexec-model=reactor
+
+-- Same shape as probe-reactor, no hledger. The baseline everything else is
+-- measured against.
+executable floor
+  import:           probe
+  main-is:          Floor.hs
+  build-depends:
+    , base
+    , ghc-experimental
+  ghc-options:      -optl-mexec-model=reactor

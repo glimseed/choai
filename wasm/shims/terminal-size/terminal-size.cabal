@@ -1,0 +1,22 @@
+cabal-version:      2.4
+name:               terminal-size
+version:            0.3.4
+synopsis:           wasm32-wasi stand-in for terminal-size
+description:
+  The real terminal-size asks the operating system for the window dimensions
+  with the TIOCGWINSZ ioctl. wasi-libc has neither that ioctl nor struct
+  winsize, so the package fails to compile for wasm32-wasi.
+  .
+  This replacement keeps the same API and answers "no terminal attached", which
+  is not a stub but the truthful answer both in a browser and under a wasm
+  runtime with no tty. Substituting it here means hledger's own sources stay
+  untouched.
+license:            MIT
+build-type:         Simple
+
+library
+  exposed-modules:  System.Console.Terminal.Size
+  hs-source-dirs:   src
+  build-depends:    base, unix
+  default-language: Haskell2010
+  ghc-options:      -Wall
