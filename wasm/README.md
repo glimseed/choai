@@ -28,7 +28,8 @@ node scripts/bench.mjs out/probe-reactor-D.wasm out/probe-reactor.jsffi.mjs \
   fixtures/large.journal
 
 # in an actual browser
-cd web && python3 -m http.server 8000   # then open http://localhost:8000
+./scripts/serve.sh          # then open http://localhost:8731/
+                            # ?journal=large.journal for the 1000-txn fixture
 ```
 
 ## Layout

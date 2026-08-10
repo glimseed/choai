@@ -5,3 +5,7 @@ node_modules/
 *.wasm
 *.hi
 *.o
+
+# staged into web/ by scripts/serve.sh
+wasm/web/probe.jsffi.mjs
+wasm/web/*.journal
