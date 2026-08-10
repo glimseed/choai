@@ -26,3 +26,19 @@ If the answer is no, the project changes direction to a server-side application
 in the style of hledger-web instead.
 
 See `wasm/README.md` for how to reproduce the measurements.
+
+## License
+
+GPL-3.0-or-later.
+
+This is not a preference so much as a consequence: the application ships
+hledger-lib compiled into its WebAssembly module, and hledger is
+GPL-3.0-or-later, so the combined work is too. Publishing the source here is
+what satisfies the corresponding-source obligation for the binary that browsers
+download.
+
+`apps/web/src/lib/solid-workbench-ui` is the author's own work under MIT, which
+is compatible with the above and leaves it reusable outside this project.
+Components under `apps/web/src/components/ui` are adapted from
+[solid-ui](https://github.com/stefan-karger/solid-ui) (MIT). Icons are from
+[lucide](https://lucide.dev) (ISC).
