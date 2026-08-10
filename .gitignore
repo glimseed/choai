@@ -10,8 +10,8 @@ node_modules/
 wasm/web/probe.jsffi.mjs
 wasm/web/*.journal
 
-# built engine, copied in by apps/web/scripts/sync-engine.mjs
-apps/web/public/engine.wasm
-apps/web/src/engine/ghc-jsffi.mjs
+# built wasm, copied in by apps/web/scripts/sync-hledger.mjs
+apps/web/public/hledger.wasm
+apps/web/src/hledger/ghc-jsffi.mjs
 apps/web/dist/
 apps/web/dev-dist/

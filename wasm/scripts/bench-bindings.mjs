@@ -1,9 +1,9 @@
 // Separate the two costs the UI cares about.
 //
-//   node bench-engine.mjs <engine.wasm> <engine.jsffi.mjs> <journal> [runs]
+//   node bench-bindings.mjs <hledger.wasm> <hledger.jsffi.mjs> <journal> [runs]
 //
 // The probe binaries re-read and re-parse the journal on every call, which
-// conflates parsing with reporting. The engine keeps the parsed journal, so
+// conflates parsing with reporting. The bindings keep the parsed journal, so
 // this measures them apart: how long loading costs once, and how long each
 // report costs afterwards. That split decides whether the UI feels heavy only
 // while opening a file, or on every navigation.
@@ -19,7 +19,7 @@ import {
 
 const [, , wasmPath, jsffiPath, journalPath, runsArg] = process.argv;
 if (!wasmPath || !jsffiPath || !journalPath) {
-  console.error("usage: bench-engine.mjs <engine.wasm> <engine.jsffi.mjs> <journal> [runs]");
+  console.error("usage: bench-bindings.mjs <hledger.wasm> <hledger.jsffi.mjs> <journal> [runs]");
   process.exit(1);
 }
 const runs = Number(runsArg ?? 7);

@@ -23,13 +23,14 @@ executable probe-cli
     , hledger-lib
     , text
 
--- The engine the app actually ships: parse once, answer many reports.
-executable engine
+-- What the app ships: the layer that binds hledger to JavaScript.
+executable hledger-bindings
   import:           probe
-  main-is:          Engine.hs
+  main-is:          Bindings.hs
   build-depends:
     , aeson
     , base
+    , directory
     , ghc-experimental
     , hledger-lib
     , text

@@ -12,7 +12,7 @@ cd "$WASM_DIR"
 . "$HOME/.ghc-wasm/env"
 
 POST_LINK="$HOME/.ghc-wasm/wasm32-wasi-ghc/lib/post-link.mjs"
-targets=("${@:-engine probe-cli probe-reactor floor}")
+targets=("${@:-hledger-bindings probe-cli probe-reactor floor}")
 read -ra targets <<<"${targets[*]}"
 
 mkdir -p out
