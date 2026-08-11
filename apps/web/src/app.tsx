@@ -18,7 +18,7 @@ import { journal } from "~/journal/store"
 import { useQuery } from "~/journal/query"
 import { ComposePanel } from "~/compose/ComposePanel"
 import { composing, startComposing, stopComposing, toggleComposing } from "~/compose/store"
-import { narrow } from "~/lib/narrow"
+import { narrow, viewportWidth } from "~/lib/narrow"
 import { t } from "~/i18n"
 
 // The daily journal comes first because that is what the app is opened for;
@@ -40,6 +40,18 @@ const NAV = [
  * motion gets none.
  */
 const SLIDE = "transition-[width] duration-150 ease-out motion-reduce:transition-none"
+
+/**
+ * No panel may be wider than the window.
+ *
+ * A panel that overflows has its far edge, and whatever sits on it, pushed off
+ * screen — for the composer that is the button which closes it, leaving no way
+ * back. Given as a function so it follows a window being resized.
+ *
+ * One pixel short of the window, because a panel lays out its splitter beside
+ * itself and that line has to land somewhere.
+ */
+const withinWindow = (): number => Math.max(1, viewportWidth() - 1)
 
 export function Layout(props: ParentProps) {
   const location = useLocation()
@@ -184,6 +196,7 @@ export function Layout(props: ParentProps) {
       panel={
         <SidePanel
           class={SLIDE}
+          maxWidth={withinWindow}
           open={panelOpen()}
           header={
             <>
@@ -213,9 +226,11 @@ export function Layout(props: ParentProps) {
           class={SLIDE}
           initialWidth={420}
           minWidth={320}
+          maxWidth={withinWindow}
           open={composing()}
           header={<span>{t("compose.title")}</span>}
           onClose={stopComposing}
+          closeLabel={t("compose.close")}
         >
           <ComposePanel />
         </AuxPanel>

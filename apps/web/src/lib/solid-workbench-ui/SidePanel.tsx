@@ -1,5 +1,5 @@
 import { Show, type JSX } from 'solid-js'
-import { createResizable } from './resize'
+import { createResizable, type Bound } from './resize'
 import { Splitter } from './Splitter'
 
 /**
@@ -17,8 +17,11 @@ export function SidePanel(props: {
   header?: JSX.Element
   children?: JSX.Element
   initialWidth?: number
-  minWidth?: number
-  maxWidth?: number
+  minWidth?: Bound
+  /** Pass a function when the room available can change, such as the width of
+   * the window; a panel wider than the window puts its own far edge out of
+   * reach. */
+  maxWidth?: Bound
   open?: boolean
   /** Classes for the outer box, which is where its width is set. Transitions
    * belong here rather than in the shell: whether a width should animate depends

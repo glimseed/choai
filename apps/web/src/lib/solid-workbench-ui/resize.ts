@@ -1,4 +1,4 @@
-import { createSignal, type Accessor } from 'solid-js'
+import { createMemo, createSignal, type Accessor } from 'solid-js'
 
 /**
  * Which side of the handle the resized region sits on, i.e. the direction it
@@ -6,6 +6,17 @@ import { createSignal, type Accessor } from 'solid-js'
  * left edge, top = the handle is along its bottom, bottom = along its top.
  */
 export type ResizeSide = 'left' | 'right' | 'top' | 'bottom'
+
+/**
+ * A bound that may move.
+ *
+ * Given as a function when it depends on something that changes — the width of
+ * the window, most often — so that a region cannot stay larger than the space
+ * it now has.
+ */
+export type Bound = number | (() => number)
+
+const valueOf = (bound: Bound): number => (typeof bound === 'function' ? bound() : bound)
 
 const isVertical = (side: ResizeSide): boolean => side === 'top' || side === 'bottom'
 
@@ -17,18 +28,31 @@ const growthFactor = (side: ResizeSide): number => (side === 'left' || side === 
  * handle. Width for the horizontal sides, height for the vertical ones. Depends
  * on nothing but solid-js. Listeners are attached to the window only while
  * dragging, and removed on release.
+ *
+ * The size reported is always within the bounds, including before anything has
+ * been dragged. An initial larger than the room available would otherwise stay
+ * that way, and a region wider than the window puts its own far edge — and
+ * whatever sits on it, such as the button that closes it — beyond reach.
  */
 export function createResizable(opts: {
   initial: number
-  min: number
-  max: number
+  min: Bound
+  max: Bound
   side: ResizeSide
 }): { size: Accessor<number>; dragging: Accessor<boolean>; onHandlePointerDown: (e: PointerEvent) => void } {
-  const [size, setSize] = createSignal(opts.initial)
+  const [wanted, setWanted] = createSignal(opts.initial)
   const [dragging, setDragging] = createSignal(false)
   const vertical = isVertical(opts.side)
   const factor = growthFactor(opts.side)
   const positionOf = (e: PointerEvent): number => (vertical ? e.clientY : e.clientX)
+
+  const clamp = (value: number): number => {
+    const max = valueOf(opts.max)
+    const min = Math.min(valueOf(opts.min), max)
+    return Math.max(min, Math.min(max, value))
+  }
+
+  const size = createMemo(() => clamp(wanted()))
 
   const onHandlePointerDown = (e: PointerEvent): void => {
     e.preventDefault()
@@ -36,8 +60,7 @@ export function createResizable(opts: {
     const start = positionOf(e)
     const startSize = size()
     const onMove = (ev: PointerEvent): void => {
-      const next = startSize + (positionOf(ev) - start) * factor
-      setSize(Math.max(opts.min, Math.min(opts.max, next)))
+      setWanted(clamp(startSize + (positionOf(ev) - start) * factor))
     }
     const onUp = (): void => {
       setDragging(false)

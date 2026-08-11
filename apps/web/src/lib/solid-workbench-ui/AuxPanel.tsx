@@ -1,5 +1,5 @@
 import { Show, type JSX } from 'solid-js'
-import { createResizable } from './resize'
+import { createResizable, type Bound } from './resize'
 import { Splitter } from './Splitter'
 import { XIcon } from './icons'
 
@@ -17,10 +17,16 @@ export function AuxPanel(props: {
   open: boolean
   header?: JSX.Element
   onClose?: () => void
+  /** What the close button is called. The shell has no language of its own, so
+   * an application with one passes its word for it. */
+  closeLabel?: string
   children?: JSX.Element
   initialWidth?: number
-  minWidth?: number
-  maxWidth?: number
+  minWidth?: Bound
+  /** Pass a function when the room available can change, such as the width of
+   * the window; a panel wider than the window puts its own far edge out of
+   * reach. */
+  maxWidth?: Bound
   /** Classes for the outer box, which is where its width is set. Transitions
    * belong here rather than in the shell: whether a width should animate depends
    * on what sits beside it. */
@@ -48,8 +54,8 @@ export function AuxPanel(props: {
                 <button
                   type="button"
                   onClick={() => props.onClose?.()}
-                  aria-label="Close"
-                  title="Close"
+                  aria-label={props.closeLabel ?? 'Close'}
+                  title={props.closeLabel ?? 'Close'}
                   class="inline-flex size-6 shrink-0 items-center justify-center rounded-md p-0 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <XIcon class="h-4 w-4" />
