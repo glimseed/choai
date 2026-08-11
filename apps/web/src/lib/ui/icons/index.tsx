@@ -9,7 +9,7 @@ import plusSvg from './plus.svg?raw'
 import xSvg from './x.svg?raw'
 import helpSvg from './help.svg?raw'
 import downloadSvg from './download.svg?raw'
-import squarePenSvg from './square-pen.svg?raw'
+import fileCodeSvg from './file-code.svg?raw'
 import undo2Svg from './undo-2.svg?raw'
 import cloudSvg from './cloud.svg?raw'
 
@@ -50,8 +50,8 @@ export const XIcon = icon(xSvg)
 export const HelpIcon = icon(helpSvg)
 /** Take the books out of the app. */
 export const DownloadIcon = icon(downloadSvg)
-/** Edit the text itself. */
-export const SquarePenIcon = icon(squarePenSvg)
+/** The file behind what is on screen, opened as the text it is. */
+export const FileCodeIcon = icon(fileCodeSvg)
 /** Back the way you came. */
 export const Undo2Icon = icon(undo2Svg)
 /** Somewhere else the books are kept. */

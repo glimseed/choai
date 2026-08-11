@@ -8,7 +8,7 @@ import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem }
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
-import { DownloadIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SquarePenIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
+import { DownloadIcon, FileCodeIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
@@ -284,16 +284,18 @@ export function Layout(props: ParentProps) {
                         The same button goes back, and says so by becoming a
                         return arrow — a way out is worth more than a lit-up
                         way in. */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    {/* A plain button rather than the one beside it: that one
+                        sets every icon inside it to 16px, and a page with code
+                        on it needs the extra two to be read as one. */}
+                    <button
+                      type="button"
                       onClick={() => navigate(onSource() ? "/" : "/source")}
                       aria-label={onSource() ? t("source.back") : t("source.title")}
                       title={onSource() ? t("source.back") : t("source.title")}
-                      class="size-6 text-muted-foreground"
+                      class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
-                      {onSource() ? <Undo2Icon /> : <SquarePenIcon />}
-                    </Button>
+                      {onSource() ? <Undo2Icon class="h-4 w-4" /> : <FileCodeIcon class="h-[18px] w-[18px]" />}
+                    </button>
                   </Show>
                   <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
                     <Button
