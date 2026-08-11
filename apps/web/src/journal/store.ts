@@ -3,7 +3,7 @@ import { createRoot, createSignal, type Accessor } from "solid-js"
 import { openJournal } from "~/hledger/client"
 import type { JournalSummary, Trouble } from "~/hledger/wire"
 import { createTask } from "~/lib/pending"
-import { Err, None, Ok, Some, match, type Option, type Result } from "~/lib/monad"
+import { Err, None, Ok, Some, getOrUndefined, match, type Option, type Result } from "~/lib/monad"
 import { t } from "~/i18n"
 import { demoJournal } from "./demo"
 
@@ -71,6 +71,39 @@ const forget = (cause: Trouble): Result<OpenJournal, Trouble> => {
   setOpened(None)
   setTrouble(Some(cause))
   return Err(cause)
+}
+
+/**
+ * Add text to the end of the open journal.
+ *
+ * Written by trying it: the new contents are handed to hledger, and if they will
+ * not read, the journal goes back to exactly what it was and the reason is
+ * returned. A draft that does not balance must not cost anyone the books they
+ * had open.
+ */
+export const appendToEntry = async (text: string): Promise<Result<OpenJournal, Trouble>> => {
+  const current = getOrUndefined(opened())
+  if (current === undefined) return Err({ kind: "no-journal" })
+
+  const name = entryName(current.source)
+  const before = current.source.files[name] ?? ""
+  const after = { ...current.source, files: { ...current.source.files, [name]: text } }
+
+  const result = await open(after)
+  if (result.ok) return result
+
+  await open({ ...current.source, files: { ...current.source.files, [name]: before } })
+  setTrouble(Some(result.error))
+  return result
+}
+
+/** The entry path as hledger sees it, back to the key the files are held under. */
+const entryName = (source: Source): string => source.entry.replace(/^\//, "")
+
+/** The text of the file new entries are added to. */
+export const entryText = (): string | undefined => {
+  const current = getOrUndefined(opened())
+  return current === undefined ? undefined : current.source.files[entryName(current.source)]
 }
 
 /** Open the journal that ships with the app, so a first visit has something to look at. */

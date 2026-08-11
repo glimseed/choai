@@ -21,6 +21,10 @@ export function AuxPanel(props: {
   initialWidth?: number
   minWidth?: number
   maxWidth?: number
+  /** Classes for the outer box, which is where its width is set. Transitions
+   * belong here rather than in the shell: whether a width should animate depends
+   * on what sits beside it. */
+  class?: string
 }): JSX.Element {
   const { size: width, onHandlePointerDown } = createResizable({
     initial: props.initialWidth ?? 300,
@@ -30,7 +34,7 @@ export function AuxPanel(props: {
   })
   return (
     <div
-      class="flex shrink-0 overflow-hidden"
+      class={`flex shrink-0 overflow-hidden ${props.class ?? ''}`}
       style={{ width: props.open ? `${width() + 1}px` : '0px' }}
       aria-hidden={!props.open}
     >

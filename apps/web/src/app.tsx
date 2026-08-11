@@ -1,15 +1,18 @@
 import type { ParentProps } from "solid-js"
-import { Show, createSignal } from "solid-js"
+import { Show, createSignal, onCleanup, onMount } from "solid-js"
 import { useLocation, useNavigate } from "@solidjs/router"
 import { getOrUndefined } from "~/lib/monad"
 
-import { ActivityBar, Shell, SidePanel, TitlesBar, type ActivityItem } from "~/lib/solid-workbench-ui"
+import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem } from "~/lib/solid-workbench-ui"
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
-import { PanelLeftIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
+import { PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
 import { AccountsPanel } from "~/components/accounts-panel"
 import { journal } from "~/journal/store"
 import { useQuery } from "~/journal/query"
+import { ComposePanel } from "~/compose/ComposePanel"
+import { composing, startComposing, stopComposing, toggleComposing } from "~/compose/store"
+import { narrow } from "~/lib/narrow"
 import { t } from "~/i18n"
 
 // The daily journal comes first because that is what the app is opened for;
@@ -70,6 +73,31 @@ export function Layout(props: ParentProps) {
     navigate(href + location.search)
   }
 
+  /**
+   * Opening the composer on a narrow window folds the rails away first. There is
+   * not room for both, and this reuses the folding already here rather than
+   * bringing in a second kind of container for small screens.
+   */
+  const compose = (): void => {
+    if (narrow()) {
+      setRailVisible(false)
+      setPanelOpen(false)
+    }
+    startComposing()
+  }
+
+  onMount(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault()
+        if (composing()) toggleComposing()
+        else compose()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    onCleanup(() => window.removeEventListener("keydown", onKey))
+  })
+
   const items = (): ActivityItem[] =>
     NAV.map((entry) => ({
       id: entry.href,
@@ -95,6 +123,17 @@ export function Layout(props: ParentProps) {
                 <PanelLeftIcon class="h-4 w-4" />
               </button>
               <span class="px-1 font-semibold tracking-tight">{t("app.name")}</span>
+              <Show when={getOrUndefined(journal())}>
+                <button
+                  type="button"
+                  onClick={compose}
+                  aria-label={t("compose.open")}
+                  title={t("compose.open")}
+                  class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <PlusIcon class="h-4 w-4" />
+                </button>
+              </Show>
             </>
           }
           right={
@@ -151,6 +190,16 @@ export function Layout(props: ParentProps) {
         >
           <AccountsPanel />
         </SidePanel>
+      }
+      aux={
+        <AuxPanel
+          class={SLIDE}
+          open={composing()}
+          header={<span>{t("compose.title")}</span>}
+          onClose={stopComposing}
+        >
+          <ComposePanel />
+        </AuxPanel>
       }
     >
       <div class="p-4">{props.children}</div>

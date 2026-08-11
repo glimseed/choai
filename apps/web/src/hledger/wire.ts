@@ -73,6 +73,8 @@ export interface Page<T> {
 export interface JournalSummary {
   readonly transactions: number
   readonly accounts: readonly string[]
+  /** The symbols this journal keeps its books in, as hledger found them. */
+  readonly commodities: readonly string[]
 }
 
 export type Request =
@@ -82,6 +84,7 @@ export type Request =
   | { readonly kind: "balancesheet"; readonly query: string }
   | { readonly kind: "incomestatement"; readonly query: string }
   | { readonly kind: "accounts" }
+  | { readonly kind: "similar"; readonly description: string; readonly limit: number }
   | { readonly kind: "renderTransaction"; readonly transaction: Transaction }
 
 /** What each request answers with. */
@@ -92,6 +95,8 @@ export interface Answer {
   balancesheet: BalanceReport
   incomestatement: BalanceReport
   accounts: readonly string[]
+  /** Past transactions resembling a description, most alike and most recent first. */
+  similar: readonly Transaction[]
   renderTransaction: string
 }
 

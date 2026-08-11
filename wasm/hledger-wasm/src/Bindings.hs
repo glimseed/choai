@@ -96,11 +96,18 @@ readAndKeep path = do
         Left detail -> pure (Left (ReadFailed (T.pack detail)))
         Right journal -> writeIORef journalRef (Just journal) >> pure (Right journal)
 
+-- | What a caller needs to know about a journal without asking for a report.
+--
+-- The commodities are here so that a form offering to write a new entry can show
+-- what the books are kept in. A bare number is a commodity of its own to
+-- hledger, so someone typing one into yen books would quietly start a second
+-- one, and nothing but the journal itself knows which symbol is meant.
 summarise :: Journal -> A.Value
 summarise journal =
   A.object
     [ "transactions" .= length (jtxns journal)
     , "accounts" .= journalAccountNames journal
+    , "commodities" .= journalCommoditiesUsed journal
     ]
 
 jsQuery :: JSString -> IO JSString
@@ -135,6 +142,8 @@ data Request = Request
   , reqTransaction :: Maybe Transaction
   -- ^ For @renderTransaction@. hledger has FromJSON instances, so this accepts
   -- exactly the shape its own reports emit.
+  , reqDescription :: Text
+  -- ^ For @similar@: the description to find past transactions like.
   }
 
 parseRequest :: A.Value -> A.Parser Request
@@ -145,6 +154,7 @@ parseRequest = A.withObject "request" $ \o ->
     <*> o .:? "limit"
     <*> (maybe 0 id <$> o .:? "offset")
     <*> o .:? "transaction"
+    <*> (maybe "" id <$> o .:? "description")
 
 -- | Run the report a request names.
 --
@@ -160,10 +170,37 @@ report journal request = case reqKind request of
   "incomestatement" -> withSpec ["type:RX"] PerPeriod (\spec -> A.toJSON (multiBalanceReport spec journal))
   "accounts" -> pure (Right (A.toJSON (journalAccountNames journal)))
   "renderTransaction" -> pure (renderTransaction request)
+  "similar" -> pure (Right (similar journal request))
   other -> pure (Left (UnknownReport other))
   where
     withSpec extra accumulation render =
       fmap (fmap render) (specFor request extra accumulation)
+
+-- | Past transactions whose description resembles this one, most recent and
+-- most alike first.
+--
+-- This is what @hledger add@ consults to offer the postings you used last time
+-- for the same payee, so a caller filling in a new entry can offer the same
+-- without inventing a notion of similarity of its own.
+similar :: Journal -> Request -> A.Value
+similar journal request =
+  A.toJSON [transaction | (_, _, _, transaction) <- matches]
+  where
+    matches =
+      journalTransactionsSimilarTo
+        journal
+        (reqDescription request)
+        Any
+        similarityThreshold
+        (maybe 1 id (reqLimit request))
+
+-- | How alike two descriptions must be to count, from 0 to 1.
+--
+-- Zero, which is what hledger passes from @Cli/Utils.hs@ when its own commands
+-- look for the transaction to copy. Ranking is by similarity weighted towards
+-- recent entries, so the threshold only decides what is excluded outright.
+similarityThreshold :: Double
+similarityThreshold = 0
 
 -- | Build the report specification, letting hledger parse the query.
 specFor :: Request -> [Text] -> BalanceAccumulation -> IO (Either Failure ReportSpec)

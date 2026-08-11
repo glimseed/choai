@@ -69,6 +69,22 @@ export const en = {
     language: "Language",
     languageHint: "Chosen from your browser unless you pick one here.",
   },
+  compose: {
+    title: "New entry",
+    open: "New entry",
+    close: "Close",
+    date: "Date",
+    description: "Description",
+    descriptionHint: "who it was with",
+    postings: "Postings",
+    account: "account",
+    amount: "amount",
+    addPosting: "+ another posting",
+    willBeWritten: "What gets written",
+    hledgerFillsTheRest: "The posting left blank is worked out by hledger.",
+    add: "Add to journal",
+    download: "Download journal",
+  },
   /** Why something did not work. The wording is chosen here, not passed up. */
   trouble: {
     noJournal: "No journal is open yet.",
