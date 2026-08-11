@@ -3,6 +3,7 @@ import { For, Show, type JSX } from "solid-js"
 import { journal } from "~/journal/store"
 import { accountQuery, useQuery } from "~/journal/query"
 import { getOrUndefined } from "~/lib/monad"
+import { t } from "~/i18n"
 
 /**
  * The account list, as the shell's side panel — the explorer of this app.
@@ -24,7 +25,7 @@ export function AccountsPanel(): JSX.Element {
   return (
     <Show
       when={getOrUndefined(journal())}
-      fallback={<p class="px-3 py-2 text-xs text-muted-foreground">No journal open.</p>}
+      fallback={<p class="px-3 py-2 text-xs text-muted-foreground">{t("accounts.noJournal")}</p>}
     >
       {(open) => (
         <div class="py-1">
@@ -34,7 +35,7 @@ export function AccountsPanel(): JSX.Element {
             class="w-full px-3 py-1 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             classList={{ "bg-accent text-accent-foreground": query() === "" }}
           >
-            All accounts
+            {t("accounts.all")}
           </button>
           <For each={open().summary.accounts}>
             {(account) => (

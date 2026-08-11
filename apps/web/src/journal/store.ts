@@ -4,6 +4,7 @@ import { openJournal } from "~/hledger/client"
 import type { JournalSummary, Trouble } from "~/hledger/wire"
 import { createTask } from "~/lib/pending"
 import { Err, None, Ok, Some, match, type Option, type Result } from "~/lib/monad"
+import { t } from "~/i18n"
 import { DEMO_JOURNAL } from "./demo"
 
 /**
@@ -75,7 +76,7 @@ const forget = (cause: Trouble): Result<OpenJournal, Trouble> => {
 /** Open the journal that ships with the app, so a first visit has something to look at. */
 export const openDemo = (): Promise<Result<OpenJournal, Trouble>> =>
   open({
-    label: "demo journal",
+    label: t("welcome.demoLabel"),
     files: { "demo.journal": DEMO_JOURNAL },
     entry: "/demo.journal",
   })

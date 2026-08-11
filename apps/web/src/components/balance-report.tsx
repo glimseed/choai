@@ -8,6 +8,7 @@ import { useQuery } from "~/journal/query"
 import { linesOf, type Line } from "~/reports/tree"
 import { getOrUndefined, matchResource } from "~/lib/monad"
 import { TroubleNote } from "./trouble-note"
+import { t } from "~/i18n"
 
 /**
  * Any of hledger's balance reports.
@@ -70,7 +71,7 @@ function Rows(props: { report: BalanceReport; nothingToShow: string }): JSX.Elem
           </tbody>
           <tfoot>
             <tr class="border-t font-medium">
-              <td class="py-2">Total</td>
+              <td class="py-2">{t("report.total")}</td>
               <Amount value={props.report.prTotals.prrTotal} class="py-2" />
             </tr>
           </tfoot>
@@ -101,7 +102,7 @@ function Amount(props: { value: MixedAmount; class: string }): JSX.Element {
 }
 
 const NeedsAJournal = (): JSX.Element => (
-  <p class="text-sm text-muted-foreground">Open a journal first.</p>
+  <p class="text-sm text-muted-foreground">{t("report.needsJournal")}</p>
 )
 
-const Waiting = (): JSX.Element => <p class="text-sm text-muted-foreground">Working…</p>
+const Waiting = (): JSX.Element => <p class="text-sm text-muted-foreground">{t("report.working")}</p>

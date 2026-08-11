@@ -3,6 +3,7 @@ import { Show, type JSX } from "solid-js"
 import { openDemo, openFiles, opening, openingTrouble } from "~/journal/store"
 import { getOrUndefined } from "~/lib/monad"
 import { Button } from "~/components/ui/button"
+import { t } from "~/i18n"
 import { TroubleNote } from "./trouble-note"
 
 /** What there is to do when no journal is open yet. */
@@ -12,19 +13,18 @@ export function Welcome(): JSX.Element {
   return (
     <div class="mx-auto flex max-w-md flex-col items-start gap-4 py-16">
       <div>
-        <h2 class="text-lg font-semibold">No journal open</h2>
+        <h2 class="text-lg font-semibold">{t("welcome.heading")}</h2>
         <p class="mt-1 text-sm text-muted-foreground">
-          Everything runs here in the browser — hledger itself, compiled to WebAssembly.
-          Nothing you open is uploaded anywhere.
+          {t("welcome.body")}
         </p>
       </div>
 
       <div class="flex gap-2">
         <Button onClick={() => chooser.click()} disabled={opening()}>
-          Open journal files
+          {t("welcome.openFiles")}
         </Button>
         <Button variant="outline" onClick={() => void openDemo()} disabled={opening()}>
-          Try the demo
+          {t("welcome.tryDemo")}
         </Button>
       </div>
 
@@ -41,7 +41,7 @@ export function Welcome(): JSX.Element {
       />
 
       <Show when={opening()}>
-        <p class="text-sm text-muted-foreground">Starting hledger…</p>
+        <p class="text-sm text-muted-foreground">{t("welcome.starting")}</p>
       </Show>
       <Show when={getOrUndefined(openingTrouble())}>
         {(trouble) => <TroubleNote trouble={trouble()} />}

@@ -1,13 +1,16 @@
 import { Show, type JSX } from "solid-js"
 
+import { diagnose, type Diagnosis } from "~/hledger/diagnose"
 import type { Trouble } from "~/hledger/wire"
+import { t } from "~/i18n"
 
 /**
- * Says what went wrong, in words chosen here rather than passed up from below.
+ * Says what went wrong, in words chosen here.
  *
- * hledger's own detail is worth showing when it names a line of the journal, but
- * it belongs behind a heading that says which kind of trouble this is, so the
- * reader knows whether to fix their books, their query, or their expectations.
+ * hledger's own text is kept underneath whenever there is any, because it names
+ * the line of the journal at fault and no translation can replace that. The
+ * heading above it is ours, so a reader knows whether to go and fix their books,
+ * their query, or their expectations.
  */
 export function TroubleNote(props: { trouble: Trouble }): JSX.Element {
   return (
@@ -15,9 +18,14 @@ export function TroubleNote(props: { trouble: Trouble }): JSX.Element {
       <p class="font-medium">{headline(props.trouble)}</p>
       <Show when={detailOf(props.trouble)}>
         {(detail) => (
-          <pre class="mt-1 overflow-x-auto whitespace-pre-wrap font-mono text-xs text-muted-foreground">
-            {detail()}
-          </pre>
+          <details class="mt-1">
+            <summary class="cursor-pointer text-xs text-muted-foreground">
+              {t("trouble.detailFromHledger")}
+            </summary>
+            <pre class="mt-1 overflow-x-auto whitespace-pre-wrap font-mono text-xs text-muted-foreground">
+              {detail()}
+            </pre>
+          </details>
         )}
       </Show>
     </div>
@@ -27,23 +35,47 @@ export function TroubleNote(props: { trouble: Trouble }): JSX.Element {
 const headline = (trouble: Trouble): string => {
   switch (trouble.kind) {
     case "no-journal":
-      return "No journal is open yet."
+      return t("trouble.noJournal")
     case "file-missing":
-      return `${trouble.path} is not among the files given.`
+      return t("trouble.fileMissing", { path: trouble.path })
     case "read-failed":
-      return "This journal could not be read."
+      return fromDiagnosis(diagnose(trouble.detail))
     case "malformed-request":
-      return "hledger did not understand that."
+      return fromDiagnosis(diagnose(trouble.detail))
     case "unknown-report":
-      return `There is no ${trouble.report} report.`
+      return t("trouble.unknownReport", { report: trouble.report })
     case "missing-transaction":
-      return "No transaction was given to write."
+      return t("trouble.missingTransaction")
     case "crashed":
-      return "hledger stopped part way through."
+      return t("trouble.crashed")
     case "unreachable":
-      return "hledger could not be reached."
+      return t("trouble.unreachable")
     case "unreadable-answer":
-      return "hledger answered with something unreadable."
+      return t("trouble.unreadableAnswer")
+  }
+}
+
+/** An unrecognised complaint keeps a general heading; hledger's words say the rest. */
+const fromDiagnosis = (diagnosis: Diagnosis): string => {
+  switch (diagnosis) {
+    case "unbalanced-transaction":
+      return t("trouble.unbalancedTransaction")
+    case "balance-assertion":
+      return t("trouble.balanceAssertion")
+    case "syntax":
+      return t("trouble.syntax")
+    case "unknown-account":
+      return t("trouble.unknownAccount")
+    case "unknown-commodity":
+      return t("trouble.unknownCommodity")
+    case "unparseable-date":
+      return t("trouble.unparseableDate")
+    case "unparseable-query":
+      return t("trouble.unparseableQuery")
+    case "unparseable-amount":
+      return t("trouble.unparseableAmount")
+    case "unknown":
+      return t("trouble.readFailed")
   }
 }
 

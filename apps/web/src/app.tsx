@@ -10,15 +10,16 @@ import { PanelLeftIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, Wa
 import { AccountsPanel } from "~/components/accounts-panel"
 import { journal } from "~/journal/store"
 import { useQuery } from "~/journal/query"
+import { t } from "~/i18n"
 
 // The daily journal comes first because that is what the app is opened for;
 // the statements are things you go and look at, not things you live in.
 const NAV = [
-  { href: "/", label: "Journal", Icon: ReceiptIcon },
-  { href: "/balance-sheet", label: "Balance sheet", Icon: ScaleIcon },
-  { href: "/income-statement", label: "Income statement", Icon: TrendingUpIcon },
-  { href: "/accounts", label: "Accounts", Icon: WalletIcon },
-  { href: "/settings", label: "Settings", Icon: SettingsIcon },
+  { href: "/", key: "nav.journal", Icon: ReceiptIcon },
+  { href: "/balance-sheet", key: "nav.balanceSheet", Icon: ScaleIcon },
+  { href: "/income-statement", key: "nav.incomeStatement", Icon: TrendingUpIcon },
+  { href: "/accounts", key: "nav.accounts", Icon: WalletIcon },
+  { href: "/settings", key: "nav.settings", Icon: SettingsIcon },
 ] as const
 
 export function Layout(props: ParentProps) {
@@ -31,7 +32,7 @@ export function Layout(props: ParentProps) {
   const items = (): ActivityItem[] =>
     NAV.map((entry) => ({
       id: entry.href,
-      label: entry.label,
+      label: t(entry.key),
       icon: <entry.Icon class="h-5 w-5" />,
       active: location.pathname === entry.href,
       // Carry the query across. It belongs to the books being looked at, not to
@@ -48,20 +49,20 @@ export function Layout(props: ParentProps) {
               <button
                 type="button"
                 onClick={() => setPanelOpen((open) => !open)}
-                aria-label={panelOpen() ? "Hide accounts" : "Show accounts"}
-                title={panelOpen() ? "Hide accounts" : "Show accounts"}
+                aria-label={panelOpen() ? t("nav.hideAccounts") : t("nav.showAccounts")}
+                title={panelOpen() ? t("nav.hideAccounts") : t("nav.showAccounts")}
                 class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <PanelLeftIcon class="h-4 w-4" />
               </button>
-              <span class="px-1 font-semibold tracking-tight">hledger-pwa</span>
+              <span class="px-1 font-semibold tracking-tight">{t("app.name")}</span>
             </>
           }
           right={
             <Show when={getOrUndefined(journal())}>
               {(open) => (
                 <span class="whitespace-nowrap px-1 text-xs text-muted-foreground">
-                  {open().source.label} · {open().summary.transactions} txns
+                  {open().source.label} · {t("journal.transactionCount", { count: open().summary.transactions })}
                 </span>
               )}
             </Show>
@@ -73,7 +74,7 @@ export function Layout(props: ParentProps) {
             <TextField class="w-full max-w-xl">
               <TextFieldInput
                 type="text"
-                placeholder="hledger query, eg  acct:food date:2026-02"
+                placeholder={t("journal.queryPlaceholder")}
                 class="h-6 border-0 bg-transparent px-2 text-[13px] shadow-none focus-visible:ring-0"
                 value={query()}
                 onInput={(e) => setQuery(e.currentTarget.value)}
@@ -102,7 +103,7 @@ export function Layout(props: ParentProps) {
         />
       }
       panel={
-        <SidePanel open={panelOpen()} header={<span>Accounts</span>}>
+        <SidePanel open={panelOpen()} header={<span>{t("accounts.panelTitle")}</span>}>
           <AccountsPanel />
         </SidePanel>
       }

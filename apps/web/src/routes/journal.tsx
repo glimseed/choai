@@ -10,6 +10,7 @@ import { Button } from "~/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table"
 import { TroubleNote } from "~/components/trouble-note"
 import { Welcome } from "~/components/welcome"
+import { t } from "~/i18n"
 
 const PAGE = 50
 
@@ -27,16 +28,16 @@ export default function Journal(): JSX.Element {
   return (
     <Show when={getOrUndefined(journal())} fallback={<Welcome />}>
       {matchResource(page(), {
-        Loading: () => <p class="text-sm text-muted-foreground">Reading…</p>,
+        Loading: () => <p class="text-sm text-muted-foreground">{t("journal.reading")}</p>,
         Err: (trouble) => <TroubleNote trouble={trouble} />,
         Ok: (found) => (
           <div class="flex flex-col gap-4">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead class="w-28">Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Postings</TableHead>
+                  <TableHead class="w-28">{t("journal.date")}</TableHead>
+                  <TableHead>{t("journal.description")}</TableHead>
+                  <TableHead>{t("journal.postings")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -53,7 +54,7 @@ export default function Journal(): JSX.Element {
                   disabled={found.offset === 0}
                   onClick={() => setOffset(Math.max(0, offset() - PAGE))}
                 >
-                  Newer
+                  {t("journal.newer")}
                 </Button>
                 <Button
                   variant="outline"
@@ -61,7 +62,7 @@ export default function Journal(): JSX.Element {
                   disabled={found.offset + PAGE >= found.total}
                   onClick={() => setOffset(offset() + PAGE)}
                 >
-                  Older
+                  {t("journal.older")}
                 </Button>
               </span>
             </div>
@@ -73,7 +74,9 @@ export default function Journal(): JSX.Element {
 }
 
 const describeRange = (offset: number, total: number): string =>
-  total === 0 ? "nothing matches" : `${offset + 1}–${Math.min(offset + PAGE, total)} of ${total}`
+  total === 0
+    ? t("journal.nothingMatches")
+    : t("journal.range", { from: offset + 1, to: Math.min(offset + PAGE, total), total })
 
 function Entry(props: { transaction: Transaction }): JSX.Element {
   return (

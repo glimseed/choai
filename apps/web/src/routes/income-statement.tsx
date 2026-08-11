@@ -2,13 +2,14 @@ import { For, createSignal, type JSX } from "solid-js"
 
 import { BalanceReportView } from "~/components/balance-report"
 import { Button } from "~/components/ui/button"
+import { t } from "~/i18n"
 
 /** Periods are hledger query terms, so hledger decides what they mean. */
 const PERIODS = [
-  { label: "This month", term: "date:thismonth" },
-  { label: "This year", term: "date:thisyear" },
-  { label: "Last year", term: "date:lastyear" },
-  { label: "All time", term: "" },
+  { key: "incomeStatement.thisMonth", term: "date:thismonth" },
+  { key: "incomeStatement.thisYear", term: "date:thisyear" },
+  { key: "incomeStatement.lastYear", term: "date:lastyear" },
+  { key: "incomeStatement.allTime", term: "" },
 ] as const
 
 export default function IncomeStatement(): JSX.Element {
@@ -16,10 +17,7 @@ export default function IncomeStatement(): JSX.Element {
 
   return (
     <div class="flex flex-col gap-4">
-      <p class="text-sm text-muted-foreground">
-        What came in and what went out over a period. Revenue and expenses, as a change
-        rather than a running balance.
-      </p>
+      <p class="text-sm text-muted-foreground">{t("incomeStatement.lead")}</p>
 
       <div class="flex flex-wrap gap-2">
         <For each={PERIODS}>
@@ -29,7 +27,7 @@ export default function IncomeStatement(): JSX.Element {
               size="sm"
               onClick={() => setPeriod(option.term)}
             >
-              {option.label}
+              {t(option.key)}
             </Button>
           )}
         </For>
@@ -38,7 +36,7 @@ export default function IncomeStatement(): JSX.Element {
       <BalanceReportView
         kind="incomestatement"
         narrowing={period()}
-        nothingToShow="Nothing in this period."
+        nothingToShow={t("incomeStatement.empty")}
       />
     </div>
   )
