@@ -79,6 +79,7 @@ export function GitHubPanel(): JSX.Element {
     <section class="flex flex-col gap-2">
       <h2 class="text-sm font-medium">{t("github.title")}</h2>
       <p class="text-xs text-muted-foreground">{t("github.lead")}</p>
+      <Folded summary={t("github.firstTime")} steps={FIRST} />
 
       <div class="grid grid-cols-2 gap-2">
         <Field label={t("github.owner")} value={settings().owner} onChange={(owner) => change({ owner })} />
@@ -103,7 +104,7 @@ export function GitHubPanel(): JSX.Element {
         onChange={(token) => change({ token })}
       />
       <p class="text-xs text-muted-foreground">{t("github.tokenHint")}</p>
-      <HowToMakeAToken />
+      <Folded summary={t("github.howTo")} steps={STEPS} link={MAKE_ONE} linkText={t("github.tokenPage")} />
 
       <div class="flex flex-wrap gap-2">
         <Button size="sm" disabled={!ready() || busy()} onClick={() => void save()}>
@@ -141,28 +142,42 @@ const MAKE_ONE = "https://github.com/settings/personal-access-tokens/new"
 
 const STEPS = ["github.step1", "github.step2", "github.step3", "github.step4", "github.step5"] as const
 
+const FIRST = ["github.first1", "github.first2", "github.first3", "github.first4"] as const
+
+/** Only the keys that name a line of instructions, so a whole section cannot be passed. */
+type StepKey = (typeof STEPS)[number] | (typeof FIRST)[number]
+
 /**
- * How to make a token, folded away.
+ * Instructions, folded away.
  *
- * Short, and next to the box it is about, because someone who already has one
- * should not have to read past it — and someone who does not should not have to
- * leave to find out what settings it needs.
+ * Kept next to what they are about and closed to begin with: someone who has
+ * done this before reads past a line, and someone who has not does not have to
+ * leave the page to find out what to do.
  */
-function HowToMakeAToken(): JSX.Element {
+function Folded(props: {
+  summary: string
+  steps: readonly StepKey[]
+  link?: string
+  linkText?: string
+}): JSX.Element {
   return (
     <details class="text-xs text-muted-foreground">
-      <summary class="cursor-pointer hover:text-foreground">{t("github.howTo")}</summary>
+      <summary class="cursor-pointer hover:text-foreground">{props.summary}</summary>
       <ol class="mt-1 flex list-decimal flex-col gap-1 pl-5">
-        <For each={STEPS}>{(step) => <li>{t(step)}</li>}</For>
+        <For each={props.steps}>{(step) => <li>{t(step)}</li>}</For>
       </ol>
-      <a
-        href={MAKE_ONE}
-        target="_blank"
-        rel="noreferrer"
-        class="mt-1 inline-block underline underline-offset-2 hover:text-foreground"
-      >
-        {t("github.tokenPage")}
-      </a>
+      <Show when={props.link}>
+        {(href) => (
+          <a
+            href={href()}
+            target="_blank"
+            rel="noreferrer"
+            class="mt-1 inline-block underline underline-offset-2 hover:text-foreground"
+          >
+            {props.linkText}
+          </a>
+        )}
+      </Show>
     </details>
   )
 }
