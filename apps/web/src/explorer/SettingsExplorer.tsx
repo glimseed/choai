@@ -6,13 +6,17 @@ import { getOrUndefined } from "~/lib/monad"
 import { t } from "~/i18n"
 
 /**
- * The account list, as the shell's side panel — the explorer of this app.
+ * The explorer beside the settings.
+ *
+ * Every view has its own, and they all start as the same account list. They are
+ * separate files so that each can grow into what its view actually needs — a
+ * period picker beside the income statement, say — without the others having to
+ * agree.
  *
  * Choosing an account sets the query rather than going somewhere new, so the
- * account stays chosen while moving between the journal, the balance sheet and
- * the income statement.
+ * account stays chosen while moving between views.
  */
-export function AccountsPanel(): JSX.Element {
+export function SettingsExplorer(): JSX.Element {
   const [query, setQuery] = useQuery()
 
   const chosen = (account: string): boolean => query() === accountQuery(account)

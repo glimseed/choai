@@ -1,13 +1,18 @@
 import type { ParentProps } from "solid-js"
 import { Show, createSignal, onCleanup, onMount } from "solid-js"
 import { useLocation, useNavigate } from "@solidjs/router"
+import { Dynamic } from "solid-js/web"
 import { getOrUndefined } from "~/lib/monad"
 
 import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem } from "~/lib/solid-workbench-ui"
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
 import { PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
-import { AccountsPanel } from "~/components/accounts-panel"
+import { JournalExplorer } from "~/explorer/JournalExplorer"
+import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
+import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
+import { AccountsExplorer } from "~/explorer/AccountsExplorer"
+import { SettingsExplorer } from "~/explorer/SettingsExplorer"
 import { journal } from "~/journal/store"
 import { useQuery } from "~/journal/query"
 import { ComposePanel } from "~/compose/ComposePanel"
@@ -18,11 +23,11 @@ import { t } from "~/i18n"
 // The daily journal comes first because that is what the app is opened for;
 // the statements are things you go and look at, not things you live in.
 const NAV = [
-  { href: "/", key: "nav.journal", Icon: ReceiptIcon },
-  { href: "/balance-sheet", key: "nav.balanceSheet", Icon: ScaleIcon },
-  { href: "/income-statement", key: "nav.incomeStatement", Icon: TrendingUpIcon },
-  { href: "/accounts", key: "nav.accounts", Icon: WalletIcon },
-  { href: "/settings", key: "nav.settings", Icon: SettingsIcon },
+  { href: "/", key: "nav.journal", Icon: ReceiptIcon, Explorer: JournalExplorer, writes: true },
+  { href: "/balance-sheet", key: "nav.balanceSheet", Icon: ScaleIcon, Explorer: BalanceSheetExplorer, writes: false },
+  { href: "/income-statement", key: "nav.incomeStatement", Icon: TrendingUpIcon, Explorer: IncomeStatementExplorer, writes: false },
+  { href: "/accounts", key: "nav.accounts", Icon: WalletIcon, Explorer: AccountsExplorer, writes: false },
+  { href: "/settings", key: "nav.settings", Icon: SettingsIcon, Explorer: SettingsExplorer, writes: false },
 ] as const
 
 /**
@@ -98,6 +103,10 @@ export function Layout(props: ParentProps) {
     onCleanup(() => window.removeEventListener("keydown", onKey))
   })
 
+  /** The view being shown, which is what the explorer beside it belongs to. */
+  const current = (): (typeof NAV)[number] =>
+    NAV.find((entry) => entry.href === location.pathname) ?? NAV[0]
+
   const items = (): ActivityItem[] =>
     NAV.map((entry) => ({
       id: entry.href,
@@ -123,17 +132,6 @@ export function Layout(props: ParentProps) {
                 <PanelLeftIcon class="h-4 w-4" />
               </button>
               <span class="px-1 font-semibold tracking-tight">{t("app.name")}</span>
-              <Show when={getOrUndefined(journal())}>
-                <button
-                  type="button"
-                  onClick={compose}
-                  aria-label={t("compose.open")}
-                  title={t("compose.open")}
-                  class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <PlusIcon class="h-4 w-4" />
-                </button>
-              </Show>
             </>
           }
           right={
@@ -186,14 +184,31 @@ export function Layout(props: ParentProps) {
         <SidePanel
           class={SLIDE}
           open={panelOpen()}
-          header={<span>{t("accounts.panelTitle")}</span>}
+          header={
+            <>
+              <span>{t(current().key)}</span>
+              <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
+                <button
+                  type="button"
+                  onClick={compose}
+                  aria-label={t("compose.open")}
+                  title={t("compose.open")}
+                  class="inline-flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <PlusIcon class="h-4 w-4" />
+                </button>
+              </Show>
+            </>
+          }
         >
-          <AccountsPanel />
+          <Dynamic component={current().Explorer} />
         </SidePanel>
       }
       aux={
         <AuxPanel
           class={SLIDE}
+          initialWidth={420}
+          minWidth={320}
           open={composing()}
           header={<span>{t("compose.title")}</span>}
           onClose={stopComposing}
