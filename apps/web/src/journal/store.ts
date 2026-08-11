@@ -6,6 +6,7 @@ import { createTask } from "~/lib/pending"
 import { Err, None, Ok, Some, getOrUndefined, match, type Option, type Result } from "~/lib/monad"
 import { t } from "~/i18n"
 import { demoJournal } from "./demo"
+import { forget as forgetKept, keep, lastOpened } from "./kept"
 
 /**
  * Which journal is open, and how it got there.
@@ -64,13 +65,70 @@ const attempt = (source: Source): Promise<Result<JournalSummary, Trouble>> =>
 const remember = (open: OpenJournal): Result<OpenJournal, Trouble> => {
   setOpened(Some(open))
   setTrouble(None)
+  void keepOnThisDevice(open.source)
   return Ok(open)
+}
+
+/**
+ * Kept only once hledger has read it.
+ *
+ * Whatever fails to read is put back by whoever tried it, and putting it back
+ * ends in another open, so the copy on the device is always one hledger has
+ * accepted. Failing to keep it is not worth interrupting anyone over — the
+ * journal in hand still works, and the next open tries again — so it is caught
+ * here and goes no further.
+ */
+const keepOnThisDevice = async (source: Source): Promise<void> => {
+  const now = Date.now()
+  const files = Object.entries(source.files).map(([path, text]) => ({ path, text, updatedAt: now }))
+  try {
+    await keep({ label: source.label, entry: source.entry, files })
+  } catch {
+    // A private window, or a refused quota, and neither is worth a word.
+  }
 }
 
 const forget = (cause: Trouble): Result<OpenJournal, Trouble> => {
   setOpened(None)
   setTrouble(Some(cause))
   return Err(cause)
+}
+
+const [settled, setSettled] = createSignal(false)
+
+/**
+ * Whether the journal left open last time is still on its way back.
+ *
+ * Between the first paint and hledger having read it there is nothing to show,
+ * and "no journal open" would be a lie for that second or two.
+ */
+export const settling = (): boolean => !settled()
+
+/**
+ * Reopen whatever was left open on this device.
+ *
+ * Called once, when the app starts. Anything already open wins: a journal
+ * chosen by hand is more recent than one remembered.
+ */
+export const reopenKept = async (): Promise<void> => {
+  try {
+    if (getOrUndefined(opened()) !== undefined) return
+    const kept = await lastOpened()
+    if (kept === undefined) return
+    const files = Object.fromEntries(kept.files.map((file) => [file.path, file.text]))
+    await open({ label: kept.label, files, entry: kept.entry })
+  } catch {
+    // Nothing to reopen is the same as nothing kept.
+  } finally {
+    setSettled(true)
+  }
+}
+
+/** Put the books away: closed here, and cleared from this device. */
+export const closeJournal = async (): Promise<void> => {
+  setOpened(None)
+  setTrouble(None)
+  await forgetKept()
 }
 
 /**

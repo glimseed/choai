@@ -1,13 +1,30 @@
 import { Show, type JSX } from "solid-js"
 
-import { openDemo, openFiles, opening, openingTrouble } from "~/journal/store"
+import { openDemo, openFiles, opening, openingTrouble, settling } from "~/journal/store"
 import { getOrUndefined } from "~/lib/monad"
 import { Button } from "~/components/ui/button"
 import { t } from "~/i18n"
 import { TroubleNote } from "./trouble-note"
 
-/** What there is to do when no journal is open yet. */
+/**
+ * What there is to do when no journal is open yet.
+ *
+ * Held back while the journal left open last time is on its way back: offering
+ * to open one, a moment before one appears, would be an invitation to undo what
+ * the app is in the middle of doing.
+ */
 export function Welcome(): JSX.Element {
+  return (
+    <Show
+      when={!settling()}
+      fallback={<p class="mx-auto max-w-md py-16 text-sm text-muted-foreground">{t("welcome.starting")}</p>}
+    >
+      <Choices />
+    </Show>
+  )
+}
+
+function Choices(): JSX.Element {
   let chooser!: HTMLInputElement
 
   return (

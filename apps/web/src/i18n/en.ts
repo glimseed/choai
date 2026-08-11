@@ -77,6 +77,12 @@ export const en = {
     language: "Language",
     languageHint: "Chosen from your browser unless you pick one here.",
   },
+  library: {
+    title: "This journal",
+    kept: "Kept on this device, so it is here again next time. Nothing leaves the browser.",
+    notKept: "This browser may clear it if the app goes unused. Installing the app, or syncing to GitHub, makes it certain.",
+    close: "Close and clear from this device",
+  },
   licenses: {
     title: "Licences",
     app: "hledger-pwa is free software under the GNU General Public License, version 3 or later.",

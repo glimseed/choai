@@ -70,6 +70,12 @@ export const ja: Dictionary = {
     language: "言語",
     languageHint: "ここで選ばないかぎり、ブラウザの言語に従います。",
   },
+  library: {
+    title: "いま開いている帳簿",
+    kept: "この端末に保存しています。次に開いたときも同じ帳簿が出ます。ブラウザの外には出ません。",
+    notKept: "しばらく使わないと、ブラウザが消してしまうことがあります。アプリとして追加するか、GitHub と同期すると確実です。",
+    close: "閉じて、この端末から消す",
+  },
   licenses: {
     title: "ライセンス",
     app: "hledger-pwa は GNU General Public License バージョン 3 以降のもとで公開されている自由ソフトウェアです。",

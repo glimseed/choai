@@ -14,7 +14,7 @@ import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
 import { AccountsExplorer } from "~/explorer/AccountsExplorer"
 import { SettingsExplorer } from "~/explorer/SettingsExplorer"
-import { journal } from "~/journal/store"
+import { journal, reopenKept } from "~/journal/store"
 import { handOver } from "~/journal/handover"
 import { useQuery } from "~/journal/query"
 import { ComposePanel } from "~/compose/ComposePanel"
@@ -134,6 +134,8 @@ export function Layout(props: ParentProps) {
   }
 
   onMount(() => {
+    void reopenKept()
+
     const onKey = (event: KeyboardEvent): void => {
       const action = actionFor(event)
       if (action === undefined) return
