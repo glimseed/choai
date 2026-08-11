@@ -4,16 +4,34 @@ import { Show, type JSX } from 'solid-js'
  * A full-width top bar, strikingly short — VSCode's tab bar. Slots on the left
  * and right; the middle takes children, typically tabs, laid out with horizontal
  * scroll. Knows nothing about any domain.
+ *
+ * `center` is a slot of another kind: it is centred on the bar itself rather
+ * than on the space left over, the way that editor centres its command box.
+ * Laying it out in the row cannot do that — it would sit halfway between the two
+ * side slots, which is off centre by half their difference — so it is laid over
+ * the row. It stays narrower than the bar so the sides remain reachable.
  */
-export function TitlesBar(props: { left?: JSX.Element; right?: JSX.Element; children?: JSX.Element }): JSX.Element {
+export function TitlesBar(props: {
+  left?: JSX.Element
+  center?: JSX.Element
+  right?: JSX.Element
+  children?: JSX.Element
+}): JSX.Element {
   return (
-    <div class="flex h-8 shrink-0 items-center gap-1 border-b border-border bg-card px-1.5 text-[13px]">
+    <div class="relative flex h-8 shrink-0 items-center gap-1 border-b border-border bg-card px-1.5 text-[13px]">
       <Show when={props.left}>
         <div class="flex shrink-0 items-center gap-1">{props.left}</div>
       </Show>
       <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">{props.children}</div>
       <Show when={props.right}>
         <div class="flex shrink-0 items-center gap-0.5">{props.right}</div>
+      </Show>
+      <Show when={props.center}>
+        {/* Only the box takes the pointer; the strip it hangs in has to let
+            presses through to whatever is under it. */}
+        <div class="pointer-events-none absolute inset-x-0 flex justify-center">
+          <div class="pointer-events-auto w-[min(36rem,60vw)]">{props.center}</div>
+        </div>
       </Show>
     </div>
   )

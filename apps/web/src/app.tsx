@@ -173,24 +173,27 @@ export function Layout(props: ParentProps) {
                 >
                   <PanelLeftIcon class="h-4 w-4" />
                 </button>
-                <span class="px-1 font-semibold tracking-tight">{t("app.name")}</span>
+                {/* Room on a phone goes to the query box, not to a name the
+                    reader already knows. */}
+                <span class="hidden px-1 font-semibold tracking-tight sm:inline">{t("app.name")}</span>
               </>
             }
-          >
-            {/* One query for whichever report is open, the way the hledger
-                command line takes one. */}
-            <Show when={getOrUndefined(journal())}>
-              <TextField class="w-full max-w-xl">
-                <TextFieldInput
-                  type="text"
-                  placeholder={t("journal.queryPlaceholder")}
-                  class="h-6 border-0 bg-transparent px-2 text-[13px] shadow-none focus-visible:ring-0"
-                  value={query()}
-                  onInput={(e) => setQuery(e.currentTarget.value)}
-                />
-              </TextField>
-            </Show>
-          </TitlesBar>
+            center={
+              // One query for whichever report is open, the way the hledger
+              // command line takes one.
+              <Show when={getOrUndefined(journal())}>
+                <TextField class="w-full">
+                  <TextFieldInput
+                    type="search"
+                    placeholder={t("journal.queryPlaceholder")}
+                    class="h-6 rounded border-input bg-background px-2 text-[13px] shadow-none focus-visible:ring-1 focus-visible:ring-offset-0"
+                    value={query()}
+                    onInput={(e) => setQuery(e.currentTarget.value)}
+                  />
+                </TextField>
+              </Show>
+            }
+          />
         }
         activity={
           <ActivityBar
