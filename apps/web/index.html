@@ -3,8 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- iOS pays no attention to the manifest's icons for the home screen. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#000031" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>hledger-pwa</title>
+    <meta name="description" content="Your hledger journal, in the browser." />
   </head>
   <body>
     <div id="root"></div>

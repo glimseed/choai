@@ -26,22 +26,32 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg"],
+      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
         name: "hledger-pwa",
         short_name: "hledger-pwa",
         description: "Your hledger journal, in the browser",
-        theme_color: "#0a0a0a",
-        background_color: "#0a0a0a",
+        // From the icon: its navy for the browser's own furniture, and the
+        // colour the app actually paints for the screen shown while it starts,
+        // so opening it does not flash from black to white.
+        theme_color: "#000031",
+        background_color: "#ffffff",
         display: "standalone",
         start_url: "/",
+        icons: [
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+          // Android crops an icon to whatever shape it likes, so this one is
+          // drawn small on a filled square and says it can take it.
+          { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        ],
       },
       workbox: {
         // The hledger engine is a single ~7 MB asset. Workbox silently skips
         // anything over 2 MiB by default, which would leave the app broken
         // offline with no error to explain why.
         maximumFileSizeToCacheInBytes: 24 * 1024 * 1024,
-        globPatterns: ["**/*.{js,css,html,svg,wasm}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,wasm}"],
       },
     }),
   ],
