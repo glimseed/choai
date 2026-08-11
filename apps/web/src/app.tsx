@@ -195,9 +195,11 @@ export function Layout(props: ParentProps) {
                   onClick={compose}
                   aria-label={t("compose.open")}
                   title={t("compose.open")}
-                  class="size-5 text-muted-foreground"
+                  class="size-6 text-muted-foreground"
                 >
-                  <PlusIcon class="h-3 w-3" />
+                  {/* Left unsized: Button sets any icon inside it to 16px, and a
+                      smaller box here would be overflowed rather than obeyed. */}
+                  <PlusIcon />
                 </Button>
               </Show>
             </>
