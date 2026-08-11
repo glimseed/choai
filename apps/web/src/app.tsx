@@ -6,6 +6,7 @@ import { getOrUndefined } from "~/lib/monad"
 
 import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem } from "~/lib/solid-workbench-ui"
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
+import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
 import { PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
@@ -188,15 +189,16 @@ export function Layout(props: ParentProps) {
             <>
               <span>{t(current().key)}</span>
               <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="icon"
                   onClick={compose}
                   aria-label={t("compose.open")}
                   title={t("compose.open")}
-                  class="inline-flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  class="size-5 text-muted-foreground"
                 >
-                  <PlusIcon class="h-4 w-4" />
-                </button>
+                  <PlusIcon class="h-3 w-3" />
+                </Button>
               </Show>
             </>
           }
