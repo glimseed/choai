@@ -65,6 +65,12 @@ export const en = {
     working: "Working…",
     needsJournal: "Open a journal first.",
   },
+  shortcuts: {
+    title: "Keyboard shortcuts",
+    compose: "Write an entry",
+    togglePanels: "Show or hide the sidebars",
+    close: "Close the panel",
+  },
   settings: {
     language: "Language",
     languageHint: "Chosen from your browser unless you pick one here.",

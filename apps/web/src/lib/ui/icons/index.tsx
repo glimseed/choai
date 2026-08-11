@@ -7,6 +7,7 @@ import settingsSvg from './settings.svg?raw'
 import panelLeftSvg from './panel-left.svg?raw'
 import plusSvg from './plus.svg?raw'
 import xSvg from './x.svg?raw'
+import helpSvg from './help.svg?raw'
 
 /**
  * Icons. The SVG bodies live beside this file as .svg files, drawn with
@@ -41,3 +42,5 @@ export const PanelLeftIcon = icon(panelLeftSvg)
 export const PlusIcon = icon(plusSvg)
 /** Dismiss or close. */
 export const XIcon = icon(xSvg)
+/** What can be done here: a question mark in a circle. */
+export const HelpIcon = icon(helpSvg)

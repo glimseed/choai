@@ -19,6 +19,8 @@ import { useQuery } from "~/journal/query"
 import { ComposePanel } from "~/compose/ComposePanel"
 import { composing, startComposing, stopComposing, toggleComposing } from "~/compose/store"
 import { narrow, viewportWidth } from "~/lib/narrow"
+import { actionFor } from "~/lib/shortcuts"
+import { ShortcutsHelp } from "~/components/shortcuts-help"
 import { t } from "~/i18n"
 
 // The daily journal comes first because that is what the app is opened for;
@@ -106,11 +108,12 @@ export function Layout(props: ParentProps) {
 
   onMount(() => {
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault()
-        if (composing()) toggleComposing()
-        else compose()
-      }
+      const action = actionFor(event)
+      if (action === undefined) return
+      event.preventDefault()
+      if (action === "compose") composing() ? toggleComposing() : compose()
+      if (action === "togglePanels") toggleChrome()
+      if (action === "close") stopComposing()
     }
     window.addEventListener("keydown", onKey)
     onCleanup(() => window.removeEventListener("keydown", onKey))
@@ -147,15 +150,7 @@ export function Layout(props: ParentProps) {
               <span class="px-1 font-semibold tracking-tight">{t("app.name")}</span>
             </>
           }
-          right={
-            <Show when={getOrUndefined(journal())}>
-              {(open) => (
-                <span class="whitespace-nowrap px-1 text-xs text-muted-foreground">
-                  {open().source.label} · {t("journal.transactionCount", { count: open().summary.transactions })}
-                </span>
-              )}
-            </Show>
-          }
+          right={<ShortcutsHelp />}
         >
           {/* One query for whichever report is open, the way the hledger
               command line takes one. */}

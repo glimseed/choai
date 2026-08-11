@@ -58,6 +58,12 @@ export const ja: Dictionary = {
     working: "計算中…",
     needsJournal: "先に帳簿を開いてください。",
   },
+  shortcuts: {
+    title: "キーボード操作",
+    compose: "仕訳を書く",
+    togglePanels: "サイドバーの表示切替",
+    close: "パネルを閉じる",
+  },
   settings: {
     language: "言語",
     languageHint: "ここで選ばないかぎり、ブラウザの言語に従います。",
