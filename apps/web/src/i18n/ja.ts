@@ -63,6 +63,7 @@ export const ja: Dictionary = {
     compose: "仕訳を書く",
     togglePanels: "サイドバーの表示切替",
     close: "パネルを閉じる",
+    hide: "閉じる",
   },
   settings: {
     language: "言語",

@@ -133,105 +133,109 @@ export function Layout(props: ParentProps) {
     }))
 
   return (
-    <Shell
-      titles={
-        <TitlesBar
-          left={
-            <>
-              <button
-                type="button"
-                onClick={toggleChrome}
-                aria-label={chromeShowing() ? t("nav.hidePanels") : t("nav.showPanels")}
-                title={chromeShowing() ? t("nav.hidePanels") : t("nav.showPanels")}
-                class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                <PanelLeftIcon class="h-4 w-4" />
-              </button>
-              <span class="px-1 font-semibold tracking-tight">{t("app.name")}</span>
-            </>
-          }
-          right={<ShortcutsHelp />}
-        >
-          {/* One query for whichever report is open, the way the hledger
-              command line takes one. */}
-          <Show when={getOrUndefined(journal())}>
-            <TextField class="w-full max-w-xl">
-              <TextFieldInput
-                type="text"
-                placeholder={t("journal.queryPlaceholder")}
-                class="h-6 border-0 bg-transparent px-2 text-[13px] shadow-none focus-visible:ring-0"
-                value={query()}
-                onInput={(e) => setQuery(e.currentTarget.value)}
-              />
-            </TextField>
-          </Show>
-        </TitlesBar>
-      }
-      activity={
-        <ActivityBar
-          class={SLIDE}
-          visible={railVisible()}
-          items={items()}
-          expanded={railExpanded()}
-          onToggle={() => setRailExpanded((expanded) => !expanded)}
-          // The trigger arrives already built, so Kobalte gets a wrapper to
-          // attach its props and ref to. The wrapper has to be a real box:
-          // display:contents would leave it nothing to measure, and the tooltip
-          // would be placed at the origin and never notice the pointer leaving.
-          renderTooltip={(label, trigger) => (
-            <Tooltip placement="right" gutter={8}>
-              <TooltipTrigger as="span" class="block w-full">
-                {trigger}
-              </TooltipTrigger>
-              <TooltipContent>{label}</TooltipContent>
-            </Tooltip>
-          )}
-        />
-      }
-      panel={
-        <SidePanel
-          class={SLIDE}
-          maxWidth={withinWindow}
-          open={panelOpen()}
-          header={
-            <>
-              <span>{t(current().key)}</span>
-              <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={compose}
-                  aria-label={t("compose.open")}
-                  title={t("compose.open")}
-                  class="size-6 text-muted-foreground"
+    <>
+      <Shell
+        titles={
+          <TitlesBar
+            left={
+              <>
+                <button
+                  type="button"
+                  onClick={toggleChrome}
+                  aria-label={chromeShowing() ? t("nav.hidePanels") : t("nav.showPanels")}
+                  title={chromeShowing() ? t("nav.hidePanels") : t("nav.showPanels")}
+                  class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
-                  {/* Left unsized: Button sets any icon inside it to 16px, and a
-                      smaller box here would be overflowed rather than obeyed. */}
-                  <PlusIcon />
-                </Button>
-              </Show>
-            </>
-          }
-        >
-          <Dynamic component={current().Explorer} />
-        </SidePanel>
-      }
-      aux={
-        <AuxPanel
-          class={SLIDE}
-          initialWidth={420}
-          minWidth={320}
-          maxWidth={withinWindow}
-          open={composing()}
-          header={<span>{t("compose.title")}</span>}
-          onClose={stopComposing}
-          closeLabel={t("compose.close")}
-        >
-          <ComposePanel />
-        </AuxPanel>
-      }
-    >
-      <div class="p-4">{props.children}</div>
-    </Shell>
+                  <PanelLeftIcon class="h-4 w-4" />
+                </button>
+                <span class="px-1 font-semibold tracking-tight">{t("app.name")}</span>
+              </>
+            }
+          >
+            {/* One query for whichever report is open, the way the hledger
+                command line takes one. */}
+            <Show when={getOrUndefined(journal())}>
+              <TextField class="w-full max-w-xl">
+                <TextFieldInput
+                  type="text"
+                  placeholder={t("journal.queryPlaceholder")}
+                  class="h-6 border-0 bg-transparent px-2 text-[13px] shadow-none focus-visible:ring-0"
+                  value={query()}
+                  onInput={(e) => setQuery(e.currentTarget.value)}
+                />
+              </TextField>
+            </Show>
+          </TitlesBar>
+        }
+        activity={
+          <ActivityBar
+            class={SLIDE}
+            visible={railVisible()}
+            items={items()}
+            expanded={railExpanded()}
+            onToggle={() => setRailExpanded((expanded) => !expanded)}
+            // The trigger arrives already built, so Kobalte gets a wrapper to
+            // attach its props and ref to. The wrapper has to be a real box:
+            // display:contents would leave it nothing to measure, and the tooltip
+            // would be placed at the origin and never notice the pointer leaving.
+            renderTooltip={(label, trigger) => (
+              <Tooltip placement="right" gutter={8}>
+                <TooltipTrigger as="span" class="block w-full">
+                  {trigger}
+                </TooltipTrigger>
+                <TooltipContent>{label}</TooltipContent>
+              </Tooltip>
+            )}
+          />
+        }
+        panel={
+          <SidePanel
+            class={SLIDE}
+            maxWidth={withinWindow}
+            open={panelOpen()}
+            header={
+              <>
+                <span>{t(current().key)}</span>
+                <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={compose}
+                    aria-label={t("compose.open")}
+                    title={t("compose.open")}
+                    class="size-6 text-muted-foreground"
+                  >
+                    {/* Left unsized: Button sets any icon inside it to 16px, and a
+                        smaller box here would be overflowed rather than obeyed. */}
+                    <PlusIcon />
+                  </Button>
+                </Show>
+              </>
+            }
+          >
+            <Dynamic component={current().Explorer} />
+          </SidePanel>
+        }
+        aux={
+          <AuxPanel
+            class={SLIDE}
+            initialWidth={420}
+            minWidth={320}
+            maxWidth={withinWindow}
+            open={composing()}
+            header={<span>{t("compose.title")}</span>}
+            onClose={stopComposing}
+            closeLabel={t("compose.close")}
+          >
+            <ComposePanel />
+          </AuxPanel>
+        }
+      >
+        <div class="p-4">{props.children}</div>
+      </Shell>
+      {/* Outside the shell, since it belongs to the window rather than to any
+          one region of it. */}
+      <ShortcutsHelp />
+    </>
   )
 }

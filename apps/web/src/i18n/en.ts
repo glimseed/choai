@@ -70,6 +70,7 @@ export const en = {
     compose: "Write an entry",
     togglePanels: "Show or hide the sidebars",
     close: "Close the panel",
+    hide: "Close",
   },
   settings: {
     language: "Language",
