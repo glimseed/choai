@@ -1,4 +1,4 @@
-import { Show, createResource, createSignal, type JSX } from "solid-js"
+import { For, Show, createResource, createSignal, type JSX } from "solid-js"
 
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
@@ -103,6 +103,7 @@ export function GitHubPanel(): JSX.Element {
         onChange={(token) => change({ token })}
       />
       <p class="text-xs text-muted-foreground">{t("github.tokenHint")}</p>
+      <HowToMakeAToken />
 
       <div class="flex flex-wrap gap-2">
         <Button size="sm" disabled={!ready() || busy()} onClick={() => void save()}>
@@ -132,6 +133,37 @@ export function GitHubPanel(): JSX.Element {
       <Show when={said()}>{(words) => <p class="text-xs text-muted-foreground">{words()}</p>}</Show>
       <Show when={snag()}>{(cause) => <SnagNote snag={cause()} />}</Show>
     </section>
+  )
+}
+
+/** GitHub's own page for making one, which is three menus deep from anywhere else. */
+const MAKE_ONE = "https://github.com/settings/personal-access-tokens/new"
+
+const STEPS = ["github.step1", "github.step2", "github.step3", "github.step4", "github.step5"] as const
+
+/**
+ * How to make a token, folded away.
+ *
+ * Short, and next to the box it is about, because someone who already has one
+ * should not have to read past it — and someone who does not should not have to
+ * leave to find out what settings it needs.
+ */
+function HowToMakeAToken(): JSX.Element {
+  return (
+    <details class="text-xs text-muted-foreground">
+      <summary class="cursor-pointer hover:text-foreground">{t("github.howTo")}</summary>
+      <ol class="mt-1 flex list-decimal flex-col gap-1 pl-5">
+        <For each={STEPS}>{(step) => <li>{t(step)}</li>}</For>
+      </ol>
+      <a
+        href={MAKE_ONE}
+        target="_blank"
+        rel="noreferrer"
+        class="mt-1 inline-block underline underline-offset-2 hover:text-foreground"
+      >
+        {t("github.tokenPage")}
+      </a>
+    </details>
   )
 }
 

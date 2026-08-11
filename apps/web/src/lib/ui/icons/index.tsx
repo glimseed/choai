@@ -9,7 +9,7 @@ import plusSvg from './plus.svg?raw'
 import xSvg from './x.svg?raw'
 import helpSvg from './help.svg?raw'
 import downloadSvg from './download.svg?raw'
-import pencilSvg from './pencil.svg?raw'
+import squarePenSvg from './square-pen.svg?raw'
 import cloudSvg from './cloud.svg?raw'
 
 /**
@@ -50,6 +50,6 @@ export const HelpIcon = icon(helpSvg)
 /** Take the books out of the app. */
 export const DownloadIcon = icon(downloadSvg)
 /** Edit the text itself. */
-export const PencilIcon = icon(pencilSvg)
+export const SquarePenIcon = icon(squarePenSvg)
 /** Somewhere else the books are kept. */
 export const CloudIcon = icon(cloudSvg)

@@ -8,7 +8,7 @@ import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem }
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
-import { DownloadIcon, PanelLeftIcon, PencilIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
+import { DownloadIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SquarePenIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
@@ -263,7 +263,7 @@ export function Layout(props: ParentProps) {
                     class="size-6 text-muted-foreground"
                     classList={{ "bg-accent text-foreground": location.pathname === "/source" }}
                   >
-                    <PencilIcon />
+                    <SquarePenIcon />
                   </Button>
                 </Show>
                 <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
