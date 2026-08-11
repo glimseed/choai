@@ -1,4 +1,4 @@
-import { For, Show, type JSX } from "solid-js"
+import { For, Index, Show, type JSX } from "solid-js"
 
 import { entryText, journal } from "~/journal/store"
 import { getOrUndefined } from "~/lib/monad"
@@ -100,7 +100,10 @@ export function ComposePanel(): JSX.Element {
 
       <div class="flex flex-col gap-2">
         <span class="text-xs font-medium text-muted-foreground">{t("compose.postings")}</span>
-        <For each={draft().postings}>
+        {/* Index rather than For: these rows are edited in place. For keys by
+            the item itself, so every keystroke would replace the object, tear
+            down the row and take the caret with it. */}
+        <Index each={draft().postings}>
           {(posting, index) => (
             <div class="flex flex-col gap-1">
               <div class="flex gap-1">
@@ -110,8 +113,8 @@ export function ComposePanel(): JSX.Element {
                     class="h-8"
                     list="known-accounts"
                     placeholder={t("compose.account")}
-                    value={posting.account}
-                    onInput={(event) => editPosting(index(), { account: event.currentTarget.value })}
+                    value={posting().account}
+                    onInput={(event) => editPosting(index, { account: event.currentTarget.value })}
                   />
                 </TextField>
                 <TextField class="w-24">
@@ -119,22 +122,22 @@ export function ComposePanel(): JSX.Element {
                     type="text"
                     class="h-8 text-right font-mono"
                     placeholder={amountHint()}
-                    value={posting.amount}
-                    onInput={(event) => editPosting(index(), { amount: event.currentTarget.value })}
+                    value={posting().amount}
+                    onInput={(event) => editPosting(index, { amount: event.currentTarget.value })}
                   />
                 </TextField>
               </div>
               <Tags
-                tags={posting.tags}
-                onAdd={() => addPostingTag(index())}
-                onEdit={(at, change) => editPostingTag(index(), at, change)}
-                onRemove={(at) => removePostingTag(index(), at)}
+                tags={posting().tags}
+                onAdd={() => addPostingTag(index)}
+                onEdit={(at, change) => editPostingTag(index, at, change)}
+                onRemove={(at) => removePostingTag(index, at)}
                 label={t("compose.postingTags")}
                 indented
               />
             </div>
           )}
-        </For>
+        </Index>
         <Button variant="ghost" size="sm" class="self-start px-1" onClick={addPosting}>
           {t("compose.addPosting")}
         </Button>
@@ -180,7 +183,7 @@ function Tags(props: {
       <Show when={props.tags.length > 0}>
         <span class="text-xs font-medium text-muted-foreground">{props.label}</span>
       </Show>
-      <For each={props.tags}>
+      <Index each={props.tags}>
         {(tag, index) => (
           <div class="flex gap-1">
             <TextField class="flex-1">
@@ -188,8 +191,8 @@ function Tags(props: {
                 type="text"
                 class="h-7 text-xs"
                 placeholder={t("compose.tagName")}
-                value={tag.name}
-                onInput={(event) => props.onEdit(index(), { name: event.currentTarget.value })}
+                value={tag().name}
+                onInput={(event) => props.onEdit(index, { name: event.currentTarget.value })}
               />
             </TextField>
             <TextField class="flex-1">
@@ -197,13 +200,13 @@ function Tags(props: {
                 type="text"
                 class="h-7 text-xs"
                 placeholder={t("compose.tagValue")}
-                value={tag.value}
-                onInput={(event) => props.onEdit(index(), { value: event.currentTarget.value })}
+                value={tag().value}
+                onInput={(event) => props.onEdit(index, { value: event.currentTarget.value })}
               />
             </TextField>
             <button
               type="button"
-              onClick={() => props.onRemove(index())}
+              onClick={() => props.onRemove(index)}
               aria-label={t("compose.removeTag")}
               title={t("compose.removeTag")}
               class="inline-flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -212,7 +215,7 @@ function Tags(props: {
             </button>
           </div>
         )}
-      </For>
+      </Index>
       <Button variant="ghost" size="sm" class="self-start px-1 text-xs" onClick={props.onAdd}>
         {t("compose.addTag")}
       </Button>
