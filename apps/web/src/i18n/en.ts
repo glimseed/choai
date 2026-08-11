@@ -38,6 +38,7 @@ export const en = {
     heading: "No journal open",
     body: "Everything runs here in the browser — hledger itself, compiled to WebAssembly. Nothing you open is uploaded anywhere.",
     openFiles: "Open journal files",
+    startFresh: "Start an empty journal",
     tryDemo: "Try the demo",
     starting: "Starting hledger…",
     demoLabel: "demo journal",

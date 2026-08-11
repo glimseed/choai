@@ -31,6 +31,7 @@ export const ja: Dictionary = {
     heading: "帳簿が開かれていません",
     body: "すべてブラウザの中で動きます。WebAssembly にした hledger 本体が計算しています。開いたファイルはどこにも送られません。",
     openFiles: "帳簿ファイルを開く",
+    startFresh: "空の帳簿をはじめる",
     tryDemo: "デモを見る",
     starting: "hledger を起動しています…",
     demoLabel: "デモ帳簿",

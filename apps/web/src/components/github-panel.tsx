@@ -7,6 +7,7 @@ import { connect, connection, disconnect, type Connection } from "~/github/kept"
 import { whoami, type Failure } from "~/github/api"
 import { pull, push, type Outcome, type Snag } from "~/github/sync"
 import { journal } from "~/journal/store"
+import { startFresh } from "~/journal/fresh"
 import { getOrUndefined } from "~/lib/monad"
 import { t } from "~/i18n"
 
@@ -118,14 +119,20 @@ export function GitHubPanel(): JSX.Element {
         <Button variant="outline" size="sm" disabled={!ready() || busy()} onClick={() => void take()}>
           {t("github.pull")}
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!ready() || busy() || getOrUndefined(journal()) === undefined}
-          onClick={() => void send()}
+        {/* With nothing open there is nothing to send, and the way to have
+            something is an empty journal named after the path above. */}
+        <Show
+          when={getOrUndefined(journal()) !== undefined}
+          fallback={
+            <Button variant="outline" size="sm" disabled={busy()} onClick={() => void startFresh()}>
+              {t("welcome.startFresh")}
+            </Button>
+          }
         >
-          {t("github.push")}
-        </Button>
+          <Button variant="outline" size="sm" disabled={!ready() || busy()} onClick={() => void send()}>
+            {t("github.push")}
+          </Button>
+        </Show>
         <Show when={kept() !== undefined}>
           <Button variant="ghost" size="sm" disabled={busy()} onClick={() => void drop()}>
             {t("github.disconnect")}

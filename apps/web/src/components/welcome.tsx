@@ -1,6 +1,7 @@
 import { Show, type JSX } from "solid-js"
 
 import { openDemo, openFiles, opening, openingTrouble, settling } from "~/journal/store"
+import { startFresh } from "~/journal/fresh"
 import { getOrUndefined } from "~/lib/monad"
 import { Button } from "~/components/ui/button"
 import { t } from "~/i18n"
@@ -40,7 +41,10 @@ function Choices(): JSX.Element {
         <Button onClick={() => chooser.click()} disabled={opening()}>
           {t("welcome.openFiles")}
         </Button>
-        <Button variant="outline" onClick={() => void openDemo()} disabled={opening()}>
+        <Button variant="outline" onClick={() => void startFresh()} disabled={opening()}>
+          {t("welcome.startFresh")}
+        </Button>
+        <Button variant="ghost" onClick={() => void openDemo()} disabled={opening()}>
           {t("welcome.tryDemo")}
         </Button>
       </div>
