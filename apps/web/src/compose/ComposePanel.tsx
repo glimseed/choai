@@ -1,21 +1,28 @@
 import { For, Show, type JSX } from "solid-js"
 
-import { journal, entryText } from "~/journal/store"
+import { entryText, journal } from "~/journal/store"
 import { getOrUndefined } from "~/lib/monad"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
 import { TroubleNote } from "~/components/trouble-note"
+import { XIcon } from "~/lib/ui/icons"
 import { t } from "~/i18n"
-import { draftToJournal } from "./draft"
+import { draftToJournal, type Tag } from "./draft"
 import {
   addPosting,
+  addPostingTag,
+  addTag,
   draft,
   editDraft,
   editPosting,
+  editPostingTag,
+  editTag,
+  removePostingTag,
+  removeTag,
   save,
   saving,
   savingTrouble,
-  suggestFromDescription,
+  suggestFromPayee,
   writable,
 } from "./store"
 
@@ -49,54 +56,82 @@ export function ComposePanel(): JSX.Element {
 
   return (
     <div class="flex flex-col gap-3 p-3">
-      <Field label={t("compose.date")}>
+      <Labelled label={t("compose.date")}>
         <TextFieldInput
           type="date"
           class="h-8"
           value={draft().date}
           onInput={(event) => editDraft({ date: event.currentTarget.value })}
         />
-      </Field>
+      </Labelled>
 
-      <Field label={t("compose.description")}>
+      <Labelled label={t("compose.payee")}>
         <TextFieldInput
           type="text"
           class="h-8"
-          placeholder={t("compose.descriptionHint")}
-          value={draft().description}
-          onInput={(event) => editDraft({ description: event.currentTarget.value })}
-          onBlur={(event) => void suggestFromDescription(event.currentTarget.value)}
+          placeholder={t("compose.payeeHint")}
+          value={draft().payee}
+          onInput={(event) => editDraft({ payee: event.currentTarget.value })}
+          onBlur={(event) => void suggestFromPayee(event.currentTarget.value)}
         />
-      </Field>
+      </Labelled>
+
+      <Labelled label={t("compose.note")}>
+        <TextFieldInput
+          type="text"
+          class="h-8"
+          placeholder={t("compose.noteHint")}
+          value={draft().note}
+          onInput={(event) => editDraft({ note: event.currentTarget.value })}
+        />
+      </Labelled>
+
+      <Tags
+        tags={draft().tags}
+        onAdd={addTag}
+        onEdit={editTag}
+        onRemove={removeTag}
+        label={t("compose.tags")}
+      />
 
       <datalist id="known-accounts">
         <For each={accounts()}>{(account) => <option value={account} />}</For>
       </datalist>
 
-      <div class="flex flex-col gap-1">
+      <div class="flex flex-col gap-2">
         <span class="text-xs font-medium text-muted-foreground">{t("compose.postings")}</span>
         <For each={draft().postings}>
           {(posting, index) => (
-            <div class="flex gap-1">
-              <TextField class="flex-1">
-                <TextFieldInput
-                  type="text"
-                  class="h-8"
-                  list="known-accounts"
-                  placeholder={t("compose.account")}
-                  value={posting.account}
-                  onInput={(event) => editPosting(index(), { account: event.currentTarget.value })}
-                />
-              </TextField>
-              <TextField class="w-24">
-                <TextFieldInput
-                  type="text"
-                  class="h-8 text-right font-mono"
-                  placeholder={amountHint()}
-                  value={posting.amount}
-                  onInput={(event) => editPosting(index(), { amount: event.currentTarget.value })}
-                />
-              </TextField>
+            <div class="flex flex-col gap-1">
+              <div class="flex gap-1">
+                <TextField class="flex-1">
+                  <TextFieldInput
+                    type="text"
+                    class="h-8"
+                    list="known-accounts"
+                    placeholder={t("compose.account")}
+                    value={posting.account}
+                    onInput={(event) => editPosting(index(), { account: event.currentTarget.value })}
+                  />
+                </TextField>
+                <TextField class="w-24">
+                  <TextFieldInput
+                    type="text"
+                    class="h-8 text-right font-mono"
+                    placeholder={amountHint()}
+                    value={posting.amount}
+                    onInput={(event) => editPosting(index(), { amount: event.currentTarget.value })}
+                  />
+                </TextField>
+              </div>
+              <Tags
+                tags={posting.tags}
+                onAdd={() => addPostingTag(index())}
+                onEdit={(at, change) => editPostingTag(index(), at, change)}
+                onRemove={(at) => removePostingTag(index(), at)}
+                label={t("compose.postingTags")}
+                indented
+              />
             </div>
           )}
         </For>
@@ -126,13 +161,70 @@ export function ComposePanel(): JSX.Element {
   )
 }
 
+/**
+ * Any number of name-and-value pairs, with any names.
+ *
+ * hledger puts no vocabulary on these — a tag is whatever you write in a comment
+ * — so neither does this.
+ */
+function Tags(props: {
+  tags: readonly Tag[]
+  label: string
+  indented?: boolean
+  onAdd: () => void
+  onEdit: (index: number, change: Partial<Tag>) => void
+  onRemove: (index: number) => void
+}): JSX.Element {
+  return (
+    <div class="flex flex-col gap-1" classList={{ "pl-3": props.indented }}>
+      <Show when={props.tags.length > 0}>
+        <span class="text-xs font-medium text-muted-foreground">{props.label}</span>
+      </Show>
+      <For each={props.tags}>
+        {(tag, index) => (
+          <div class="flex gap-1">
+            <TextField class="flex-1">
+              <TextFieldInput
+                type="text"
+                class="h-7 text-xs"
+                placeholder={t("compose.tagName")}
+                value={tag.name}
+                onInput={(event) => props.onEdit(index(), { name: event.currentTarget.value })}
+              />
+            </TextField>
+            <TextField class="flex-1">
+              <TextFieldInput
+                type="text"
+                class="h-7 text-xs"
+                placeholder={t("compose.tagValue")}
+                value={tag.value}
+                onInput={(event) => props.onEdit(index(), { value: event.currentTarget.value })}
+              />
+            </TextField>
+            <button
+              type="button"
+              onClick={() => props.onRemove(index())}
+              aria-label={t("compose.removeTag")}
+              title={t("compose.removeTag")}
+              class="inline-flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <XIcon class="h-3 w-3" />
+            </button>
+          </div>
+        )}
+      </For>
+      <Button variant="ghost" size="sm" class="self-start px-1 text-xs" onClick={props.onAdd}>
+        {t("compose.addTag")}
+      </Button>
+    </div>
+  )
+}
+
 /** A posting with no figure is what tells hledger to work the last one out. */
 const hasBlankAmount = (): boolean =>
-  draft().postings.some(
-    (posting) => posting.account.trim() !== "" && posting.amount.trim() === "",
-  )
+  draft().postings.some((posting) => posting.account.trim() !== "" && posting.amount.trim() === "")
 
-function Field(props: { label: string; children: JSX.Element }): JSX.Element {
+function Labelled(props: { label: string; children: JSX.Element }): JSX.Element {
   return (
     <TextField class="flex flex-col gap-1">
       <span class="text-xs font-medium text-muted-foreground">{props.label}</span>
