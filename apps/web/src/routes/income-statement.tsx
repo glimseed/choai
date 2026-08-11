@@ -1,6 +1,7 @@
 import { For, createSignal, type JSX } from "solid-js"
 
 import { BalanceReportView } from "~/components/balance-report"
+import { DeclareTypes } from "~/components/declare-types"
 import { Button } from "~/components/ui/button"
 import { t } from "~/i18n"
 
@@ -33,6 +34,7 @@ export default function IncomeStatement(): JSX.Element {
         </For>
       </div>
 
+      <DeclareTypes />
       <BalanceReportView
         kind="incomestatement"
         narrowing={period()}

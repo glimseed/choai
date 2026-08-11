@@ -169,6 +169,10 @@ report journal request = case reqKind request of
   "balancesheet" -> withSpec ["type:ALE"] Historical (\spec -> A.toJSON (multiBalanceReport spec journal))
   "incomestatement" -> withSpec ["type:RX"] PerPeriod (\spec -> A.toJSON (multiBalanceReport spec journal))
   "accounts" -> pure (Right (A.toJSON (journalAccountNames journal)))
+  -- What hledger takes each account to be, whether declared with an @account@
+  -- directive or inferred from its name. Accounts it cannot place are simply
+  -- absent, and those are the ones a balance sheet leaves out.
+  "accountTypes" -> pure (Right (A.toJSON (jaccounttypes journal)))
   "renderTransaction" -> pure (renderTransaction request)
   "similar" -> pure (Right (similar journal request))
   other -> pure (Left (UnknownReport other))

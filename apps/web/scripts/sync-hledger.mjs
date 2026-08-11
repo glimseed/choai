@@ -10,9 +10,14 @@
 import { copyFile, mkdir } from "node:fs/promises";
 
 const WASM_OUT = "../../wasm/out";
+
+// The names the build writes, which are the cabal target's -- hledger-bindings,
+// after the D stage of the size pipeline. Older names from earlier targets are
+// still in that directory, so these are spelled out rather than guessed at.
+const TARGET = "hledger-bindings";
 const copies = [
-  [`${WASM_OUT}/hledger-D.wasm`, "public/hledger.wasm"],
-  [`${WASM_OUT}/hledger.jsffi.mjs`, "src/hledger/ghc-jsffi.mjs"],
+  [`${WASM_OUT}/${TARGET}-D.wasm`, "public/hledger.wasm"],
+  [`${WASM_OUT}/${TARGET}.jsffi.mjs`, "src/hledger/ghc-jsffi.mjs"],
 ];
 
 await mkdir("src/hledger", { recursive: true });

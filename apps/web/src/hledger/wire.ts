@@ -98,8 +98,17 @@ export type Request =
   | { readonly kind: "balancesheet"; readonly query: string }
   | { readonly kind: "incomestatement"; readonly query: string }
   | { readonly kind: "accounts" }
+  | { readonly kind: "accountTypes" }
   | { readonly kind: "similar"; readonly description: string; readonly limit: number }
   | { readonly kind: "renderTransaction"; readonly transaction: Transaction }
+
+/**
+ * The five kinds of account a report is built from, as hledger names them.
+ *
+ * Two more exist — Cash and Conversion — which narrow Asset and Equity rather
+ * than standing beside them, so nothing here has to know about them.
+ */
+export type AccountType = "Asset" | "Liability" | "Equity" | "Revenue" | "Expense" | "Cash" | "Conversion"
 
 /** What each request answers with. */
 export interface Answer {
@@ -109,6 +118,11 @@ export interface Answer {
   balancesheet: BalanceReport
   incomestatement: BalanceReport
   accounts: readonly string[]
+  /**
+   * What hledger takes each account to be. Accounts it cannot place are absent,
+   * and those are the ones its balance sheet and income statement leave out.
+   */
+  accountTypes: Readonly<Record<string, AccountType>>
   /** Past transactions resembling a description, most alike and most recent first. */
   similar: readonly Transaction[]
   renderTransaction: string

@@ -87,6 +87,17 @@ export const en = {
     checking: "hledger is reading it…",
     hint: "hledger reads it before it is kept. A file that will not read leaves the journal as it was.",
   },
+  declare: {
+    title: "These accounts are not in any statement",
+    why: "hledger works out what an account is from its name, but only for the English ones — assets, liabilities, equity, revenues, expenses. Say what these are and they will appear. Everything under them follows.",
+    where: "Written as account directives at the top of the journal.",
+    write: "Write the declarations",
+    asset: "Asset",
+    liability: "Liability",
+    equity: "Equity",
+    revenue: "Revenue",
+    expense: "Expense",
+  },
   edit: {
     title: "This entry",
     where: "{{ path }}, lines {{ from }}–{{ to }}",

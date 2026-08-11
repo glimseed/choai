@@ -27,9 +27,16 @@ export function BalanceReportView(props: {
 }): JSX.Element {
   const [query] = useQuery()
 
+  // The journal itself is part of what is asked, not only the query: a resource
+  // refetches when the value its source returns differs, and the same query put
+  // to a journal that has since gained an entry — or a declaration — is a
+  // different question with a different answer.
   const [report] = createResource(
-    () => (getOrUndefined(journal()) === undefined ? undefined : terms(query(), props.narrowing)),
-    (asked) => askFor(props.kind, asked),
+    () => {
+      const open = getOrUndefined(journal())
+      return open === undefined ? undefined : { open, terms: terms(query(), props.narrowing) }
+    },
+    (asked) => askFor(props.kind, asked.terms),
   )
 
   return (
