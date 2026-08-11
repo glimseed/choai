@@ -1,9 +1,10 @@
 /**
- * A small journal so the app has something to show before you point it at your
- * own. Covers all five account types, so the balance sheet and income statement
- * both have something to report.
+ * The demo journal in English.
+ *
+ * Covers all five account types so that the balance sheet and the income
+ * statement both have something to report.
  */
-export const DEMO_JOURNAL = `; a demo journal
+export const demoEn = `; a demo journal
 
 account assets:bank:checking    ; type:A
 account assets:cash             ; type:A

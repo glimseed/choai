@@ -5,7 +5,7 @@ import type { JournalSummary, Trouble } from "~/hledger/wire"
 import { createTask } from "~/lib/pending"
 import { Err, None, Ok, Some, match, type Option, type Result } from "~/lib/monad"
 import { t } from "~/i18n"
-import { DEMO_JOURNAL } from "./demo"
+import { demoJournal } from "./demo"
 
 /**
  * Which journal is open, and how it got there.
@@ -74,12 +74,14 @@ const forget = (cause: Trouble): Result<OpenJournal, Trouble> => {
 }
 
 /** Open the journal that ships with the app, so a first visit has something to look at. */
-export const openDemo = (): Promise<Result<OpenJournal, Trouble>> =>
-  open({
+export const openDemo = (): Promise<Result<OpenJournal, Trouble>> => {
+  const demo = demoJournal()
+  return open({
     label: t("welcome.demoLabel"),
-    files: { "demo.journal": DEMO_JOURNAL },
-    entry: "/demo.journal",
+    files: { [demo.filename]: demo.contents },
+    entry: `/${demo.filename}`,
   })
+}
 
 /**
  * Open files chosen from disk.
