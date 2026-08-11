@@ -14,6 +14,8 @@
  * agreed at — is its own business and is kept by it, not here.
  */
 
+import { STORE, rowsOf, within } from "~/lib/idb"
+
 /** One file of a journal, as it stands here. */
 export interface KeptFile {
   readonly path: string
@@ -28,10 +30,8 @@ export interface KeptJournal {
   readonly files: readonly KeptFile[]
 }
 
-const DB = "hledger-pwa"
-const VERSION = 1
-const FILES = "files"
-const STATE = "state"
+const FILES = STORE.files
+const STATE = STORE.state
 const OPEN = "open"
 
 /** What is remembered besides the files themselves. */
@@ -40,40 +40,6 @@ interface OpenState {
   readonly label: string
   readonly entry: string
 }
-
-const open = (): Promise<IDBDatabase> =>
-  new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB, VERSION)
-    request.onupgradeneeded = () => {
-      const db = request.result
-      if (!db.objectStoreNames.contains(FILES)) db.createObjectStore(FILES, { keyPath: "path" })
-      if (!db.objectStoreNames.contains(STATE)) db.createObjectStore(STATE, { keyPath: "id" })
-    }
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error ?? new Error("indexedDB refused to open"))
-  })
-
-/** One transaction, awaited to its end rather than to the last request. */
-const within = async <T>(
-  mode: IDBTransactionMode,
-  stores: readonly string[],
-  work: (transaction: IDBTransaction) => T,
-): Promise<T> => {
-  const db = await open()
-  try {
-    return await new Promise<T>((resolve, reject) => {
-      const transaction = db.transaction([...stores], mode)
-      const result = work(transaction)
-      transaction.oncomplete = () => resolve(result)
-      transaction.onerror = () => reject(transaction.error ?? new Error("transaction failed"))
-      transaction.onabort = () => reject(transaction.error ?? new Error("transaction aborted"))
-    })
-  } finally {
-    db.close()
-  }
-}
-
-const asArray = <T>(request: IDBRequest<T[]>): T[] => request.result ?? []
 
 /**
  * Ask that this not be thrown away.
@@ -97,8 +63,8 @@ export const lastOpened = async (): Promise<KeptJournal | undefined> => {
     const files = transaction.objectStore(FILES).getAll() as IDBRequest<KeptFile[]>
     return [state, files] as const
   })
-  if (state.result === undefined || asArray(files).length === 0) return undefined
-  return { label: state.result.label, entry: state.result.entry, files: asArray(files) }
+  if (state.result === undefined || rowsOf(files).length === 0) return undefined
+  return { label: state.result.label, entry: state.result.entry, files: rowsOf(files) }
 }
 
 /**

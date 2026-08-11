@@ -1,0 +1,194 @@
+import { Err, Ok, getOrUndefined, type Result } from "~/lib/monad"
+import { journal, openBringingMissing, rewriteFile } from "~/journal/store"
+import type { Trouble } from "~/hledger/wire"
+import { fetchFile, putFile, type Failure, type Where } from "./api"
+import { agree, agreedOn, connection, type Agreed, type Connection } from "./kept"
+
+/**
+ * Keeping the books here and the books in the repository the same.
+ *
+ * Two devices are the ordinary case — a phone that writes entries on the way
+ * home and a desktop that writes them in an editor — so a push has to expect
+ * that the file has moved on. GitHub refuses such a write rather than
+ * overwriting, and the refusal is where this earns its keep.
+ *
+ * What it does with the refusal is the whole design: with the text both sides
+ * last agreed on kept here, entries added in each place are laid one after the
+ * other. Anything else — an edit inside the shared part — is not merged and not
+ * guessed at; it is reported, with both texts still intact.
+ */
+
+/** What went wrong, told apart by who said no. */
+export type Snag =
+  | { readonly at: "not-connected" }
+  | { readonly at: "no-journal" }
+  | { readonly at: "github"; readonly failure: Failure }
+  | { readonly at: "hledger"; readonly trouble: Trouble }
+  /** Both sides changed the same text; only a person can say what was meant. */
+  | { readonly at: "diverged"; readonly path: string }
+
+/** What came of it, in the words the reader gets. */
+export type Outcome =
+  | { readonly did: "pulled"; readonly files: number }
+  | { readonly did: "pushed"; readonly files: number }
+  | { readonly did: "merged"; readonly files: number }
+  | { readonly did: "nothing" }
+
+const directoryOf = (path: string): string => path.slice(0, path.lastIndexOf("/") + 1)
+const nameOf = (path: string): string => path.slice(path.lastIndexOf("/") + 1)
+
+const where = (settings: Connection, path: string): Where => ({
+  owner: settings.owner.trim(),
+  repo: settings.repo.trim(),
+  branch: settings.branch.trim(),
+  path,
+})
+
+/**
+ * Take the repository's copy and open it.
+ *
+ * The entry file is fetched by name; the files it includes are fetched as
+ * hledger asks for them, from the directory the entry file sits in — which is
+ * how the `include` lines resolve on a disk, so it is how they resolve here.
+ */
+export const pull = async (): Promise<Result<Outcome, Snag>> => {
+  const settings = await connection()
+  if (settings === undefined) return Err({ at: "not-connected" })
+
+  const entry = nameOf(settings.path)
+  const directory = directoryOf(settings.path)
+  const brought = new Map<string, { text: string; sha: string; repoPath: string }>()
+
+  const bring = async (path: string): Promise<string | undefined> => {
+    const repoPath = `${directory}${path}`
+    const fetched = await fetchFile(settings.token, where(settings, repoPath))
+    if (!fetched.ok) return undefined
+    brought.set(path, { text: fetched.value.text, sha: fetched.value.sha, repoPath })
+    return fetched.value.text
+  }
+
+  const first = await fetchFile(settings.token, where(settings, settings.path))
+  if (!first.ok) return Err({ at: "github", failure: first.error })
+  brought.set(entry, { text: first.value.text, sha: first.value.sha, repoPath: settings.path })
+
+  const opened = await openBringingMissing(
+    {
+      label: `${settings.owner}/${settings.repo}`,
+      files: { [entry]: first.value.text },
+      entry: `/${entry}`,
+    },
+    bring,
+  )
+  if (!opened.ok) return Err({ at: "hledger", trouble: opened.error })
+
+  await Promise.all(
+    [...brought].map(([path, file]) =>
+      agree({ path, repoPath: file.repoPath, sha: file.sha, baseText: file.text, at: Date.now() }),
+    ),
+  )
+  return Ok({ did: "pulled", files: brought.size })
+}
+
+/** Every file of the open journal that is not already what the repository has. */
+const changedFiles = async (
+  files: Readonly<Record<string, string>>,
+): Promise<readonly { path: string; text: string; agreed: Agreed | undefined }[]> => {
+  const all = await Promise.all(
+    Object.entries(files).map(async ([path, text]) => ({ path, text, agreed: await agreedOn(path) })),
+  )
+  return all.filter((file) => file.agreed?.baseText !== file.text)
+}
+
+export const push = async (): Promise<Result<Outcome, Snag>> => {
+  const settings = await connection()
+  if (settings === undefined) return Err({ at: "not-connected" })
+  const open = getOrUndefined(journal())
+  if (open === undefined) return Err({ at: "no-journal" })
+
+  const changed = await changedFiles(open.source.files)
+  if (changed.length === 0) return Ok({ did: "nothing" })
+
+  const results = []
+  for (const file of changed) {
+    const result = await send(settings, file.path, file.text, file.agreed)
+    if (!result.ok) return result
+    results.push(result.value)
+  }
+  const merged = results.some((each) => each === "merged")
+  return Ok({ did: merged ? "merged" : "pushed", files: changed.length })
+}
+
+/**
+ * Write one file, and settle the refusal if there is one.
+ *
+ * Files sent one at a time rather than all at once: each is a commit of its own,
+ * and stopping at the first refusal leaves a state that can be described.
+ */
+const send = async (
+  settings: Connection,
+  path: string,
+  text: string,
+  agreed: Agreed | undefined,
+): Promise<Result<"pushed" | "merged", Snag>> => {
+  const repoPath = agreed?.repoPath ?? `${directoryOf(settings.path)}${path}`
+  const written = await putFile(
+    settings.token,
+    where(settings, repoPath),
+    text,
+    agreed?.sha,
+    `Update ${repoPath}`,
+  )
+  if (written.ok) {
+    await agree({ path, repoPath, sha: written.value.sha, baseText: text, at: Date.now() })
+    return Ok("pushed")
+  }
+  if (written.error.kind !== "conflict") return Err({ at: "github", failure: written.error })
+  return settle(settings, path, text, repoPath, agreed)
+}
+
+/**
+ * The repository has moved on. Lay what was added here after what was added
+ * there, if that is honestly all that happened.
+ *
+ * It is only honest when both texts still begin with the text the two sides last
+ * agreed on: then each side has appended and nothing has been rewritten, which
+ * is what a journal mostly gets. Anything else is a divergence, and saying so is
+ * better than picking a winner.
+ *
+ * The merged text goes through hledger before it is sent, so a merge that does
+ * not read is not something the repository ever sees.
+ */
+const settle = async (
+  settings: Connection,
+  path: string,
+  text: string,
+  repoPath: string,
+  agreed: Agreed | undefined,
+): Promise<Result<"merged", Snag>> => {
+  const theirs = await fetchFile(settings.token, where(settings, repoPath))
+  if (!theirs.ok) return Err({ at: "github", failure: theirs.error })
+  if (agreed === undefined || !onlyAdded(agreed.baseText, text) || !onlyAdded(agreed.baseText, theirs.value.text)) {
+    return Err({ at: "diverged", path })
+  }
+
+  const merged = joined(theirs.value.text, text.slice(agreed.baseText.length))
+  const adopted = await rewriteFile(path, merged)
+  if (!adopted.ok) return Err({ at: "hledger", trouble: adopted.error })
+
+  const written = await putFile(
+    settings.token,
+    where(settings, repoPath),
+    merged,
+    theirs.value.sha,
+    `Merge ${repoPath}`,
+  )
+  if (!written.ok) return Err({ at: "github", failure: written.error })
+  await agree({ path, repoPath, sha: written.value.sha, baseText: merged, at: Date.now() })
+  return Ok("merged")
+}
+
+const onlyAdded = (base: string, now: string): boolean => now.startsWith(base)
+
+/** One blank line between what was there and what follows, and only one. */
+const joined = (before: string, added: string): string =>
+  added.trim() === "" ? before : `${before.replace(/\s*$/, "")}\n\n${added.replace(/^\s*/, "")}`

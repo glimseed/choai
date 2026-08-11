@@ -1,6 +1,7 @@
 import { createRoot, createSignal, type Accessor } from "solid-js"
 
 import { openJournal } from "~/hledger/client"
+import { missingFile } from "~/hledger/diagnose"
 import type { JournalSummary, Trouble } from "~/hledger/wire"
 import { createTask } from "~/lib/pending"
 import { Err, None, Ok, Some, getOrUndefined, match, type Option, type Result } from "~/lib/monad"
@@ -139,14 +140,66 @@ export const closeJournal = async (): Promise<void> => {
  * whatever was being typed is still there to fix. Opening proper is the other
  * thing — a journal that will not read leaves nothing open, and should.
  */
-const change = async (from: OpenJournal, files: Source["files"]): Promise<Result<OpenJournal, Trouble>> => {
-  const after = { ...from.source, files }
-  const read = await attempt(after)
+export const openIfItReads = async (source: Source): Promise<Result<OpenJournal, Trouble>> => {
+  const read = await attempt(source)
   if (!read.ok) {
     setTrouble(Some(read.error))
     return Err(read.error)
   }
-  return remember({ source: after, summary: read.value })
+  return remember({ source, summary: read.value })
+}
+
+const change = (from: OpenJournal, files: Source["files"]): Promise<Result<OpenJournal, Trouble>> =>
+  openIfItReads({ ...from.source, files })
+
+/** How many times a journal may send us looking for another file before we stop. */
+const FETCHES = 20
+
+/**
+ * Open a journal whose other files are somewhere else, fetching them as it turns
+ * out they are needed.
+ *
+ * A journal split with `include` cannot say what it needs until hledger has read
+ * it and said which file is missing — and the file it names may itself include
+ * more. So this asks, brings what was asked for, and asks again. Bounded, since
+ * a journal that includes itself would otherwise never stop.
+ */
+export const openBringingMissing = async (
+  source: Source,
+  bring: (path: string) => Promise<string | undefined>,
+  left: number = FETCHES,
+): Promise<Result<OpenJournal, Trouble>> => {
+  const read = await attempt(source)
+  if (read.ok) return remember({ source, summary: read.value })
+  const wanted = left === 0 ? undefined : missingFrom(read.error)
+  if (wanted === undefined) {
+    setTrouble(Some(read.error))
+    return Err(read.error)
+  }
+  const brought = await bring(wanted)
+  if (brought === undefined) {
+    setTrouble(Some(read.error))
+    return Err(read.error)
+  }
+  return openBringingMissing({ ...source, files: { ...source.files, [wanted]: brought } }, bring, left - 1)
+}
+
+/**
+ * Which file this failure is asking for, if it is asking for one.
+ *
+ * Two shapes: the file we were told to open, which comes back as a case of its
+ * own, and a file an `include` line asked for, which only hledger knows about
+ * and says in prose. Names are given as hledger saw them, from the root of the
+ * filesystem it was handed, so the leading slash comes off.
+ */
+const missingFrom = (trouble: Trouble): string | undefined => {
+  const named =
+    trouble.kind === "file-missing"
+      ? trouble.path
+      : trouble.kind === "read-failed"
+        ? missingFile(trouble.detail)
+        : undefined
+  return named?.replace(/^\//, "")
 }
 
 /**

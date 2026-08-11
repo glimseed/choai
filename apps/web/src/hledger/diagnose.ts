@@ -43,3 +43,18 @@ const MARKERS: readonly (readonly [RegExp, Diagnosis])[] = [
 
 export const diagnose = (detail: string): Diagnosis =>
   MARKERS.find(([marker]) => marker.test(detail))?.[1] ?? "unknown"
+
+/**
+ * The file an `include` line asked for and did not find, if that is what went
+ * wrong.
+ *
+ * A journal that includes another says so only once hledger has read it, and it
+ * says it in prose — the structured failures cover the file we were told to open,
+ * not the ones it goes on to ask for. Whoever is fetching a journal from
+ * somewhere else needs the name to go and get it.
+ *
+ * Recognising nothing is a fair answer: the caller then has an ordinary read
+ * failure, with hledger's own words, which is what it would have had anyway.
+ */
+export const missingFile = (detail: string): string | undefined =>
+  /no files were matched by:\s*(\S+)/i.exec(detail)?.[1]

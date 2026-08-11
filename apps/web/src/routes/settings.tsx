@@ -4,6 +4,7 @@ import { A } from "@solidjs/router"
 import { LOCALES, LOCALE_NAMES, locale, setLocale, t } from "~/i18n"
 import { Button } from "~/components/ui/button"
 import { closeJournal, journal } from "~/journal/store"
+import { GitHubPanel } from "~/components/github-panel"
 import { handOver } from "~/journal/handover"
 import { keptForGood } from "~/journal/kept"
 import { getOrUndefined } from "~/lib/monad"
@@ -29,6 +30,7 @@ export default function Settings(): JSX.Element {
         <p class="text-xs text-muted-foreground">{t("settings.languageHint")}</p>
       </section>
       <Library />
+      <GitHubPanel />
       <section class="flex flex-col gap-2">
         <h2 class="text-sm font-medium">{t("licenses.title")}</h2>
         <p class="text-xs text-muted-foreground">{t("licenses.app")}</p>
