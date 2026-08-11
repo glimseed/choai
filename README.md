@@ -11,21 +11,37 @@ The UI is built with SolidJS, Solid Router, TailwindCSS and Kobalte. Components
 adapted from solid-ui are vendored into the source tree rather than taken as a
 runtime dependency.
 
-## Current phase: feasibility check
+## What it does
 
-Before any UI work, we need to know whether the client-side WebAssembly approach
-is viable at all. The spike lives in [`wasm/`](wasm/) and answers a single
-question, recorded in `wasm/RESULTS.md`:
+The journal is kept as the text file it is, and hledger itself -- compiled to
+WebAssembly and running in a worker -- reads it and answers every question the
+screens ask. Nothing is uploaded anywhere by the app.
 
-> Can hledger-lib be compiled to `wasm32-wasi`, kept small enough for a
-> Cloudflare Pages asset, kept fast enough to be usable in a browser, and kept
-> close enough to upstream that future hledger releases can be followed without
-> maintaining a deep fork?
+- **Read**: the daily journal, the balance sheet, the income statement, and
+  every account with its balance. One hledger query applies to whichever is
+  open.
+- **Write**: entries are composed beside the journal, with accounts suggested
+  from what the books already contain -- by the same code `hledger add` uses --
+  and a posting left blank for hledger to work out. Text is appended, never
+  rewritten.
+- **Edit**: the journal's own text, one file at a time. hledger reads it before
+  it is kept, so text that will not parse never replaces text that does.
+- **Keep**: the files stay on the device, one record per path, and the journal
+  left open comes back on the next visit.
+- **Take away**: the share sheet on a phone, a download elsewhere.
+- **Sync**: a path in a GitHub repository, reached from the browser straight to
+  api.github.com. Entries written in two places are laid one after the other;
+  when the same part changed on both sides, nothing is merged and it says so.
 
-If the answer is no, the project changes direction to a server-side application
-in the style of hledger-web instead.
+The feasibility spike that decided all this lives in [`wasm/`](wasm/); its
+answer -- that hledger-lib can be compiled to `wasm32-wasi`, kept small enough
+for a Cloudflare Pages asset, kept fast enough to be usable, and kept close
+enough to upstream to follow future releases -- is recorded with its
+measurements in `wasm/RESULTS.md`. See `wasm/README.md` for how to reproduce
+them.
 
-See `wasm/README.md` for how to reproduce the measurements.
+Not one line of hledger's source is modified. What we write is the binding that
+exports its functions to JavaScript, in `wasm/hledger-wasm/src/Bindings.hs`.
 
 ## License
 
