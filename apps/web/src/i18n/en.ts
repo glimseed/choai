@@ -111,6 +111,7 @@ export const en = {
     token: "Access token",
     tokenHint: "A fine-grained token with Contents: read and write, kept in this browser only.",
     firstTime: "Starting from nothing",
+    repoPage: "Open the page that makes a repository",
     first1: "Make a repository on GitHub, and make it private — these are your books. It can be empty; nothing has to be in it yet.",
     first2: "Fill in the owner, the repository, and the path the journal should have — folders in the path do not need to exist.",
     first3: "Press Save and check. That only asks GitHub who the token belongs to; it writes nothing.",

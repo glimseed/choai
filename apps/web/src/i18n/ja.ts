@@ -104,6 +104,7 @@ export const ja: Dictionary = {
     token: "アクセストークン",
     tokenHint: "Contents の読み書き権限を持つ fine-grained トークン。このブラウザの中だけに保存します。",
     firstTime: "はじめて使うとき",
+    repoPage: "リポジトリを作るページを開く",
     first1: "GitHub でリポジトリを作る。自分の帳簿なので private に。中身は空のままでかまいません。",
     first2: "上の欄に オーナー・リポジトリ・帳簿のパス を入れる。パスの途中のフォルダは、無くてもかまいません。",
     first3: "「保存して確認」を押す。これはトークンの持ち主を GitHub に尋ねるだけで、何も書き込みません。",

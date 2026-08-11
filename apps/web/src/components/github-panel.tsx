@@ -79,7 +79,12 @@ export function GitHubPanel(): JSX.Element {
     <section class="flex flex-col gap-2">
       <h2 class="text-sm font-medium">{t("github.title")}</h2>
       <p class="text-xs text-muted-foreground">{t("github.lead")}</p>
-      <Folded summary={t("github.firstTime")} steps={FIRST} />
+      <Folded
+        summary={t("github.firstTime")}
+        steps={FIRST}
+        link={MAKE_A_REPO}
+        linkText={t("github.repoPage")}
+      />
 
       <div class="grid grid-cols-2 gap-2">
         <Field label={t("github.owner")} value={settings().owner} onChange={(owner) => change({ owner })} />
@@ -137,7 +142,10 @@ export function GitHubPanel(): JSX.Element {
   )
 }
 
-/** GitHub's own page for making one, which is three menus deep from anywhere else. */
+/** GitHub's own page for making a repository. Private is chosen on it, not here. */
+const MAKE_A_REPO = "https://github.com/new"
+
+/** And for making a token, which is three menus deep from anywhere else. */
 const MAKE_ONE = "https://github.com/settings/personal-access-tokens/new"
 
 const STEPS = ["github.step1", "github.step2", "github.step3", "github.step4", "github.step5"] as const
