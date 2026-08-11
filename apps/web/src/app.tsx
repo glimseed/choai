@@ -251,35 +251,39 @@ export function Layout(props: ParentProps) {
             header={
               <>
                 <span>{t(current().key)}</span>
-                <Show when={railOf(current()) === "/" && getOrUndefined(journal()) !== undefined}>
-                  {/* The text behind the view being looked at, which is the
-                      journal's own business rather than a view of its own. */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => navigate(location.pathname === "/source" ? "/" : "/source")}
-                    aria-label={t("source.title")}
-                    title={t("source.title")}
-                    class="size-6 text-muted-foreground"
-                    classList={{ "bg-accent text-foreground": location.pathname === "/source" }}
-                  >
-                    <SquarePenIcon />
-                  </Button>
-                </Show>
-                <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={compose}
-                    aria-label={t("compose.open")}
-                    title={t("compose.open")}
-                    class="size-6 text-muted-foreground"
-                  >
-                    {/* Left unsized: Button sets any icon inside it to 16px, and a
-                        smaller box here would be overflowed rather than obeyed. */}
-                    <PlusIcon />
-                  </Button>
-                </Show>
+                {/* One group at the far end, so the two ways of writing sit
+                    together rather than being spread across the heading. */}
+                <div class="flex items-center gap-1">
+                  <Show when={railOf(current()) === "/" && getOrUndefined(journal()) !== undefined}>
+                    {/* The text behind the view being looked at, which is the
+                        journal's own business rather than a view of its own. */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigate(location.pathname === "/source" ? "/" : "/source")}
+                      aria-label={t("source.title")}
+                      title={t("source.title")}
+                      class="size-6 text-muted-foreground"
+                      classList={{ "bg-accent text-foreground": location.pathname === "/source" }}
+                    >
+                      <SquarePenIcon />
+                    </Button>
+                  </Show>
+                  <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={compose}
+                      aria-label={t("compose.open")}
+                      title={t("compose.open")}
+                      class="size-6 text-muted-foreground"
+                    >
+                      {/* Left unsized: Button sets any icon inside it to 16px, and a
+                          smaller box here would be overflowed rather than obeyed. */}
+                      <PlusIcon />
+                    </Button>
+                  </Show>
+                </div>
               </>
             }
           >
