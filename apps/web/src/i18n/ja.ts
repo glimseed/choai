@@ -23,6 +23,7 @@ export const ja: Dictionary = {
     reading: "読み込み中…",
     nothingMatches: "該当なし",
     range: "{{ total }} 件中 {{ from }}–{{ to }}",
+    export: "帳簿を書き出す",
     newer: "新しい方へ",
     older: "古い方へ",
   },
@@ -104,7 +105,6 @@ export const ja: Dictionary = {
     willBeWritten: "書かれる内容",
     hledgerFillsTheRest: "金額を空けた行は hledger が埋めます。",
     add: "帳簿に追加",
-    download: "帳簿を書き出す",
   },
   trouble: {
     noJournal: "まだ帳簿が開かれていません。",

@@ -30,6 +30,7 @@ export const en = {
     reading: "Reading…",
     nothingMatches: "nothing matches",
     range: "{{ from }}–{{ to }} of {{ total }}",
+    export: "Export the journal",
     newer: "Newer",
     older: "Older",
   },
@@ -111,7 +112,6 @@ export const en = {
     willBeWritten: "What gets written",
     hledgerFillsTheRest: "The posting left blank is worked out by hledger.",
     add: "Add to journal",
-    download: "Download journal",
   },
   /** Why something did not work. The wording is chosen here, not passed up. */
   trouble: {

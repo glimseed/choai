@@ -8,13 +8,14 @@ import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem }
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
-import { PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
+import { DownloadIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
 import { AccountsExplorer } from "~/explorer/AccountsExplorer"
 import { SettingsExplorer } from "~/explorer/SettingsExplorer"
 import { journal } from "~/journal/store"
+import { handOver } from "~/journal/handover"
 import { useQuery } from "~/journal/query"
 import { ComposePanel } from "~/compose/ComposePanel"
 import { composing, startComposing, stopComposing, toggleComposing } from "~/compose/store"
@@ -191,6 +192,21 @@ export function Layout(props: ParentProps) {
                     onInput={(e) => setQuery(e.currentTarget.value)}
                   />
                 </TextField>
+              </Show>
+            }
+            right={
+              <Show when={getOrUndefined(journal())}>
+                {(open) => (
+                  <button
+                    type="button"
+                    onClick={() => void handOver(open().source)}
+                    aria-label={t("journal.export")}
+                    title={t("journal.export")}
+                    class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <DownloadIcon class="h-4 w-4" />
+                  </button>
+                )}
               </Show>
             }
           />

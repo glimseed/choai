@@ -8,6 +8,9 @@ import panelLeftSvg from './panel-left.svg?raw'
 import plusSvg from './plus.svg?raw'
 import xSvg from './x.svg?raw'
 import helpSvg from './help.svg?raw'
+import downloadSvg from './download.svg?raw'
+import pencilSvg from './pencil.svg?raw'
+import cloudSvg from './cloud.svg?raw'
 
 /**
  * Icons. The SVG bodies live beside this file as .svg files, drawn with
@@ -44,3 +47,9 @@ export const PlusIcon = icon(plusSvg)
 export const XIcon = icon(xSvg)
 /** What can be done here: a question mark in a circle. */
 export const HelpIcon = icon(helpSvg)
+/** Take the books out of the app. */
+export const DownloadIcon = icon(downloadSvg)
+/** Edit the text itself. */
+export const PencilIcon = icon(pencilSvg)
+/** Somewhere else the books are kept. */
+export const CloudIcon = icon(cloudSvg)
