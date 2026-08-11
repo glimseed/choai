@@ -10,6 +10,7 @@ import IncomeStatement from "~/routes/income-statement"
 import Accounts from "~/routes/accounts"
 import Settings from "~/routes/settings"
 import Licenses from "~/routes/licenses"
+import Source from "~/routes/source"
 
 render(
   () => (
@@ -20,6 +21,7 @@ render(
       <Route path="/accounts" component={Accounts} />
       <Route path="/settings" component={Settings} />
       <Route path="/licenses" component={Licenses} />
+      <Route path="/source" component={Source} />
     </Router>
   ),
   document.getElementById("root")!,

@@ -77,6 +77,14 @@ export const en = {
     language: "Language",
     languageHint: "Chosen from your browser unless you pick one here.",
   },
+  source: {
+    title: "Edit the text",
+    save: "Save",
+    saved: "Saved, and read by hledger.",
+    unsaved: "Not saved yet.",
+    checking: "hledger is reading it…",
+    hint: "hledger reads it before it is kept. A file that will not read leaves the journal as it was.",
+  },
   library: {
     title: "This journal",
     kept: "Kept on this device, so it is here again next time. Nothing leaves the browser.",

@@ -132,27 +132,48 @@ export const closeJournal = async (): Promise<void> => {
 }
 
 /**
+ * Change one file of the open journal, once hledger agrees it still reads.
+ *
+ * The new contents are read first and put in place only if that works, so a
+ * failed change costs nothing: the journal on screen never blinks out, and
+ * whatever was being typed is still there to fix. Opening proper is the other
+ * thing — a journal that will not read leaves nothing open, and should.
+ */
+const change = async (from: OpenJournal, files: Source["files"]): Promise<Result<OpenJournal, Trouble>> => {
+  const after = { ...from.source, files }
+  const read = await attempt(after)
+  if (!read.ok) {
+    setTrouble(Some(read.error))
+    return Err(read.error)
+  }
+  return remember({ source: after, summary: read.value })
+}
+
+/**
  * Add text to the end of the open journal.
  *
- * Written by trying it: the new contents are handed to hledger, and if they will
- * not read, the journal goes back to exactly what it was and the reason is
- * returned. A draft that does not balance must not cost anyone the books they
- * had open.
+ * A draft that does not balance must not cost anyone the books they had open,
+ * so it is offered to hledger before it is kept.
  */
 export const appendToEntry = async (text: string): Promise<Result<OpenJournal, Trouble>> => {
   const current = getOrUndefined(opened())
   if (current === undefined) return Err({ kind: "no-journal" })
-
   const name = entryName(current.source)
-  const before = current.source.files[name] ?? ""
-  const after = { ...current.source, files: { ...current.source.files, [name]: text } }
+  return change(current, { ...current.source.files, [name]: text })
+}
 
-  const result = await open(after)
-  if (result.ok) return result
-
-  await open({ ...current.source, files: { ...current.source.files, [name]: before } })
-  setTrouble(Some(result.error))
-  return result
+/**
+ * Replace one file of the open journal with text someone has written.
+ *
+ * The same bargain as adding an entry. Editing the text by hand is the one place
+ * where a whole file can be ruined in a keystroke, so nothing is kept until
+ * hledger has read it.
+ */
+export const rewriteFile = async (path: string, text: string): Promise<Result<OpenJournal, Trouble>> => {
+  const current = getOrUndefined(opened())
+  if (current === undefined) return Err({ kind: "no-journal" })
+  if (current.source.files[path] === undefined) return Err({ kind: "file-missing", path })
+  return change(current, { ...current.source.files, [path]: text })
 }
 
 /** The entry path as hledger sees it, back to the key the files are held under. */

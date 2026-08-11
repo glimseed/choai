@@ -70,6 +70,14 @@ export const ja: Dictionary = {
     language: "言語",
     languageHint: "ここで選ばないかぎり、ブラウザの言語に従います。",
   },
+  source: {
+    title: "テキストを編集",
+    save: "保存",
+    saved: "保存済み。hledger が読めています。",
+    unsaved: "まだ保存していません。",
+    checking: "hledger が読んでいます…",
+    hint: "保存の前に hledger が読みます。読めなかった場合、帳簿は元のままです。",
+  },
   library: {
     title: "いま開いている帳簿",
     kept: "この端末に保存しています。次に開いたときも同じ帳簿が出ます。ブラウザの外には出ません。",

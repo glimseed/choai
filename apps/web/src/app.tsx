@@ -8,7 +8,7 @@ import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem }
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
-import { DownloadIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
+import { DownloadIcon, PanelLeftIcon, PencilIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
@@ -50,6 +50,14 @@ const INNER = [
     Explorer: SettingsExplorer,
     writes: false,
     under: "/settings",
+  },
+  {
+    href: "/source",
+    key: "source.title",
+    Icon: ReceiptIcon,
+    Explorer: JournalExplorer,
+    writes: false,
+    under: "/",
   },
 ] as const
 
@@ -243,6 +251,21 @@ export function Layout(props: ParentProps) {
             header={
               <>
                 <span>{t(current().key)}</span>
+                <Show when={railOf(current()) === "/" && getOrUndefined(journal()) !== undefined}>
+                  {/* The text behind the view being looked at, which is the
+                      journal's own business rather than a view of its own. */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate(location.pathname === "/source" ? "/" : "/source")}
+                    aria-label={t("source.title")}
+                    title={t("source.title")}
+                    class="size-6 text-muted-foreground"
+                    classList={{ "bg-accent text-foreground": location.pathname === "/source" }}
+                  >
+                    <PencilIcon />
+                  </Button>
+                </Show>
                 <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
                   <Button
                     variant="outline"
