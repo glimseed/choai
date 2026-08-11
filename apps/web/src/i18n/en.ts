@@ -79,6 +79,7 @@ export const en = {
   },
   source: {
     title: "Edit the text",
+    back: "Back to the journal",
     save: "Save",
     saved: "Saved, and read by hledger.",
     unsaved: "Not saved yet.",

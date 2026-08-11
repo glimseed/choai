@@ -8,7 +8,7 @@ import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem }
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
-import { DownloadIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SquarePenIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
+import { DownloadIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SquarePenIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
@@ -156,6 +156,9 @@ export function Layout(props: ParentProps) {
     onCleanup(() => window.removeEventListener("keydown", onKey))
   })
 
+  /** Whether the journal's own text is what is on screen. */
+  const editing = (): boolean => location.pathname === "/source"
+
   /** The view being shown, which is what the explorer beside it belongs to. */
   const current = (): View => VIEWS.find((entry) => entry.href === location.pathname) ?? VIEWS[0]
 
@@ -256,17 +259,19 @@ export function Layout(props: ParentProps) {
                 <div class="flex items-center gap-1">
                   <Show when={railOf(current()) === "/" && getOrUndefined(journal()) !== undefined}>
                     {/* The text behind the view being looked at, which is the
-                        journal's own business rather than a view of its own. */}
+                        journal's own business rather than a view of its own.
+                        The same button goes back, and says so by becoming a
+                        return arrow — a way out is worth more than a lit-up
+                        way in. */}
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => navigate(location.pathname === "/source" ? "/" : "/source")}
-                      aria-label={t("source.title")}
-                      title={t("source.title")}
+                      onClick={() => navigate(editing() ? "/" : "/source")}
+                      aria-label={editing() ? t("source.back") : t("source.title")}
+                      title={editing() ? t("source.back") : t("source.title")}
                       class="size-6 text-muted-foreground"
-                      classList={{ "bg-accent text-foreground": location.pathname === "/source" }}
                     >
-                      <SquarePenIcon />
+                      {editing() ? <Undo2Icon /> : <SquarePenIcon />}
                     </Button>
                   </Show>
                   <Show when={current().writes && getOrUndefined(journal()) !== undefined}>

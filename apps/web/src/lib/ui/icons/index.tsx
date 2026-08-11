@@ -10,6 +10,7 @@ import xSvg from './x.svg?raw'
 import helpSvg from './help.svg?raw'
 import downloadSvg from './download.svg?raw'
 import squarePenSvg from './square-pen.svg?raw'
+import undo2Svg from './undo-2.svg?raw'
 import cloudSvg from './cloud.svg?raw'
 
 /**
@@ -51,5 +52,7 @@ export const HelpIcon = icon(helpSvg)
 export const DownloadIcon = icon(downloadSvg)
 /** Edit the text itself. */
 export const SquarePenIcon = icon(squarePenSvg)
+/** Back the way you came. */
+export const Undo2Icon = icon(undo2Svg)
 /** Somewhere else the books are kept. */
 export const CloudIcon = icon(cloudSvg)
