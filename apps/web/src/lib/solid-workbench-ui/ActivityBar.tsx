@@ -28,8 +28,12 @@ export function ActivityBar(props: {
   collapsedWidth?: number
   expandedWidth?: number
   /** false folds it to zero width and hides it completely, drag edge and all.
-   * Defaults to true. This width does animate. */
+   * Defaults to true. */
   visible?: boolean
+  /** Classes for the outer box, which is where its width is set. Transitions
+   * belong here rather than in the shell: whether a width should animate depends
+   * on what sits beside it. */
+  class?: string
   /**
    * Wrap a collapsed item's button so its label can be shown on hover.
    *
@@ -44,7 +48,7 @@ export function ActivityBar(props: {
   const navW = (): number => (props.expanded ? props.expandedWidth ?? 208 : props.collapsedWidth ?? 48)
   return (
     <div
-      class="flex shrink-0 overflow-hidden"
+      class={`flex shrink-0 overflow-hidden ${props.class ?? ''}`}
       style={{ width: visible() ? `${navW() + 1}px` : '0px' }}
       aria-hidden={!visible()}
     >

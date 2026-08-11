@@ -22,12 +22,53 @@ const NAV = [
   { href: "/settings", key: "nav.settings", Icon: SettingsIcon },
 ] as const
 
+/**
+ * The one place a panel's width is animated.
+ *
+ * The shell leaves this to whoever uses it, since a neighbour that redraws — a
+ * canvas, a map — would flicker for the length of the slide. Nothing here does,
+ * so both panels get the same short slide, and anyone who has asked for less
+ * motion gets none.
+ */
+const SLIDE = "transition-[width] duration-150 ease-out motion-reduce:transition-none"
+
 export function Layout(props: ParentProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [query, setQuery] = useQuery()
   const [railExpanded, setRailExpanded] = createSignal(false)
+  const [railVisible, setRailVisible] = createSignal(true)
   const [panelOpen, setPanelOpen] = createSignal(true)
+
+  const chromeShowing = (): boolean => railVisible() || panelOpen()
+
+  /**
+   * The title bar's button works on the chrome as a whole, both rails at once,
+   * so one press clears everything away from the books and the next brings it
+   * all back.
+   */
+  const toggleChrome = (): void => {
+    const bringBack = !chromeShowing()
+    setRailVisible(bringBack)
+    setPanelOpen(bringBack)
+  }
+
+  /**
+   * Selecting a view opens the explorer beside it; selecting the view already
+   * shown folds the explorer away, which is what the icon rail does in the
+   * editor this shell is shaped after.
+   *
+   * The query travels along. It belongs to the books being looked at rather than
+   * to the report looking at them, so changing report must not drop it.
+   */
+  const select = (href: string): void => {
+    if (location.pathname === href) {
+      setPanelOpen((open) => !open)
+      return
+    }
+    setPanelOpen(true)
+    navigate(href + location.search)
+  }
 
   const items = (): ActivityItem[] =>
     NAV.map((entry) => ({
@@ -35,9 +76,7 @@ export function Layout(props: ParentProps) {
       label: t(entry.key),
       icon: <entry.Icon class="h-5 w-5" />,
       active: location.pathname === entry.href,
-      // Carry the query across. It belongs to the books being looked at, not to
-      // the report looking at them, so switching reports must not drop it.
-      onSelect: () => navigate(entry.href + location.search),
+      onSelect: () => select(entry.href),
     }))
 
   return (
@@ -48,9 +87,9 @@ export function Layout(props: ParentProps) {
             <>
               <button
                 type="button"
-                onClick={() => setPanelOpen((open) => !open)}
-                aria-label={panelOpen() ? t("nav.hideAccounts") : t("nav.showAccounts")}
-                title={panelOpen() ? t("nav.hideAccounts") : t("nav.showAccounts")}
+                onClick={toggleChrome}
+                aria-label={chromeShowing() ? t("nav.hidePanels") : t("nav.showPanels")}
+                title={chromeShowing() ? t("nav.hidePanels") : t("nav.showPanels")}
                 class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <PanelLeftIcon class="h-4 w-4" />
@@ -85,6 +124,8 @@ export function Layout(props: ParentProps) {
       }
       activity={
         <ActivityBar
+          class={SLIDE}
+          visible={railVisible()}
           items={items()}
           expanded={railExpanded()}
           onToggle={() => setRailExpanded((expanded) => !expanded)}
@@ -103,7 +144,11 @@ export function Layout(props: ParentProps) {
         />
       }
       panel={
-        <SidePanel open={panelOpen()} header={<span>{t("accounts.panelTitle")}</span>}>
+        <SidePanel
+          class={SLIDE}
+          open={panelOpen()}
+          header={<span>{t("accounts.panelTitle")}</span>}
+        >
           <AccountsPanel />
         </SidePanel>
       }

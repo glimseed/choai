@@ -11,8 +11,8 @@ export const ja: Dictionary = {
     incomeStatement: "損益計算書",
     accounts: "勘定科目",
     settings: "設定",
-    showAccounts: "勘定科目を表示",
-    hideAccounts: "勘定科目を隠す",
+    showPanels: "サイドバーを表示",
+    hidePanels: "サイドバーを隠す",
   },
   journal: {
     queryPlaceholder: "hledger クエリ 例: acct:食費 date:2026-02",

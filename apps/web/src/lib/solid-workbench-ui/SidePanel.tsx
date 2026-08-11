@@ -8,9 +8,10 @@ import { Splitter } from './Splitter'
  * self-contained. Takes a header and children. With open=false it folds to zero
  * width; open by default.
  *
- * The width is deliberately not animated. Put something like a WebGL map beside
- * it and every width change triggers a resize that clears the drawing buffer,
- * which reads as flickering for the whole length of the animation.
+ * The width does not animate on its own. Whether it should depends on what sits
+ * beside it — put a WebGL map there and every width change clears its drawing
+ * buffer, which reads as flickering for the length of the animation — so that
+ * choice is left to the caller, through `class`.
  */
 export function SidePanel(props: {
   header?: JSX.Element
@@ -19,6 +20,10 @@ export function SidePanel(props: {
   minWidth?: number
   maxWidth?: number
   open?: boolean
+  /** Classes for the outer box, which is where its width is set. Transitions
+   * belong here rather than in the shell: whether a width should animate depends
+   * on what sits beside it. */
+  class?: string
 }): JSX.Element {
   const { size: width, onHandlePointerDown } = createResizable({
     initial: props.initialWidth ?? 260,
@@ -29,7 +34,7 @@ export function SidePanel(props: {
   const isOpen = (): boolean => props.open ?? true
   return (
     <div
-      class="flex shrink-0 overflow-hidden"
+      class={`flex shrink-0 overflow-hidden ${props.class ?? ''}`}
       style={{ width: isOpen() ? `${width() + 1}px` : '0px' }}
       aria-hidden={!isOpen()}
     >

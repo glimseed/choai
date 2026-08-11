@@ -18,8 +18,8 @@ export const en = {
     incomeStatement: "Income statement",
     accounts: "Accounts",
     settings: "Settings",
-    showAccounts: "Show accounts",
-    hideAccounts: "Hide accounts",
+    showPanels: "Show sidebars",
+    hidePanels: "Hide sidebars",
   },
   journal: {
     queryPlaceholder: "hledger query, eg  acct:food date:2026-02",
