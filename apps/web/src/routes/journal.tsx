@@ -7,6 +7,7 @@ import { journal } from "~/journal/store"
 import { useQuery } from "~/journal/query"
 import { getOrUndefined, matchResource } from "~/lib/monad"
 import { Button } from "~/components/ui/button"
+import { startEditingEntry } from "~/compose/editing"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table"
 import { TroubleNote } from "~/components/trouble-note"
 import { Welcome } from "~/components/welcome"
@@ -78,9 +79,27 @@ const describeRange = (offset: number, total: number): string =>
     ? t("journal.nothingMatches")
     : t("journal.range", { from: offset + 1, to: Math.min(offset + PAGE, total), total })
 
+/**
+ * One entry, and the way into its text.
+ *
+ * The row is what hledger made of a few lines of a file, so pressing it opens
+ * those lines. Reachable from the keyboard as well: a row that does something
+ * has to be something you can get to without a pointer.
+ */
 function Entry(props: { transaction: Transaction }): JSX.Element {
+  const open = (): void => startEditingEntry(props.transaction)
   return (
-    <TableRow>
+    <TableRow
+      tabindex={0}
+      class="cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      onClick={open}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          open()
+        }
+      }}
+    >
       <TableCell class="align-top font-mono text-xs">{props.transaction.tdate}</TableCell>
       <TableCell class="align-top font-medium">{props.transaction.tdescription}</TableCell>
       <TableCell class="align-top">

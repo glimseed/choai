@@ -38,8 +38,22 @@ export interface Posting {
   readonly pstatus: string
 }
 
+/**
+ * Somewhere in a file, as megaparsec counts it: both numbers start at one.
+ *
+ * `sourceName` is the path as hledger saw it, from the root of the filesystem it
+ * was given.
+ */
+export interface SourcePos {
+  readonly sourceName: string
+  readonly sourceLine: number
+  readonly sourceColumn: number
+}
+
 export interface Transaction {
   readonly tindex: number
+  /** Where the date starts, and where the last posting ends. */
+  readonly tsourcepos: readonly [SourcePos, SourcePos]
   readonly tdate: string
   readonly tdescription: string
   readonly tcomment: string

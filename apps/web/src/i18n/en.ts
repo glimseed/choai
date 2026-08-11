@@ -86,6 +86,14 @@ export const en = {
     checking: "hledger is reading it…",
     hint: "hledger reads it before it is kept. A file that will not read leaves the journal as it was.",
   },
+  edit: {
+    title: "This entry",
+    where: "{{ path }}, lines {{ from }}–{{ to }}",
+    save: "Save",
+    cancel: "Cancel",
+    remove: "Delete",
+    hint: "hledger reads it before it replaces anything. The lines around it are left exactly as they are.",
+  },
   library: {
     title: "This journal",
     kept: "Kept on this device, so it is here again next time. Nothing leaves the browser.",

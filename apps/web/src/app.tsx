@@ -1,5 +1,5 @@
 import type { ParentProps } from "solid-js"
-import { Show, createSignal, onCleanup, onMount } from "solid-js"
+import { Show, createEffect, createSignal, on, onCleanup, onMount } from "solid-js"
 import { useLocation, useNavigate } from "@solidjs/router"
 import { Dynamic } from "solid-js/web"
 import { getOrUndefined } from "~/lib/monad"
@@ -18,6 +18,8 @@ import { journal, reopenKept } from "~/journal/store"
 import { handOver } from "~/journal/handover"
 import { useQuery } from "~/journal/query"
 import { ComposePanel } from "~/compose/ComposePanel"
+import { EntryEditor } from "~/compose/EntryEditor"
+import { editing, stopEditingEntry } from "~/compose/editing"
 import { composing, startComposing, stopComposing, toggleComposing } from "~/compose/store"
 import { narrow, viewportWidth } from "~/lib/narrow"
 import { actionFor } from "~/lib/shortcuts"
@@ -128,6 +130,12 @@ export function Layout(props: ParentProps) {
     navigate(href + location.search)
   }
 
+  /** Whichever of the two is open in the dock, closed. */
+  const putDown = (): void => {
+    stopComposing()
+    stopEditingEntry()
+  }
+
   /**
    * Opening the composer on a narrow window folds the rails away first. There is
    * not room for both, and this reuses the folding already here rather than
@@ -141,6 +149,19 @@ export function Layout(props: ParentProps) {
     startComposing()
   }
 
+  /**
+   * Editing an entry is started from the journal, which does not know about the
+   * rails, so the folding that opening the composer does by hand is done here
+   * for it — the dock needs the same room either way.
+   */
+  createEffect(
+    on(editing, (open) => {
+      if (open === undefined || !narrow()) return
+      setRailVisible(false)
+      setPanelOpen(false)
+    }),
+  )
+
   onMount(() => {
     void reopenKept()
 
@@ -150,14 +171,14 @@ export function Layout(props: ParentProps) {
       event.preventDefault()
       if (action === "compose") composing() ? toggleComposing() : compose()
       if (action === "togglePanels") toggleChrome()
-      if (action === "close") stopComposing()
+      if (action === "close") putDown()
     }
     window.addEventListener("keydown", onKey)
     onCleanup(() => window.removeEventListener("keydown", onKey))
   })
 
   /** Whether the journal's own text is what is on screen. */
-  const editing = (): boolean => location.pathname === "/source"
+  const onSource = (): boolean => location.pathname === "/source"
 
   /** The view being shown, which is what the explorer beside it belongs to. */
   const current = (): View => VIEWS.find((entry) => entry.href === location.pathname) ?? VIEWS[0]
@@ -266,12 +287,12 @@ export function Layout(props: ParentProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => navigate(editing() ? "/" : "/source")}
-                      aria-label={editing() ? t("source.back") : t("source.title")}
-                      title={editing() ? t("source.back") : t("source.title")}
+                      onClick={() => navigate(onSource() ? "/" : "/source")}
+                      aria-label={onSource() ? t("source.back") : t("source.title")}
+                      title={onSource() ? t("source.back") : t("source.title")}
                       class="size-6 text-muted-foreground"
                     >
-                      {editing() ? <Undo2Icon /> : <SquarePenIcon />}
+                      {onSource() ? <Undo2Icon /> : <SquarePenIcon />}
                     </Button>
                   </Show>
                   <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
@@ -301,12 +322,16 @@ export function Layout(props: ParentProps) {
             initialWidth={420}
             minWidth={320}
             maxWidth={withinWindow}
-            open={composing()}
-            header={<span>{t("compose.title")}</span>}
-            onClose={stopComposing}
+            open={composing() || editing() !== undefined}
+            header={<span>{editing() === undefined ? t("compose.title") : t("edit.title")}</span>}
+            onClose={putDown}
             closeLabel={t("compose.close")}
           >
-            <ComposePanel />
+            {/* One dock, two things to write in: a new entry, or the lines an
+                existing one is written on. */}
+            <Show when={editing() !== undefined} fallback={<ComposePanel />}>
+              <EntryEditor />
+            </Show>
           </AuxPanel>
         }
       >

@@ -79,6 +79,14 @@ export const ja: Dictionary = {
     checking: "hledger が読んでいます…",
     hint: "保存の前に hledger が読みます。読めなかった場合、帳簿は元のままです。",
   },
+  edit: {
+    title: "この仕訳",
+    where: "{{ path }} の {{ from }}–{{ to }} 行目",
+    save: "保存",
+    cancel: "やめる",
+    remove: "削除",
+    hint: "置き換える前に hledger が読みます。前後の行はそのままです。",
+  },
   library: {
     title: "いま開いている帳簿",
     kept: "この端末に保存しています。次に開いたときも同じ帳簿が出ます。ブラウザの外には出ません。",
