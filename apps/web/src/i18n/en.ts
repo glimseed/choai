@@ -76,6 +76,19 @@ export const en = {
     language: "Language",
     languageHint: "Chosen from your browser unless you pick one here.",
   },
+  licenses: {
+    title: "Licences",
+    app: "hledger-pwa is free software under the GNU General Public License, version 3 or later.",
+    hledger:
+      "The accounting is done by hledger itself, compiled to WebAssembly. hledger is copyright Simon Michael and contributors, under the same licence — which is why this app is under it too.",
+    show: "Every package and its licence",
+    fullText: "Licence in full",
+    loading: "Reading the licences…",
+    engine: "In the engine — {{ count }} packages",
+    web: "In the app — {{ count }} packages",
+    collected: "Collected from the installed packages on {{ date }}.",
+    unstated: "licence not stated",
+  },
   compose: {
     title: "New entry",
     open: "New entry",

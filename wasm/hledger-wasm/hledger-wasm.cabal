@@ -6,6 +6,10 @@ description:
   Not a library. Three small binaries whose only purpose is to be measured:
   a WASI command probe, a browser reactor probe, and a hledger-free reactor
   module that establishes the size floor of the Haskell runtime itself.
+-- Linked against hledger-lib, which is GPL, so this is too.
+license:            GPL-3.0-or-later
+copyright:          hledger-pwa contributors
+homepage:           https://github.com/mrksye/hledger-pwa
 build-type:         Simple
 
 common probe

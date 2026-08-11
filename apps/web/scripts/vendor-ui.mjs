@@ -46,3 +46,24 @@ for (const name of names) {
   console.log(`${name}: ${body.split("\n").length} lines` +
     (missing.length ? `  (also needs: ${missing.join(", ")})` : ""));
 }
+
+// Copied code carries its terms with it, so the licence is fetched alongside
+// and written where the app's licence page reads it. Recorded here rather than
+// typed out by hand, for the same reason the components are.
+const licence = await fetch(`https://raw.githubusercontent.com/${REPO}/${REF}/LICENSE`);
+if (licence.ok) {
+  const entry = {
+    name: "solid-ui",
+    origin: "vendored",
+    license: "MIT",
+    homepage: `https://github.com/${REPO}`,
+    note: `Components copied into ${DEST}, not installed as a dependency.`,
+    text: (await licence.text()).trim(),
+  };
+  await mkdir("src/licenses", { recursive: true });
+  await writeFile("src/licenses/vendored.json", `${JSON.stringify([entry], null, 2)}\n`);
+  console.log("licence: src/licenses/vendored.json");
+} else {
+  console.error(`licence: ${licence.status} ${licence.statusText} -- vendored.json left as it was`);
+  process.exitCode = 1;
+}

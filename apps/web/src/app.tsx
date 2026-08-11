@@ -30,8 +30,34 @@ const NAV = [
   { href: "/balance-sheet", key: "nav.balanceSheet", Icon: ScaleIcon, Explorer: BalanceSheetExplorer, writes: false },
   { href: "/income-statement", key: "nav.incomeStatement", Icon: TrendingUpIcon, Explorer: IncomeStatementExplorer, writes: false },
   { href: "/accounts", key: "nav.accounts", Icon: WalletIcon, Explorer: AccountsExplorer, writes: false },
+] as const
+
+// Settings are not one of the books, so they sit at the foot of the rail, apart
+// from the four views and where the editor this shell is shaped after keeps
+// them.
+const FOOT = [
   { href: "/settings", key: "nav.settings", Icon: SettingsIcon, Explorer: SettingsExplorer, writes: false },
 ] as const
+
+// Reached from the settings rather than from the rail, so it has no button of
+// its own; `under` says which button stays lit while it is open.
+const INNER = [
+  {
+    href: "/licenses",
+    key: "licenses.title",
+    Icon: SettingsIcon,
+    Explorer: SettingsExplorer,
+    writes: false,
+    under: "/settings",
+  },
+] as const
+
+const VIEWS = [...NAV, ...FOOT, ...INNER]
+
+type View = (typeof VIEWS)[number]
+
+/** Which rail button a view belongs to, which is itself unless it says otherwise. */
+const railOf = (view: View): string => ("under" in view ? view.under : view.href)
 
 /**
  * The one place a panel's width is animated.
@@ -120,15 +146,14 @@ export function Layout(props: ParentProps) {
   })
 
   /** The view being shown, which is what the explorer beside it belongs to. */
-  const current = (): (typeof NAV)[number] =>
-    NAV.find((entry) => entry.href === location.pathname) ?? NAV[0]
+  const current = (): View => VIEWS.find((entry) => entry.href === location.pathname) ?? VIEWS[0]
 
-  const items = (): ActivityItem[] =>
-    NAV.map((entry) => ({
+  const buttonsFor = (entries: readonly View[]): ActivityItem[] =>
+    entries.map((entry) => ({
       id: entry.href,
       label: t(entry.key),
       icon: <entry.Icon class="h-5 w-5" />,
-      active: location.pathname === entry.href,
+      active: railOf(current()) === entry.href,
       onSelect: () => select(entry.href),
     }))
 
@@ -171,7 +196,8 @@ export function Layout(props: ParentProps) {
           <ActivityBar
             class={SLIDE}
             visible={railVisible()}
-            items={items()}
+            items={buttonsFor(NAV)}
+            footer={buttonsFor(FOOT)}
             expanded={railExpanded()}
             onToggle={() => setRailExpanded((expanded) => !expanded)}
             // The trigger arrives already built, so Kobalte gets a wrapper to

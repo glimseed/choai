@@ -11,7 +11,11 @@ description:
   is not a stub but the truthful answer both in a browser and under a wasm
   runtime with no tty. Substituting it here means hledger's own sources stay
   untouched.
+-- Written here, but licensed as the package it stands in for, so that swapping
+-- one for the other changes nothing for whoever redistributes the result.
 license:            MIT
+license-file:       LICENSE
+copyright:          hledger-pwa contributors
 build-type:         Simple
 
 library

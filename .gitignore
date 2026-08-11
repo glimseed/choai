@@ -15,3 +15,6 @@ apps/web/public/hledger.wasm
 apps/web/src/hledger/ghc-jsffi.mjs
 apps/web/dist/
 apps/web/dev-dist/
+
+# written by apps/web/scripts/collect-licenses.mjs at build time
+apps/web/src/generated/
