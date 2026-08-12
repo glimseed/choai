@@ -32,15 +32,24 @@ export const LETTER: Readonly<Record<Kind, string>> = {
 export const topOf = (account: string): string => account.split(":")[0] ?? account
 
 /**
- * The top-level accounts hledger could not place.
+ * The branches of the tree that no statement will show.
  *
- * Only the top level: naming a child as well would say nothing the parent has
- * not already said.
+ * A kind travels down from a parent to its children, never up, so a journal that
+ * declares its leaves — `資産:銀行:普通預金`, and not `資産` — leaves the name at
+ * the top of that branch with no kind of its own while everything beneath it has
+ * one. Nothing is missing from the statements there, and saying otherwise would
+ * be a false alarm on a perfectly good journal.
+ *
+ * So a branch counts as unplaced only when nothing anywhere in it has a kind.
+ * Named by its top, since that is where one declaration settles the whole of it.
  */
 export const unplaced = (
   accounts: readonly string[],
   types: Readonly<Record<string, AccountType>>,
-): readonly string[] => [...new Set(accounts.map(topOf))].filter((name) => types[name] === undefined)
+): readonly string[] =>
+  [...new Set(accounts.map(topOf))].filter(
+    (top) => !accounts.some((account) => topOf(account) === top && types[account] !== undefined),
+  )
 
 /**
  * A guess at what a name means, offered as a starting point.

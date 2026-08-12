@@ -3,8 +3,14 @@
  *
  * Covers all five account types so that the balance sheet and the income
  * statement both have something to report.
+ *
+ * The `D` directive gives the amounts their styling — symbol in front, thousands
+ * grouped — and stands as the commodity for any amount written without one,
+ * which is what a new journal starts with too.
  */
 export const demoEn = `; a demo journal
+
+D $1,000.00
 
 account assets:bank:checking    ; type:A
 account assets:cash             ; type:A

@@ -7,13 +7,13 @@
  * The `type:` tags are not decoration. hledger works out what kind of account it
  * is looking at from the name, and the patterns it matches are English, so
  * without these the balance sheet and the income statement would both come back
- * empty. The commodity directive is what gives the amounts their yen styling —
- * symbol in front, thousands grouped, no fractional part — and hledger applies
- * it to every amount it prints.
+ * empty. The `D` directive gives the amounts their yen styling — symbol in
+ * front, thousands grouped, no fractional part — and stands as the commodity for
+ * any amount written without one, which is what a new journal starts with too.
  */
 export const demoJa = `; デモ帳簿
 
-commodity ¥1,000.
+D ¥1,000.
 
 account 資産:銀行:普通預金  ; type:A
 account 資産:現金  ; type:A
