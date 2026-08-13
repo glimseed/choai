@@ -1,8 +1,9 @@
 import { Err, Ok, getOrUndefined, type Result } from "~/lib/monad"
-import { journal, openBringingMissing, rewriteFile } from "~/journal/store"
+import { journal, openBringingMissing, rewriteFile, type OpenJournal } from "~/journal/store"
+import type { Remote } from "~/journal/kept"
 import type { Trouble } from "~/hledger/wire"
 import { fetchFile, putFile, type Failure, type Where } from "./api"
-import { agree, agreedOn, connection, type Agreed, type Connection } from "./kept"
+import { agree, agreedOn, token, type Agreed } from "./kept"
 
 /**
  * Keeping the books here and the books in the repository the same.
@@ -21,6 +22,7 @@ import { agree, agreedOn, connection, type Agreed, type Connection } from "./kep
 /** What went wrong, told apart by who said no. */
 export type Snag =
   | { readonly at: "not-connected" }
+  | { readonly at: "no-place" }
   | { readonly at: "no-journal" }
   | { readonly at: "github"; readonly failure: Failure }
   | { readonly at: "hledger"; readonly trouble: Trouble }
@@ -37,12 +39,27 @@ export type Outcome =
 const directoryOf = (path: string): string => path.slice(0, path.lastIndexOf("/") + 1)
 const nameOf = (path: string): string => path.slice(path.lastIndexOf("/") + 1)
 
-const where = (settings: Connection, path: string): Where => ({
-  owner: settings.owner.trim(),
-  repo: settings.repo.trim(),
-  branch: settings.branch.trim(),
+const where = (remote: Remote, path: string): Where => ({
+  owner: remote.owner.trim(),
+  repo: remote.repo.trim(),
+  branch: remote.branch.trim(),
   path,
 })
+
+/**
+ * What it takes to reach a book: the account's token, and the book's own place.
+ *
+ * Two different absences, because they are fixed in two different screens — the
+ * token once for the account, the place for this book.
+ */
+const reachable = async (): Promise<Result<{ token: string; open: OpenJournal }, Snag>> => {
+  const key = await token()
+  if (key === undefined || key === "") return Err({ at: "not-connected" })
+  const open = getOrUndefined(journal())
+  if (open === undefined) return Err({ at: "no-journal" })
+  if (open.remote === undefined || open.remote.path === "") return Err({ at: "no-place" })
+  return Ok({ token: key, open })
+}
 
 /**
  * Take the repository's copy and open it.
@@ -52,38 +69,39 @@ const where = (settings: Connection, path: string): Where => ({
  * how the `include` lines resolve on a disk, so it is how they resolve here.
  */
 export const pull = async (): Promise<Result<Outcome, Snag>> => {
-  const settings = await connection()
-  if (settings === undefined) return Err({ at: "not-connected" })
+  const reach = await reachable()
+  if (!reach.ok) return reach
+  const { token: key, open } = reach.value
+  const remote = open.remote as Remote
 
-  const entry = nameOf(settings.path)
-  const directory = directoryOf(settings.path)
+  const entry = nameOf(remote.path)
+  const directory = directoryOf(remote.path)
   const brought = new Map<string, { text: string; sha: string; repoPath: string }>()
 
   const bring = async (path: string): Promise<string | undefined> => {
     const repoPath = `${directory}${path}`
-    const fetched = await fetchFile(settings.token, where(settings, repoPath))
+    const fetched = await fetchFile(key, where(remote, repoPath))
     if (!fetched.ok) return undefined
     brought.set(path, { text: fetched.value.text, sha: fetched.value.sha, repoPath })
     return fetched.value.text
   }
 
-  const first = await fetchFile(settings.token, where(settings, settings.path))
+  const first = await fetchFile(key, where(remote, remote.path))
   if (!first.ok) return Err({ at: "github", failure: first.error })
-  brought.set(entry, { text: first.value.text, sha: first.value.sha, repoPath: settings.path })
+  brought.set(entry, { text: first.value.text, sha: first.value.sha, repoPath: remote.path })
 
+  // The copy taken replaces this book rather than becoming another: it is the
+  // same books, fetched from where they are kept.
   const opened = await openBringingMissing(
-    {
-      label: `${settings.owner}/${settings.repo}`,
-      files: { [entry]: first.value.text },
-      entry: `/${entry}`,
-    },
+    { label: open.source.label, files: { [entry]: first.value.text }, entry: `/${entry}` },
     bring,
+    remote,
   )
   if (!opened.ok) return Err({ at: "hledger", trouble: opened.error })
 
   await Promise.all(
     [...brought].map(([path, file]) =>
-      agree({ path, repoPath: file.repoPath, sha: file.sha, baseText: file.text, at: Date.now() }),
+      agree(open.bookId, { path, repoPath: file.repoPath, sha: file.sha, baseText: file.text, at: Date.now() }),
     ),
   )
   return Ok({ did: "pulled", files: brought.size })
@@ -91,26 +109,27 @@ export const pull = async (): Promise<Result<Outcome, Snag>> => {
 
 /** Every file of the open journal that is not already what the repository has. */
 const changedFiles = async (
+  book: string,
   files: Readonly<Record<string, string>>,
 ): Promise<readonly { path: string; text: string; agreed: Agreed | undefined }[]> => {
   const all = await Promise.all(
-    Object.entries(files).map(async ([path, text]) => ({ path, text, agreed: await agreedOn(path) })),
+    Object.entries(files).map(async ([path, text]) => ({ path, text, agreed: await agreedOn(book, path) })),
   )
   return all.filter((file) => file.agreed?.baseText !== file.text)
 }
 
 export const push = async (): Promise<Result<Outcome, Snag>> => {
-  const settings = await connection()
-  if (settings === undefined) return Err({ at: "not-connected" })
-  const open = getOrUndefined(journal())
-  if (open === undefined) return Err({ at: "no-journal" })
+  const reach = await reachable()
+  if (!reach.ok) return reach
+  const { token: key, open } = reach.value
+  const remote = open.remote as Remote
 
-  const changed = await changedFiles(open.source.files)
+  const changed = await changedFiles(open.bookId, open.source.files)
   if (changed.length === 0) return Ok({ did: "nothing" })
 
   const results = []
   for (const file of changed) {
-    const result = await send(settings, file.path, file.text, file.agreed)
+    const result = await send(key, open.bookId, remote, file.path, file.text, file.agreed)
     if (!result.ok) return result
     results.push(result.value)
   }
@@ -125,25 +144,21 @@ export const push = async (): Promise<Result<Outcome, Snag>> => {
  * and stopping at the first refusal leaves a state that can be described.
  */
 const send = async (
-  settings: Connection,
+  key: string,
+  book: string,
+  remote: Remote,
   path: string,
   text: string,
   agreed: Agreed | undefined,
 ): Promise<Result<"pushed" | "merged", Snag>> => {
-  const repoPath = agreed?.repoPath ?? `${directoryOf(settings.path)}${path}`
-  const written = await putFile(
-    settings.token,
-    where(settings, repoPath),
-    text,
-    agreed?.sha,
-    `Update ${repoPath}`,
-  )
+  const repoPath = agreed?.repoPath ?? `${directoryOf(remote.path)}${path}`
+  const written = await putFile(key, where(remote, repoPath), text, agreed?.sha, `Update ${repoPath}`)
   if (written.ok) {
-    await agree({ path, repoPath, sha: written.value.sha, baseText: text, at: Date.now() })
+    await agree(book, { path, repoPath, sha: written.value.sha, baseText: text, at: Date.now() })
     return Ok("pushed")
   }
   if (written.error.kind !== "conflict") return Err({ at: "github", failure: written.error })
-  return settle(settings, path, text, repoPath, agreed)
+  return settle(key, book, remote, path, text, repoPath, agreed)
 }
 
 /**
@@ -159,13 +174,15 @@ const send = async (
  * not read is not something the repository ever sees.
  */
 const settle = async (
-  settings: Connection,
+  key: string,
+  book: string,
+  remote: Remote,
   path: string,
   text: string,
   repoPath: string,
   agreed: Agreed | undefined,
 ): Promise<Result<"merged", Snag>> => {
-  const theirs = await fetchFile(settings.token, where(settings, repoPath))
+  const theirs = await fetchFile(key, where(remote, repoPath))
   if (!theirs.ok) return Err({ at: "github", failure: theirs.error })
   if (agreed === undefined || !onlyAdded(agreed.baseText, text) || !onlyAdded(agreed.baseText, theirs.value.text)) {
     return Err({ at: "diverged", path })
@@ -175,15 +192,9 @@ const settle = async (
   const adopted = await rewriteFile(path, merged)
   if (!adopted.ok) return Err({ at: "hledger", trouble: adopted.error })
 
-  const written = await putFile(
-    settings.token,
-    where(settings, repoPath),
-    merged,
-    theirs.value.sha,
-    `Merge ${repoPath}`,
-  )
+  const written = await putFile(key, where(remote, repoPath), merged, theirs.value.sha, `Merge ${repoPath}`)
   if (!written.ok) return Err({ at: "github", failure: written.error })
-  await agree({ path, repoPath, sha: written.value.sha, baseText: merged, at: Date.now() })
+  await agree(book, { path, repoPath, sha: written.value.sha, baseText: merged, at: Date.now() })
   return Ok("merged")
 }
 

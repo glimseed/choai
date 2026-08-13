@@ -3,7 +3,8 @@ import { A } from "@solidjs/router"
 
 import { LOCALES, LOCALE_NAMES, locale, setLocale, t } from "~/i18n"
 import { Button } from "~/components/ui/button"
-import { closeJournal, journal } from "~/journal/store"
+import { TextField, TextFieldInput } from "~/components/ui/text-field"
+import { journal, removeBook, renameBook } from "~/journal/store"
 import { GitHubPanel } from "~/components/github-panel"
 import { handOver } from "~/journal/handover"
 import { keptForGood } from "~/journal/kept"
@@ -59,7 +60,16 @@ function Library(): JSX.Element {
       {(open) => (
         <section class="flex flex-col gap-2">
           <h2 class="text-sm font-medium">{t("library.title")}</h2>
-          <p class="text-xs">{open().source.label}</p>
+          {/* The name is the book's own, not the file's: two books can be kept
+              in files called the same thing. */}
+          <TextField class="max-w-56">
+            <TextFieldInput
+              type="text"
+              class="h-8 text-sm"
+              value={open().source.label}
+              onChange={(event) => void renameBook(event.currentTarget.value)}
+            />
+          </TextField>
           <p class="text-xs text-muted-foreground">
             {promised() === false ? t("library.notKept") : t("library.kept")}
           </p>
@@ -67,7 +77,7 @@ function Library(): JSX.Element {
             <Button variant="outline" size="sm" onClick={() => void handOver(open().source)}>
               {t("journal.export")}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => void closeJournal()}>
+            <Button variant="outline" size="sm" onClick={() => void removeBook(open().bookId)}>
               {t("library.close")}
             </Button>
           </div>

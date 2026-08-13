@@ -7,7 +7,16 @@ import { createTask } from "~/lib/pending"
 import { Err, None, Ok, Some, getOrUndefined, match, type Option, type Result } from "~/lib/monad"
 import { t } from "~/i18n"
 import { demoJournal } from "./demo"
-import { forget as forgetKept, keep, lastOpened } from "./kept"
+import {
+  allBooks,
+  bookWithFiles,
+  currentBook,
+  forgetBook,
+  keepBook,
+  markCurrent,
+  type BookCard,
+  type Remote,
+} from "./kept"
 
 /**
  * Which journal is open, and how it got there.
@@ -27,12 +36,17 @@ export interface Source {
 }
 
 export interface OpenJournal {
+  /** Which book on this device these files are, so writes go back to it. */
+  readonly bookId: string
   readonly source: Source
+  /** Where this book is kept away from here, if it is kept anywhere. */
+  readonly remote?: Remote
   readonly summary: JournalSummary
 }
 
 const [opened, setOpened] = createSignal<Option<OpenJournal>>(None)
 const [trouble, setTrouble] = createSignal<Option<Trouble>>(None)
+const [shelf, setShelf] = createSignal<readonly BookCard[]>([])
 
 /**
  * The journal outlives any one screen, so this state lives at module scope.
@@ -51,11 +65,45 @@ export const openingTrouble: Accessor<Option<Trouble>> = trouble
 /** Whether to show that opening is under way; see lib/pending for the timing. */
 export const opening: Accessor<boolean> = task.pending
 
-export const open = async (source: Source): Promise<Result<OpenJournal, Trouble>> =>
+/** Every book on this device. Kept in a signal so the switcher follows changes. */
+export const books: Accessor<readonly BookCard[]> = shelf
+
+const restock = async (): Promise<void> => {
+  setShelf(await allBooks())
+}
+
+/**
+ * Open a journal that is not on this device yet, as a book of its own.
+ *
+ * This is what the ways in — a file from the filesystem, the demo, an empty one,
+ * a copy taken from a repository — all end in. A journal that will not read
+ * leaves nothing open and nothing kept, which is the honest answer to being
+ * handed something unreadable.
+ */
+export const startBook = async (
+  source: Source,
+  remote?: Remote,
+): Promise<Result<OpenJournal, Trouble>> =>
   match(await attempt(source), {
-    Ok: (summary) => remember({ source, summary }),
+    Ok: (summary) => remember({ bookId: crypto.randomUUID(), source, remote, summary }),
     Err: forget,
   })
+
+/** Open a book already on this device, and make it the one that is open. */
+export const openBook = async (id: string): Promise<Result<OpenJournal, Trouble>> => {
+  const kept = await bookWithFiles(id)
+  if (kept === undefined) return Err({ kind: "no-journal" })
+  return match(await attempt({ label: kept.name, files: kept.files, entry: kept.entry }), {
+    Ok: (summary) =>
+      remember({
+        bookId: kept.id,
+        source: { label: kept.name, files: kept.files, entry: kept.entry },
+        remote: kept.remote,
+        summary,
+      }),
+    Err: forget,
+  })
+}
 
 /** Whatever happens below, an answer comes back rather than a rejection. */
 const attempt = (source: Source): Promise<Result<JournalSummary, Trouble>> =>
@@ -66,7 +114,7 @@ const attempt = (source: Source): Promise<Result<JournalSummary, Trouble>> =>
 const remember = (open: OpenJournal): Result<OpenJournal, Trouble> => {
   setOpened(Some(open))
   setTrouble(None)
-  void keepOnThisDevice(open.source)
+  void keepOnThisDevice(open)
   return Ok(open)
 }
 
@@ -79,11 +127,18 @@ const remember = (open: OpenJournal): Result<OpenJournal, Trouble> => {
  * journal in hand still works, and the next open tries again — so it is caught
  * here and goes no further.
  */
-const keepOnThisDevice = async (source: Source): Promise<void> => {
-  const now = Date.now()
-  const files = Object.entries(source.files).map(([path, text]) => ({ path, text, updatedAt: now }))
+const keepOnThisDevice = async (open: OpenJournal): Promise<void> => {
   try {
-    await keep({ label: source.label, entry: source.entry, files })
+    await keepBook({
+      id: open.bookId,
+      name: open.source.label,
+      entry: open.source.entry,
+      remote: open.remote,
+      openedAt: Date.now(),
+      files: open.source.files,
+    })
+    await markCurrent(open.bookId)
+    await restock()
   } catch {
     // A private window, or a refused quota, and neither is worth a word.
   }
@@ -113,11 +168,11 @@ export const settling = (): boolean => !settled()
  */
 export const reopenKept = async (): Promise<void> => {
   try {
+    await restock()
     if (getOrUndefined(opened()) !== undefined) return
-    const kept = await lastOpened()
-    if (kept === undefined) return
-    const files = Object.fromEntries(kept.files.map((file) => [file.path, file.text]))
-    await open({ label: kept.label, files, entry: kept.entry })
+    const id = await currentBook()
+    if (id === undefined) return
+    await openBook(id)
   } catch {
     // Nothing to reopen is the same as nothing kept.
   } finally {
@@ -125,11 +180,35 @@ export const reopenKept = async (): Promise<void> => {
   }
 }
 
-/** Put the books away: closed here, and cleared from this device. */
-export const closeJournal = async (): Promise<void> => {
-  setOpened(None)
-  setTrouble(None)
-  await forgetKept()
+/**
+ * Put a book away and clear it from this device.
+ *
+ * Closing the one that is open leaves nothing open rather than choosing another:
+ * which book to look at next is not a decision to make on someone's behalf.
+ */
+export const removeBook = async (id: string): Promise<void> => {
+  await forgetBook(id)
+  if (getOrUndefined(opened())?.bookId === id) {
+    setOpened(None)
+    setTrouble(None)
+  }
+  await restock()
+}
+
+/** Call a book something else. Only its name changes; nothing in it moves. */
+export const renameBook = async (name: string): Promise<void> => {
+  const current = getOrUndefined(opened())
+  if (current === undefined || name.trim() === "") return
+  setOpened(Some({ ...current, source: { ...current.source, label: name.trim() } }))
+  await keepOnThisDevice({ ...current, source: { ...current.source, label: name.trim() } })
+}
+
+/** Say where this book is kept, which is the one thing syncing needs of it. */
+export const setRemote = async (remote: Remote): Promise<void> => {
+  const current = getOrUndefined(opened())
+  if (current === undefined) return
+  setOpened(Some({ ...current, remote }))
+  await keepOnThisDevice({ ...current, remote })
 }
 
 /**
@@ -141,12 +220,14 @@ export const closeJournal = async (): Promise<void> => {
  * thing — a journal that will not read leaves nothing open, and should.
  */
 export const openIfItReads = async (source: Source): Promise<Result<OpenJournal, Trouble>> => {
+  const current = getOrUndefined(opened())
+  if (current === undefined) return Err({ kind: "no-journal" })
   const read = await attempt(source)
   if (!read.ok) {
     setTrouble(Some(read.error))
     return Err(read.error)
   }
-  return remember({ source, summary: read.value })
+  return remember({ ...current, source, summary: read.value })
 }
 
 const change = (from: OpenJournal, files: Source["files"]): Promise<Result<OpenJournal, Trouble>> =>
@@ -167,10 +248,19 @@ const FETCHES = 20
 export const openBringingMissing = async (
   source: Source,
   bring: (path: string) => Promise<string | undefined>,
+  remote?: Remote,
   left: number = FETCHES,
 ): Promise<Result<OpenJournal, Trouble>> => {
   const read = await attempt(source)
-  if (read.ok) return remember({ source, summary: read.value })
+  if (read.ok) {
+    const current = getOrUndefined(opened())
+    return remember({
+      bookId: current?.bookId ?? crypto.randomUUID(),
+      source,
+      remote: remote ?? current?.remote,
+      summary: read.value,
+    })
+  }
   const wanted = left === 0 ? undefined : missingFrom(read.error)
   if (wanted === undefined) {
     setTrouble(Some(read.error))
@@ -181,7 +271,7 @@ export const openBringingMissing = async (
     setTrouble(Some(read.error))
     return Err(read.error)
   }
-  return openBringingMissing({ ...source, files: { ...source.files, [wanted]: brought } }, bring, left - 1)
+  return openBringingMissing({ ...source, files: { ...source.files, [wanted]: brought } }, bring, remote, left - 1)
 }
 
 /**
@@ -241,7 +331,7 @@ export const entryText = (): string | undefined => {
 /** Open the journal that ships with the app, so a first visit has something to look at. */
 export const openDemo = (): Promise<Result<OpenJournal, Trouble>> => {
   const demo = demoJournal()
-  return open({
+  return startBook({
     label: t("welcome.demoLabel"),
     files: { [demo.filename]: demo.contents },
     entry: `/${demo.filename}`,
@@ -262,7 +352,7 @@ export const openFiles = async (chosen: FileList): Promise<Result<OpenJournal, T
   const files = Object.fromEntries(contents)
   const names = contents.map(([name]) => name)
   const entry = names.find(looksLikeAnEntry) ?? names[0] ?? ""
-  return open({
+  return startBook({
     label: names.length > 1 ? `${entry} (+${names.length - 1} more)` : entry,
     files,
     entry: `/${entry}`,

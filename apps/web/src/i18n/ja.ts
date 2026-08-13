@@ -99,6 +99,11 @@ export const ja: Dictionary = {
     remove: "削除",
     hint: "置き換える前に hledger が読みます。前後の行はそのままです。",
   },
+  books: {
+    switch: "どの帳簿か",
+    add: "帳簿を追加…",
+    addTitle: "帳簿を追加",
+  },
   library: {
     title: "いま開いている帳簿",
     kept: "この端末に保存しています。次に開いたときも同じ帳簿が出ます。ブラウザの外には出ません。",
@@ -139,6 +144,7 @@ export const ja: Dictionary = {
     merged: "リポジトリ側が進んでいました。こちらで書いた分をその後ろに並べ、両方を同じ内容にしました。",
     nothing: "すでにリポジトリと同じです。",
     notConnected: "先にここを埋めてください。",
+    noPlace: "この帳簿の置き場所を入れて、保存してください。",
     noJournal: "帳簿が開かれていません。",
     unauthorised: "トークンが拒否されました。このリポジトリに対する Contents の読み書き権限を確認してください。",
     noSuchFile: "そのパスにファイルがありません。",

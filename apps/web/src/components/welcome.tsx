@@ -1,4 +1,5 @@
 import { Show, type JSX } from "solid-js"
+import { useNavigate } from "@solidjs/router"
 
 import { openDemo, openFiles, opening, openingTrouble, settling } from "~/journal/store"
 import { startFresh } from "~/journal/fresh"
@@ -27,6 +28,12 @@ export function Welcome(): JSX.Element {
 
 function Choices(): JSX.Element {
   let chooser!: HTMLInputElement
+  const navigate = useNavigate()
+
+  /** A book that opened is a book to look at, so this screen steps aside. */
+  const then = async (opening: Promise<{ ok: boolean }>): Promise<void> => {
+    if ((await opening).ok) navigate("/")
+  }
 
   return (
     <div class="mx-auto flex max-w-md flex-col items-start gap-4 py-16">
@@ -41,10 +48,10 @@ function Choices(): JSX.Element {
         <Button onClick={() => chooser.click()} disabled={opening()}>
           {t("welcome.openFiles")}
         </Button>
-        <Button variant="outline" onClick={() => void startFresh()} disabled={opening()}>
+        <Button variant="outline" onClick={() => void then(startFresh())} disabled={opening()}>
           {t("welcome.startFresh")}
         </Button>
-        <Button variant="ghost" onClick={() => void openDemo()} disabled={opening()}>
+        <Button variant="ghost" onClick={() => void then(openDemo())} disabled={opening()}>
           {t("welcome.tryDemo")}
         </Button>
       </div>
@@ -57,7 +64,7 @@ function Choices(): JSX.Element {
         accept=".journal,.hledger,.ledger,.txt"
         onChange={(event) => {
           const chosen = event.currentTarget.files
-          if (chosen !== null && chosen.length > 0) void openFiles(chosen)
+          if (chosen !== null && chosen.length > 0) void then(openFiles(chosen))
         }}
       />
 

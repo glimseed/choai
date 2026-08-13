@@ -24,6 +24,7 @@ import { composing, startComposing, stopComposing, toggleComposing } from "~/com
 import { narrow, viewportWidth } from "~/lib/narrow"
 import { actionFor } from "~/lib/shortcuts"
 import { ShortcutsHelp } from "~/components/shortcuts-help"
+import { BookSwitcher } from "~/components/book-switcher"
 import { t } from "~/i18n"
 
 // The daily journal comes first because that is what the app is opened for;
@@ -52,6 +53,14 @@ const INNER = [
     Explorer: SettingsExplorer,
     writes: false,
     under: "/settings",
+  },
+  {
+    href: "/add",
+    key: "books.addTitle",
+    Icon: ReceiptIcon,
+    Explorer: JournalExplorer,
+    writes: false,
+    under: "/",
   },
   {
     href: "/source",
@@ -208,9 +217,17 @@ export function Layout(props: ParentProps) {
                 >
                   <PanelLeftIcon class="h-4 w-4" />
                 </button>
-                {/* Room on a phone goes to the query box, not to a name the
-                    reader already knows. */}
-                <span class="hidden px-1 font-semibold tracking-tight sm:inline">{t("app.name")}</span>
+                {/* Whose books these are matters more than the app's own name,
+                    and on a phone there is only room for one of them. */}
+                <BookSwitcher
+                  onAdd={() => navigate("/add")}
+                  onSwitched={() => {
+                    // The query belonged to the books being put down; an account
+                    // it names may not exist in the ones being picked up.
+                    setQuery("")
+                    navigate("/")
+                  }}
+                />
               </>
             }
             center={

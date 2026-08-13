@@ -3,15 +3,16 @@ import { For, Show, createResource, createSignal, type JSX } from "solid-js"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
 import { TroubleNote } from "~/components/trouble-note"
-import { connect, connection, disconnect, type Connection } from "~/github/kept"
+import { forgetToken, keepToken, token } from "~/github/kept"
 import { whoami, type Failure } from "~/github/api"
 import { pull, push, type Outcome, type Snag } from "~/github/sync"
-import { journal } from "~/journal/store"
+import { journal, setRemote } from "~/journal/store"
+import type { Remote } from "~/journal/kept"
 import { startFresh } from "~/journal/fresh"
 import { getOrUndefined } from "~/lib/monad"
 import { t } from "~/i18n"
 
-const EMPTY: Connection = { owner: "", repo: "", branch: "", path: "", token: "" }
+const NOWHERE: Remote = { owner: "", repo: "", branch: "", path: "" }
 
 /**
  * The repository the books live in.
@@ -21,16 +22,18 @@ const EMPTY: Connection = { owner: "", repo: "", branch: "", path: "", token: ""
  * for a token deserves to say where it goes.
  */
 export function GitHubPanel(): JSX.Element {
-  const [kept, { refetch }] = createResource(connection)
-  const [edited, setEdited] = createSignal<Connection | undefined>(undefined)
+  const [saved, { refetch }] = createResource(token)
+  const [typed, setTyped] = createSignal<string | undefined>(undefined)
+  const [edited, setEdited] = createSignal<Remote | undefined>(undefined)
   const [busy, setBusy] = createSignal(false)
   const [said, setSaid] = createSignal<string | undefined>(undefined)
   const [snag, setSnag] = createSignal<Snag | undefined>(undefined)
 
-  /** What is in the boxes: what is being typed, or what was saved. */
-  const settings = (): Connection => edited() ?? kept() ?? EMPTY
-  const change = (part: Partial<Connection>): void => {
-    setEdited({ ...settings(), ...part })
+  /** What is in the boxes: what is being typed, or what the book already says. */
+  const place = (): Remote => edited() ?? getOrUndefined(journal())?.remote ?? NOWHERE
+  const key = (): string => typed() ?? saved() ?? ""
+  const change = (part: Partial<Remote>): void => {
+    setEdited({ ...place(), ...part })
   }
 
   const run = async (work: () => Promise<void>): Promise<void> => {
@@ -43,13 +46,14 @@ export function GitHubPanel(): JSX.Element {
 
   const save = (): Promise<void> =>
     run(async () => {
-      const current = settings()
-      const who = await whoami(current.token)
+      const who = await whoami(key())
       if (!who.ok) {
         setSnag({ at: "github", failure: who.error })
         return
       }
-      await connect(current)
+      await keepToken(key())
+      await setRemote(place())
+      setTyped(undefined)
       setEdited(undefined)
       await refetch()
       setSaid(t("github.connectedAs", { login: who.value }))
@@ -68,13 +72,13 @@ export function GitHubPanel(): JSX.Element {
 
   const drop = (): Promise<void> =>
     run(async () => {
-      await disconnect()
-      setEdited(EMPTY)
+      await forgetToken()
+      setTyped("")
       await refetch()
     })
 
   const ready = (): boolean =>
-    settings().owner !== "" && settings().repo !== "" && settings().path !== "" && settings().token !== ""
+    place().owner !== "" && place().repo !== "" && place().path !== "" && key() !== ""
 
   return (
     <section class="flex flex-col gap-2">
@@ -88,26 +92,26 @@ export function GitHubPanel(): JSX.Element {
       />
 
       <div class="grid grid-cols-2 gap-2">
-        <Field label={t("github.owner")} value={settings().owner} onChange={(owner) => change({ owner })} />
-        <Field label={t("github.repo")} value={settings().repo} onChange={(repo) => change({ repo })} />
+        <Field label={t("github.owner")} value={place().owner} onChange={(owner) => change({ owner })} />
+        <Field label={t("github.repo")} value={place().repo} onChange={(repo) => change({ repo })} />
       </div>
       <Field
         label={t("github.path")}
-        value={settings().path}
+        value={place().path}
         placeholder="books/main.journal"
         onChange={(path) => change({ path })}
       />
       <Field
         label={t("github.branch")}
-        value={settings().branch}
+        value={place().branch}
         placeholder={t("github.branchHint")}
         onChange={(branch) => change({ branch })}
       />
       <Field
         label={t("github.token")}
-        value={settings().token}
+        value={key()}
         secret
-        onChange={(token) => change({ token })}
+        onChange={setTyped}
       />
       <p class="text-xs text-muted-foreground">{t("github.tokenHint")}</p>
       <Folded summary={t("github.howTo")} steps={STEPS} link={MAKE_ONE} linkText={t("github.tokenPage")} />
@@ -133,7 +137,7 @@ export function GitHubPanel(): JSX.Element {
             {t("github.push")}
           </Button>
         </Show>
-        <Show when={kept() !== undefined}>
+        <Show when={saved() !== undefined}>
           <Button variant="ghost" size="sm" disabled={busy()} onClick={() => void drop()}>
             {t("github.disconnect")}
           </Button>
@@ -246,6 +250,8 @@ const words = (snag: Snag): string => {
   switch (snag.at) {
     case "not-connected":
       return t("github.notConnected")
+    case "no-place":
+      return t("github.noPlace")
     case "no-journal":
       return t("github.noJournal")
     case "diverged":

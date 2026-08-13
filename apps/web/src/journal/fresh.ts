@@ -1,7 +1,7 @@
 import type { Trouble } from "~/hledger/wire"
 import type { Result } from "~/lib/monad"
-import { connection } from "~/github/kept"
-import { open, type OpenJournal } from "./store"
+import type { Remote } from "./kept"
+import { startBook, type OpenJournal } from "./store"
 import { starterJournal } from "./starter"
 
 /**
@@ -22,15 +22,15 @@ import { starterJournal } from "./starter"
 const PLAIN = "main.journal"
 
 /**
- * Start one, named to match the repository if there is one.
+ * Start one, named to match the repository if one is given.
  *
- * Someone who has already said where their books will live has already chosen
- * the name; taking it from there means the first send lands at that path rather
- * than beside it.
+ * Someone who has already said where this book will live has already chosen the
+ * name; taking it from there means the first send lands at that path rather than
+ * beside it.
  */
-export const startFresh = async (): Promise<Result<OpenJournal, Trouble>> => {
-  const name = nameOf((await connection())?.path) ?? PLAIN
-  return open({ label: name, files: { [name]: starterJournal() }, entry: `/${name}` })
+export const startFresh = async (remote?: Remote): Promise<Result<OpenJournal, Trouble>> => {
+  const name = nameOf(remote?.path) ?? PLAIN
+  return startBook({ label: name, files: { [name]: starterJournal() }, entry: `/${name}` }, remote)
 }
 
 const nameOf = (path: string | undefined): string | undefined => {

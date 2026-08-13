@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # hledger-pwa
 
 A PWA for keeping hledger journals in a GitHub repository. The accounting is done
@@ -42,3 +46,68 @@ functions will do.
 
 - **Keep scope small, always.** In English, written on the assumption it will be
   grown.
+
+## Commands
+
+From `apps/web`. There is no linter and no test runner; `tsc` is the only check.
+
+```sh
+npm run dev      # licences, then vite on :8396      npm run build   # + tsc -b
+npx tsc -b       # typecheck alone
+node scripts/vendor-ui.mjs <name>...   # re-fetch a solid-ui component
+```
+
+The engine is a build output of `wasm/`, gitignored, and `src/hledger/ghc-jsffi.mjs`
+is imported by the worker — so a fresh clone cannot even start until:
+
+```sh
+../../wasm/scripts/build.sh hledger-bindings   # needs the ghc-wasm toolchain
+node scripts/sync-hledger.mjs                  # -> public/hledger.wasm, src/hledger/ghc-jsffi.mjs
+```
+
+`wasm/README.md` has the rest (`setup.sh`, benching, `serve.sh`).
+
+## Architecture
+
+`wasm/` makes hledger reachable from JavaScript; `apps/web` is everything around
+it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/`.
+
+- **The worker holds the journal.** `hledger/worker.ts` keeps one reactor
+  instance alive across calls — parsing costs ~290 ms, queries 10–25 ms. Files go
+  into a WASI `PreopenDirectory` rather than as strings, because hledger's text
+  entry point needs `createPipe` and because `include` then resolves itself.
+- **`hledger/client.ts` is the only way in**, answering `Result<T, Trouble>`;
+  nothing throws or rejects, and a dead worker settles everyone stranded.
+- **`hledger/wire.ts` mirrors `Bindings.hs`** — `Request`, `Answer`, `Trouble`
+  against its `Request` parser and `Failure` type. A new report means editing
+  both. Shapes are hledger's own `ToJSON`, so they follow upstream.
+- **The text is what is true.** `journal/store.ts` alone owns the open journal,
+  and every write is offered to hledger first and kept only if it reads.
+  `openBringingMissing` fetches `include`d files as hledger asks for them.
+- **`lib/idb.ts` is the whole database** — name, version, stores, migrations —
+  because IndexedDB versions all of it at once.
+- **`github/sync.ts`** appends local entries after remote ones when both texts
+  still begin with what was last agreed, and otherwise reports `diverged`
+  untouched. Straight to api.github.com; there is no backend anywhere.
+- **`app.tsx`** wires `lib/solid-workbench-ui` (MIT, kept app-agnostic); its
+  `NAV`/`FOOT`/`INNER` tables pair each route with its explorer, and one query in
+  the URL is shared by every view.
+- **`i18n/en.ts` is the type** every other dictionary is checked against.
+- **Generated or vendored, so don't hand-edit:** `src/generated/` (licences,
+  rebuilt each dev/build), `src/components/ui/*` (solid-ui), `wasm/vendor/`.
+
+## Constraints
+
+- **GPL-3.0-or-later**, inherited by linking hledger-lib; publishing here is what
+  satisfies it. Keep `lib/solid-workbench-ui` MIT and reusable.
+- **Upstream must stay followable.** Fix a wasm build failure as far from
+  hledger's source as possible: `cabal.project` → `shims/` → a `.cabal` patch →
+  its source last, recorded in `RESULTS.md`. Currently zero lines changed.
+- **The module is ~7 MB** against a 25 MiB Cloudflare limit, which is why
+  `maximumFileSizeToCacheInBytes` is raised in `vite.config.ts`.
+- **Money is never a float** — rendered from mantissa and scale in
+  `hledger/amount.ts`; hledger's float field is left out of `Quantity`.
+
+Commit subjects say what the app now does, not what was touched: "Let the journal
+be edited as the text it is".
+

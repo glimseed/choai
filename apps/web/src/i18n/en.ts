@@ -106,6 +106,11 @@ export const en = {
     remove: "Delete",
     hint: "hledger reads it before it replaces anything. The lines around it are left exactly as they are.",
   },
+  books: {
+    switch: "Which books these are",
+    add: "Add a book…",
+    addTitle: "Add a book",
+  },
   library: {
     title: "This journal",
     kept: "Kept on this device, so it is here again next time. Nothing leaves the browser.",
@@ -146,6 +151,7 @@ export const en = {
     merged: "The repository had moved on. What was written here was laid after it, and both are now the same.",
     nothing: "Already the same as the repository.",
     notConnected: "Fill this in first.",
+    noPlace: "Say where this book is kept, then save.",
     noJournal: "No journal is open.",
     unauthorised: "GitHub refused the token. Check it has Contents: read and write for this repository.",
     noSuchFile: "GitHub has no file at that path.",
