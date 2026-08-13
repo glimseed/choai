@@ -46,7 +46,7 @@ exports its functions to JavaScript, in `wasm/hledger-wasm/src/Bindings.hs`.
 ## Two sites
 
 - **`hledger-pwa.app`** — the app itself, from `apps/web/dist`.
-- **`docs.hledger-pwa.app`** — the page that explains it, from `apps/docs/dist`:
+- **`docs.hledger-pwa.app`** — the page that explains it, from `docs/dist`:
   a separate Astro project, English at the root and Japanese at `/ja/`. It loads
   no fonts, runs no scripts and tracks nobody, which is the same claim it makes
   on the app's behalf.

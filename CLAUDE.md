@@ -67,17 +67,18 @@ node scripts/sync-hledger.mjs                  # -> public/hledger.wasm, src/hle
 
 `wasm/README.md` has the rest (`setup.sh`, benching, `serve.sh`).
 
-The page that explains the app is its own Astro project in `apps/docs`, with its
-own dependencies and nothing of the app's. Two names, two deployments:
+The page that explains the app is its own Astro project in `docs/`, beside the
+app rather than inside it — where Vite keeps its own site. Its own dependencies,
+nothing of the app's, two names, two deployments:
 
 ```sh
-npm --prefix apps/docs run dev   # astro on :45720 (ASTRO in digits)
-scripts/build-site.sh            # apps/web/dist and apps/docs/dist, side by side
+npm --prefix docs run dev        # astro on :45720 (ASTRO in digits)
+scripts/build-site.sh            # apps/web/dist and docs/dist, side by side
 ```
 
 `hledger-pwa.app` serves `apps/web/dist`, `docs.hledger-pwa.app` serves
-`apps/docs/dist`. Where the app lives is `PUBLIC_APP` in `apps/docs/.env`, so
-development links to a local app rather than to the published one.
+`docs/dist`. Where the app lives is `PUBLIC_APP` in `docs/.env`, so development
+links to a local app rather than to the published one.
 
 ## Architecture
 
@@ -105,7 +106,7 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   `NAV`/`FOOT`/`INNER` tables pair each route with its explorer, and one query in
   the URL is shared by every view.
 - **`i18n/en.ts` is the type** every other dictionary is checked against, and
-  `apps/docs/src/words.ts` does the same for the landing page — which speaks to
+  `docs/src/words.ts` does the same for the landing page — which speaks to
   someone who has not opened the app, so it does not share the app's wording.
 - **Generated or vendored, so don't hand-edit:** `src/generated/` (licences,
   rebuilt each dev/build), `src/components/ui/*` (solid-ui), `wasm/vendor/`.
@@ -114,9 +115,9 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
 
 - **GPL-3.0-or-later**, inherited by linking hledger-lib; publishing here is what
   satisfies it. Keep `lib/solid-workbench-ui` MIT and reusable.
-- **`apps/docs` is MIT and must stay separable.** It links against nothing of the
-  app's — no shared config, no shared dependencies, no imports across `apps/` —
-  so hledger's licence does not reach it and it could be lifted into a
+- **`docs/` is MIT and must stay separable.** It links against nothing of the
+  app's — no shared config, no shared dependencies, no imports across the two —
+  so hledger's licence does not reach it, and it could be lifted into a
   repository of its own without unpicking anything.
 - **Upstream must stay followable.** Fix a wasm build failure as far from
   hledger's source as possible: `cabal.project` → `shims/` → a `.cabal` patch →

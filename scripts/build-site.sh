@@ -9,13 +9,13 @@
 #
 #   scripts/build-site.sh
 #     apps/web/dist   -> hledger-pwa.app
-#     apps/docs/dist  -> docs.hledger-pwa.app
+#     docs/dist       -> docs.hledger-pwa.app
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 npm --prefix apps/web run build
-npm --prefix apps/docs run build
+npm --prefix docs run build
 
 echo
 echo "apps/web/dist   -> hledger-pwa.app"
-echo "apps/docs/dist  -> docs.hledger-pwa.app"
+echo "docs/dist       -> docs.hledger-pwa.app"
