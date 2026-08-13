@@ -19,6 +19,10 @@ interface Props {
 
 const { words, heading } = Astro.props
 const BEACON = import.meta.env.PUBLIC_CF_BEACON ?? ""
+
+/** Where all of this is, app and site together, for anyone who wants to read it
+ * or run their own. */
+const SOURCE = "https://github.com/glimseed/hledger-pwa"
 const ja = words.lang === "ja"
 const here = Astro.url.pathname
 const inEnglish = here.replace(/^\/ja/, "") || "/"
@@ -71,6 +75,7 @@ const other = ja ? inEnglish : `/ja${inEnglish}`
         <p>{words.licence}</p>
         <p>{words.builtWith}</p>
         <nav>
+          <a href={SOURCE} rel="noreferrer">{words.sourceTitle}</a>
           <a href={at("/terms/")}>{words.termsTitle}</a>
           <a href={at("/privacy/")}>{words.privacyTitle}</a>
         </nav>

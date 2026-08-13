@@ -44,6 +44,7 @@ export const en = {
       body: "Nothing is served but static files, so it costs almost nothing to run and there is nothing to sell. No account to make, and nothing counted but the fact that a page was opened — without cookies, and never anything from a journal.",
     },
   ],
+  sourceTitle: "Source",
   termsTitle: "Terms of use",
   privacyTitle: "Privacy",
   licenceHeading: "Licence",
@@ -53,7 +54,8 @@ export const en = {
    * The two happen to be the same licence; this one is a choice rather than
    * something inherited from hledger, which this site links nothing of.
    */
-  licence: "This site is free software too, under the GNU General Public License, version 3 or later.",
+  licence:
+    "This site is free software too, under the GNU General Public License, version 3 or later. All of it is in the open, the app included.",
   builtWith: "Built with hledger, GHC's WebAssembly backend, SolidJS and Astro.",
 }
 
@@ -95,9 +97,11 @@ export const ja: Words = {
       body: "配っているのは静的ファイルだけなので、動かす費用がほとんどかかりません。売るものもありません。登録は不要で、数えているのは「ページが開かれた」ことだけ ── クッキーは使わず、帳簿の中身は一切含みません。",
     },
   ],
+  sourceTitle: "ソース",
   termsTitle: "利用規約",
   privacyTitle: "プライバシーポリシー",
   licenceHeading: "ライセンス",
-  licence: "このサイトも自由ソフトウェアです。GNU General Public License バージョン 3 以降のもとで公開しています。",
+  licence:
+    "このサイトも自由ソフトウェアです。GNU General Public License バージョン 3 以降のもとで公開しています。アプリも含めて、すべて公開しています。",
   builtWith: "hledger、GHC の WebAssembly バックエンド、SolidJS、Astro で作っています。",
 }
