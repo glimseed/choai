@@ -163,6 +163,9 @@ export const ja: Dictionary = {
   licenses: {
     title: "ライセンス",
     app: "hledger-pwa は GNU General Public License バージョン 3 以降のもとで公開されている自由ソフトウェアです。",
+    copyright: "Copyright © 2026 hledger-pwa contributors.",
+    warranty:
+      "法律が認める範囲で、一切の保証はありません。このライセンスの条件のもとで再配布できます。",
     hledger:
       "計算しているのは hledger 本体を WebAssembly にしたものです。hledger の著作権は Simon Michael と貢献者にあり、同じライセンスで公開されています。このアプリが同じライセンスなのはそのためです。",
     show: "すべてのパッケージとライセンス",

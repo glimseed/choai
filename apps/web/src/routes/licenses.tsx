@@ -17,6 +17,8 @@ export default function Licenses(): JSX.Element {
       <section class="flex flex-col gap-2">
         <h2 class="text-sm font-medium">{t("licenses.title")}</h2>
         <p class="text-xs text-muted-foreground">{t("licenses.app")}</p>
+        <p class="text-xs text-muted-foreground">{t("licenses.copyright")}</p>
+        <p class="text-xs text-muted-foreground">{t("licenses.warranty")}</p>
         <p class="text-xs text-muted-foreground">{t("licenses.hledger")}</p>
       </section>
       <Show when={credits()} fallback={<p class="text-xs text-muted-foreground">{t("licenses.loading")}</p>}>

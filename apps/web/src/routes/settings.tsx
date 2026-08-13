@@ -35,6 +35,7 @@ export default function Settings(): JSX.Element {
       <section class="flex flex-col gap-2">
         <h2 class="text-sm font-medium">{t("licenses.title")}</h2>
         <p class="text-xs text-muted-foreground">{t("licenses.app")}</p>
+        <p class="text-xs text-muted-foreground">{t("licenses.copyright")}</p>
         <A
           href="/licenses"
           class="self-start text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"

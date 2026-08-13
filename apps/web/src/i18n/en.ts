@@ -170,6 +170,9 @@ export const en = {
   licenses: {
     title: "Licences",
     app: "hledger-pwa is free software under the GNU General Public License, version 3 or later.",
+    copyright: "Copyright © 2026 hledger-pwa contributors.",
+    warranty:
+      "It comes with absolutely no warranty, to the extent the law allows. You are welcome to redistribute it under the terms of that licence.",
     hledger:
       "The accounting is done by hledger itself, compiled to WebAssembly. hledger is copyright Simon Michael and contributors, under the same licence — which is why this app is under it too.",
     show: "Every package and its licence",
