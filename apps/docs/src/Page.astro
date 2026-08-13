@@ -11,6 +11,9 @@ import type { Words } from "./words"
 
 const { words } = Astro.props as { words: Words }
 const HLEDGER = "https://hledger.org"
+
+/** The app is a site of its own; locally it is whatever is running on 8396. */
+const APP = import.meta.env.PUBLIC_APP ?? "https://hledger-pwa.app"
 ---
 
 <!doctype html>
@@ -25,8 +28,8 @@ const HLEDGER = "https://hledger.org"
     <meta property="og:title" content={words.title} />
     <meta property="og:description" content={words.description} />
     <meta property="og:type" content="website" />
-    <link rel="alternate" hreflang="en" href="/lp/" />
-    <link rel="alternate" hreflang="ja" href="/lp/ja/" />
+    <link rel="alternate" hreflang="en" href="/" />
+    <link rel="alternate" hreflang="ja" href="/ja/" />
     <style>
       :root {
         --ink: #0a0a0a;
@@ -93,7 +96,7 @@ const HLEDGER = "https://hledger.org"
       <p class="lead">{words.lead}</p>
 
       <div class="ways">
-        <a class="button" href="/">{words.open}</a>
+        <a class="button" href={APP}>{words.open}</a>
         <a class="quiet" href={HLEDGER} rel="noreferrer">{words.aboutHledger} →</a>
       </div>
 
@@ -112,7 +115,7 @@ const HLEDGER = "https://hledger.org"
         <p><strong>{words.licenceHeading}</strong></p>
         <p>{words.licence}</p>
         <p>{words.hledgerCredit}</p>
-        <p><a href="/licenses">{words.licencesLink}</a></p>
+        <p><a href={`${APP}/licenses`}>{words.licencesLink}</a></p>
         <p>{words.builtWith}</p>
       </footer>
     </main>

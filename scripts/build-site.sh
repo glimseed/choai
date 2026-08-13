@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
-# Build everything that gets served, into one directory.
+# Build both sites that get published.
 #
-# The app is at the root and the landing page is under /lp, which is what lets
-# the page link straight to `/` and to the licence page inside the app. They are
-# separate projects with separate dependencies; only their output shares a site.
+# They are two names and two deployments, not one site with a corner cut out of
+# it: the app is a service worker, a WebAssembly module and a cache to match,
+# and the page that explains it is static files that should not carry any of
+# that. Each ends up in its own directory, and each directory is what its host
+# serves at the root of its name.
 #
-#   scripts/build-site.sh     # -> apps/web/dist
+#   scripts/build-site.sh
+#     apps/web/dist   -> hledger-pwa.app
+#     apps/docs/dist  -> docs.hledger-pwa.app
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 npm --prefix apps/web run build
-npm --prefix apps/lp run build
+npm --prefix apps/docs run build
 
-rm -rf apps/web/dist/lp
-cp -r apps/lp/dist apps/web/dist/lp
-echo "site -> apps/web/dist (app at /, landing page at /lp/)"
+echo
+echo "apps/web/dist   -> hledger-pwa.app"
+echo "apps/docs/dist  -> docs.hledger-pwa.app"

@@ -67,13 +67,17 @@ node scripts/sync-hledger.mjs                  # -> public/hledger.wasm, src/hle
 
 `wasm/README.md` has the rest (`setup.sh`, benching, `serve.sh`).
 
-The landing page is its own Astro project in `apps/lp`, with its own
-dependencies and nothing of the app's:
+The page that explains the app is its own Astro project in `apps/docs`, with its
+own dependencies and nothing of the app's. Two names, two deployments:
 
 ```sh
-npm --prefix apps/lp run dev     # astro on :45720 (ASTRO in digits), page at /lp/
-scripts/build-site.sh            # both, assembled: app at /, page at /lp/
+npm --prefix apps/docs run dev   # astro on :45720 (ASTRO in digits)
+scripts/build-site.sh            # apps/web/dist and apps/docs/dist, side by side
 ```
+
+`hledger-pwa.app` serves `apps/web/dist`, `docs.hledger-pwa.app` serves
+`apps/docs/dist`. Where the app lives is `PUBLIC_APP` in `apps/docs/.env`, so
+development links to a local app rather than to the published one.
 
 ## Architecture
 
@@ -101,7 +105,7 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   `NAV`/`FOOT`/`INNER` tables pair each route with its explorer, and one query in
   the URL is shared by every view.
 - **`i18n/en.ts` is the type** every other dictionary is checked against, and
-  `apps/lp/src/words.ts` does the same for the landing page — which speaks to
+  `apps/docs/src/words.ts` does the same for the landing page — which speaks to
   someone who has not opened the app, so it does not share the app's wording.
 - **Generated or vendored, so don't hand-edit:** `src/generated/` (licences,
   rebuilt each dev/build), `src/components/ui/*` (solid-ui), `wasm/vendor/`.

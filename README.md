@@ -43,12 +43,15 @@ them.
 Not one line of hledger's source is modified. What we write is the binding that
 exports its functions to JavaScript, in `wasm/hledger-wasm/src/Bindings.hs`.
 
-## The landing page
+## Two sites
 
-`apps/lp` is a separate Astro project, built to `/lp` of the same site so that it
-can link straight to the app and to its licence page. English at `/lp/`, Japanese
-at `/lp/ja/`. It loads no fonts, no scripts and no analytics — the same claim the
-page itself makes about the app.
+- **`hledger-pwa.app`** — the app itself, from `apps/web/dist`.
+- **`docs.hledger-pwa.app`** — the page that explains it, from `apps/docs/dist`:
+  a separate Astro project, English at the root and Japanese at `/ja/`. It loads
+  no fonts, runs no scripts and tracks nobody, which is the same claim it makes
+  on the app's behalf.
+
+`scripts/build-site.sh` builds both.
 
 ## License
 
