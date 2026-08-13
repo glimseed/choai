@@ -2,13 +2,15 @@
 
 The site that explains the app, to somebody who has not opened it.
 
-**MIT, not GPL.** It shares no code with the app: nothing here is linked
-against hledger, so nothing here inherits hledger's licence. It sits in the same
-repository for convenience — beside the app rather than inside it, which is
-where Vite keeps its own site — and is built on its own, with its own
-dependencies, into its own directory. The GPL at the root of this repository covers the app
-and the engine; this directory carries its own LICENSE and that is the one that
-applies to it.
+**GPL-3.0-or-later, by choice.** Nothing here links against hledger, so nothing
+here inherits hledger's licence — the app's copyleft does not reach this
+directory. It is under the same terms because that is what this project wants
+for everything it publishes, and the LICENSE at the root of the repository is
+the one that says so.
+
+It is still its own project: its own dependencies, its own build, its own
+output, and no imports in either direction. Nothing about the licence changes
+that, and it could still be lifted out into a repository of its own.
 
 ```sh
 npm install
@@ -18,3 +20,5 @@ npm run build   # -> dist, served at the root of docs.hledger-pwa.dev
 
 `PUBLIC_APP` in `.env` says where the app is, so a page built here links to the
 published app and a page run here links to the one on this machine.
+`PUBLIC_CF_BEACON` is the Cloudflare Web Analytics token; with it unset, no
+counter is written into the page at all.

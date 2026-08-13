@@ -50,8 +50,10 @@ export const en = {
   /**
    * This site's own, and only this site's. What the app is under is the app's to
    * say, and it says it — in its settings, with every package it is made of.
+   * The two happen to be the same licence; this one is a choice rather than
+   * something inherited from hledger, which this site links nothing of.
    */
-  licence: "This site is MIT. It shares no code with the app.",
+  licence: "This site is free software too, under the GNU General Public License, version 3 or later.",
   builtWith: "Built with hledger, GHC's WebAssembly backend, SolidJS and Astro.",
 }
 
@@ -96,6 +98,6 @@ export const ja: Words = {
   termsTitle: "利用規約",
   privacyTitle: "プライバシーポリシー",
   licenceHeading: "ライセンス",
-  licence: "このサイトは MIT です。アプリとコードを共有していません。",
+  licence: "このサイトも自由ソフトウェアです。GNU General Public License バージョン 3 以降のもとで公開しています。",
   builtWith: "hledger、GHC の WebAssembly バックエンド、SolidJS、Astro で作っています。",
 }
