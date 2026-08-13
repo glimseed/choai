@@ -11,7 +11,10 @@ import { defineConfig } from "astro/config"
  */
 export default defineConfig({
   site: "https://docs.hledger-pwa.app",
-  trailingSlash: "always",
+  // Both /ja and /ja/ answer. The pages are written to directories, so a host
+  // serves either spelling, and refusing one of them locally only means a link
+  // typed by hand fails on a laptop and works once published.
+  trailingSlash: "ignore",
   build: { format: "directory" },
   // ASTRO in the digits its letters look like. Ports stop at 65535, so five of
   // them starting with a 4 is as much room as there is. The app next door plays
