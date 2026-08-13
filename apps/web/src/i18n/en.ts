@@ -109,6 +109,7 @@ export const en = {
   books: {
     switch: "Which books these are",
     add: "Add a book…",
+    none: "No book selected",
     addTitle: "Add a book",
     addBody: "Another set of books, kept apart from the ones already here. Nothing is mixed: each is its own files.",
     fromGitHub: "Take from a repository",
@@ -117,6 +118,7 @@ export const en = {
   },
   library: {
     title: "This journal",
+    nameLives: "Kept as the first line of the journal, so it travels with the file.",
     kept: "Kept on this device, so it is here again next time. Nothing leaves the browser.",
     notKept: "This browser may clear it if the app goes unused. Installing the app, or syncing to GitHub, makes it certain.",
     close: "Close and clear from this device",

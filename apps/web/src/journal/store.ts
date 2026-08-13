@@ -7,6 +7,7 @@ import { createTask } from "~/lib/pending"
 import { Err, None, Ok, Some, getOrUndefined, match, type Option, type Result } from "~/lib/monad"
 import { t } from "~/i18n"
 import { demoJournal } from "./demo"
+import { retitled, titleOf } from "./title"
 import {
   allBooks,
   bookWithFiles,
@@ -111,12 +112,20 @@ const attempt = (source: Source): Promise<Result<JournalSummary, Trouble>> =>
     .run(() => openJournal(source.files, source.entry))
     .catch((cause: unknown) => Err<Trouble, JournalSummary>({ kind: "unreachable", detail: String(cause) }))
 
-const remember = (open: OpenJournal): Result<OpenJournal, Trouble> => {
+const remember = (raw: OpenJournal): Result<OpenJournal, Trouble> => {
+  const open = { ...raw, source: { ...raw.source, label: nameOf(raw.source) } }
   setOpened(Some(open))
   setTrouble(None)
   void keepOnThisDevice(open)
   return Ok(open)
 }
+
+/**
+ * What to call these books: what they call themselves, or failing that whatever
+ * they were opened as — a file name, or the repository they came from.
+ */
+const nameOf = (source: Source): string =>
+  titleOf(source.files[source.entry.replace(/^\//, "")] ?? "") ?? source.label
 
 /**
  * Kept only once hledger has read it.
@@ -195,12 +204,21 @@ export const removeBook = async (id: string): Promise<void> => {
   await restock()
 }
 
-/** Call a book something else. Only its name changes; nothing in it moves. */
-export const renameBook = async (name: string): Promise<void> => {
+/**
+ * Call a book something else.
+ *
+ * Written into the journal's own first line rather than kept beside it, so the
+ * name is the file's and goes with it — to another device, to a repository, to
+ * whoever is handed it. Only a comment changes; hledger reads it after, as it
+ * reads every other change.
+ */
+export const renameBook = async (name: string): Promise<Result<OpenJournal, Trouble>> => {
   const current = getOrUndefined(opened())
-  if (current === undefined || name.trim() === "") return
-  setOpened(Some({ ...current, source: { ...current.source, label: name.trim() } }))
-  await keepOnThisDevice({ ...current, source: { ...current.source, label: name.trim() } })
+  if (current === undefined || name.trim() === "") return Err({ kind: "no-journal" })
+  const path = current.source.entry.replace(/^\//, "")
+  const text = current.source.files[path]
+  if (text === undefined) return Err({ kind: "file-missing", path })
+  return rewriteFile(path, retitled(text, name.trim()))
 }
 
 /** Say where this book is kept, which is the one thing syncing needs of it. */

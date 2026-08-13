@@ -70,6 +70,7 @@ function Library(): JSX.Element {
               onChange={(event) => void renameBook(event.currentTarget.value)}
             />
           </TextField>
+          <p class="text-xs text-muted-foreground">{t("library.nameLives")}</p>
           <p class="text-xs text-muted-foreground">
             {promised() === false ? t("library.notKept") : t("library.kept")}
           </p>

@@ -12,8 +12,11 @@ import { t } from "~/i18n"
  * what they cannot see, and must never be wrong about, is whose books are on
  * screen — a company's or a household's.
  *
- * Adding one is the same three ways as ever, so the button at the foot goes to
- * the screen that already offers them rather than repeating it here.
+ * Adding one is the same ways as ever, so the button at the foot goes to the
+ * screen that already offers them rather than repeating it here.
+ *
+ * With nothing open it says so. The app's own name would be advertising in the
+ * one place that is meant to answer a question.
  */
 export function BookSwitcher(props: { onAdd: () => void; onSwitched: () => void }): JSX.Element {
   const [open, setOpen] = createSignal(false)
@@ -36,7 +39,7 @@ export function BookSwitcher(props: { onAdd: () => void; onSwitched: () => void 
         aria-expanded={open()}
         class="inline-flex max-w-32 items-center gap-1 truncate rounded px-1 font-semibold tracking-tight transition-colors hover:bg-accent sm:max-w-48"
       >
-        <span class="truncate">{current() ?? t("app.name")}</span>
+        <span class="truncate">{current() ?? t("books.none")}</span>
         <span aria-hidden="true" class="text-[10px] text-muted-foreground">
           ▾
         </span>
