@@ -1,3 +1,9 @@
 dist/
 .astro/
 node_modules/
+
+# Anything private goes here and is never committed. What is checked in --
+# .env and .env.development -- holds only what ends up in the page anyway:
+# where the app is, and the analytics token, which is public by design.
+.env.local
+.env.*.local
