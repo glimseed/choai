@@ -41,9 +41,11 @@ export const en = {
     },
     {
       heading: "Free, and without advertising",
-      body: "Nothing is served but static files, so it costs almost nothing to run and there is nothing to sell. No account here, no tracking.",
+      body: "Nothing is served but static files, so it costs almost nothing to run and there is nothing to sell. No account to make, and nothing counted but the fact that a page was opened — without cookies, and never anything from a journal.",
     },
   ],
+  termsTitle: "Terms of use",
+  privacyTitle: "Privacy",
   licenceHeading: "Licence",
   /**
    * This site's own, and only this site's. What the app is under is the app's to
@@ -88,9 +90,11 @@ export const ja: Words = {
     },
     {
       heading: "無料、広告なし",
-      body: "配っているのは静的ファイルだけなので、動かす費用がほとんどかかりません。売るものもありません。ここでの登録も、追跡もありません。",
+      body: "配っているのは静的ファイルだけなので、動かす費用がほとんどかかりません。売るものもありません。登録は不要で、数えているのは「ページが開かれた」ことだけ ── クッキーは使わず、帳簿の中身は一切含みません。",
     },
   ],
+  termsTitle: "利用規約",
+  privacyTitle: "プライバシーポリシー",
   licenceHeading: "ライセンス",
   licence: "このサイトは MIT です。アプリとコードを共有していません。",
   builtWith: "hledger、GHC の WebAssembly バックエンド、SolidJS、Astro で作っています。",

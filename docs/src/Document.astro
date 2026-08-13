@@ -1,0 +1,29 @@
+---
+/**
+ * A page of terms rather than of persuasion: one column, headings, and the date
+ * it last changed at the top where somebody checking will look for it.
+ */
+import Shell from "./Shell.astro"
+import type { Document } from "./legal"
+import type { Words } from "./words"
+
+const { words, document } = Astro.props as { words: Words; document: Document }
+---
+
+<Shell words={words} heading={document.title}>
+  <article>
+    <h1>{document.title}</h1>
+    <p class="updated">{document.updated}</p>
+    <p class="intro">{document.intro}</p>
+    {
+      document.sections.map((section) => (
+        <>
+          <h2>{section.heading}</h2>
+          {section.body.map((line) => (
+            <p>{line}</p>
+          ))}
+        </>
+      ))
+    }
+  </article>
+</Shell>

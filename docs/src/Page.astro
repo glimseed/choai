@@ -1,121 +1,32 @@
 ---
 /**
- * The whole page, in whichever language it was given.
- *
- * One file for both, because the two say the same things in the same order —
- * only the words differ, and those live in words.ts. Everything is inline: no
- * fonts to fetch, no scripts, nothing to track anyone with. That is not a
- * flourish, it is the same claim the page makes about the app.
+ * The front page: what the app is, to somebody who has not opened it.
  */
+import Shell from "./Shell.astro"
 import type { Words } from "./words"
 
 const { words } = Astro.props as { words: Words }
 const HLEDGER = "https://hledger.org"
-
-/** The app is a site of its own; locally it is whatever is running on 8396. */
 const APP = import.meta.env.PUBLIC_APP ?? "https://hledger-pwa.dev"
 ---
 
-<!doctype html>
-<html lang={words.lang}>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{words.title}</title>
-    <meta name="description" content={words.description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#000031" />
-    <meta property="og:title" content={words.title} />
-    <meta property="og:description" content={words.description} />
-    <meta property="og:type" content="website" />
-    <link rel="alternate" hreflang="en" href="/" />
-    <link rel="alternate" hreflang="ja" href="/ja/" />
-    <style>
-      :root {
-        --ink: #0a0a0a;
-        --quiet: #5b5b66;
-        --line: #e5e5ea;
-        --deep: #000031;
-        --bright: #2fc3c5;
-        --paper: #ffffff;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --ink: #f5f5f7;
-          --quiet: #a1a1ac;
-          --line: #26262c;
-          --paper: #0c0c10;
-          --deep: #cfe9ea;
-        }
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        background: var(--paper);
-        color: var(--ink);
-        font: 16px/1.7 ui-sans-serif, system-ui, -apple-system, "Hiragino Kaku Gothic ProN",
-          "Noto Sans JP", sans-serif;
-        -webkit-font-smoothing: antialiased;
-      }
-      main { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
-      header { display: flex; align-items: center; gap: 0.75rem; }
-      header img { width: 3.5rem; height: 3.5rem; }
-      h1 { font-size: 1.9rem; line-height: 1.25; margin: 1.75rem 0 0; letter-spacing: -0.01em; }
-      .lead { color: var(--quiet); font-size: 1.05rem; margin: 0.75rem 0 0; }
-      .ways { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 2rem 0 0; }
-      a.button {
-        display: inline-block; padding: 0.6rem 1.1rem; border-radius: 0.5rem;
-        background: var(--deep); color: var(--paper); text-decoration: none; font-weight: 600;
-      }
-      @media (prefers-color-scheme: dark) { a.button { color: #06060a; } }
-      a.quiet { display: inline-block; padding: 0.6rem 0.4rem; color: var(--quiet); }
-      a { color: inherit; text-underline-offset: 3px; }
-      ul.points { list-style: none; padding: 0; margin: 3rem 0 0; display: grid; gap: 1.5rem; }
-      @media (min-width: 42rem) { ul.points { grid-template-columns: 1fr 1fr; gap: 1.75rem 2rem; } }
-      h2 { font-size: 1rem; margin: 0 0 0.35rem; }
-      h2::before { content: ""; display: inline-block; width: 0.6rem; height: 0.6rem; margin-right: 0.5rem;
-        border-radius: 2px; background: linear-gradient(135deg, var(--bright), var(--deep)); }
-      ul.points p { margin: 0; color: var(--quiet); font-size: 0.925rem; }
-      footer { margin: 3.5rem 0 0; padding-top: 1.5rem; border-top: 1px solid var(--line);
-        color: var(--quiet); font-size: 0.85rem; }
-      footer p { margin: 0 0 0.5rem; }
-      .switch { margin-left: auto; font-size: 0.85rem; color: var(--quiet); }
-    </style>
-  </head>
-  <body>
-    <main>
-      <header>
-        <img src="/favicon.svg" alt="" width="56" height="56" />
-        <strong>hledger-pwa</strong>
-        <a class="switch" href={words.other.href} lang={words.other.label === "日本語" ? "ja" : "en"}>
-          {words.other.label}
-        </a>
-      </header>
+<Shell words={words}>
+  <h1>{words.tagline}</h1>
+  <p class="lead">{words.lead}</p>
 
-      <h1>{words.tagline}</h1>
-      <p class="lead">{words.lead}</p>
+  <div class="ways">
+    <a class="button" href={APP}>{words.open}</a>
+    <a class="quiet" href={HLEDGER} rel="noreferrer">{words.aboutHledger} →</a>
+  </div>
 
-      <div class="ways">
-        <a class="button" href={APP}>{words.open}</a>
-        <a class="quiet" href={HLEDGER} rel="noreferrer">{words.aboutHledger} →</a>
-      </div>
-
-      <ul class="points">
-        {
-          words.points.map((point) => (
-            <li>
-              <h2>{point.heading}</h2>
-              <p>{point.body}</p>
-            </li>
-          ))
-        }
-      </ul>
-
-      <footer>
-        <p><strong>{words.licenceHeading}</strong></p>
-        <p>{words.licence}</p>
-        <p>{words.builtWith}</p>
-      </footer>
-    </main>
-  </body>
-</html>
+  <ul class="points">
+    {
+      words.points.map((point) => (
+        <li>
+          <h2>{point.heading}</h2>
+          <p>{point.body}</p>
+        </li>
+      ))
+    }
+  </ul>
+</Shell>

@@ -1,0 +1,139 @@
+---
+/**
+ * Everything every page here has: the head, the look, the way to the other
+ * language, and the footer.
+ *
+ * Styles are inline and there are no fonts to fetch. The one thing that leaves
+ * the page is Cloudflare's counter, and only once a token has been set for it —
+ * a page that tells the reader what it collects should not have a script
+ * waiting on a blank to be filled in.
+ */
+import type { Words } from "./words"
+
+interface Props {
+  words: Words
+  /** Named for pages that are not the front one; it goes before the app's name. */
+  heading?: string
+}
+
+const { words, heading } = Astro.props
+const BEACON = import.meta.env.PUBLIC_CF_BEACON ?? ""
+const ja = words.lang === "ja"
+const here = Astro.url.pathname
+const inEnglish = here.replace(/^\/ja/, "") || "/"
+const title = heading === undefined ? words.title : `${heading} — hledger-pwa`
+const at = (path: string): string => (ja ? `/ja${path}` : path)
+
+/**
+ * The same page in the other language, rather than its front page. Someone
+ * reading the terms who switches wants the terms, not to start again.
+ */
+const other = ja ? inEnglish : `/ja${inEnglish}`
+---
+
+<!doctype html>
+<html lang={words.lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={words.description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#000031" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={words.description} />
+    <meta property="og:type" content="website" />
+    <link rel="alternate" hreflang="en" href={inEnglish} />
+    <link rel="alternate" hreflang="ja" href={`/ja${inEnglish}`.replace(/\/$/, "/")} />
+    <style>
+      :root {
+        --ink: #0a0a0a;
+        --quiet: #5b5b66;
+        --line: #e5e5ea;
+        --deep: #000031;
+        --bright: #2fc3c5;
+        --paper: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ink: #f5f5f7;
+          --quiet: #a1a1ac;
+          --line: #26262c;
+          --paper: #0c0c10;
+          --deep: #cfe9ea;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 16px/1.7 ui-sans-serif, system-ui, -apple-system, "Hiragino Kaku Gothic ProN",
+          "Noto Sans JP", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+      header { display: flex; align-items: center; gap: 0.75rem; }
+      header img { width: 3.5rem; height: 3.5rem; }
+      header a.home { color: inherit; text-decoration: none; }
+      h1 { font-size: 1.9rem; line-height: 1.25; margin: 1.75rem 0 0; letter-spacing: -0.01em; }
+      .lead { color: var(--quiet); font-size: 1.05rem; margin: 0.75rem 0 0; }
+      .ways { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 2rem 0 0; }
+      a.button {
+        display: inline-block; padding: 0.6rem 1.1rem; border-radius: 0.5rem;
+        background: var(--deep); color: var(--paper); text-decoration: none; font-weight: 600;
+      }
+      @media (prefers-color-scheme: dark) { a.button { color: #06060a; } }
+      a.quiet { display: inline-block; padding: 0.6rem 0.4rem; color: var(--quiet); }
+      a { color: inherit; text-underline-offset: 3px; }
+      ul.points { list-style: none; padding: 0; margin: 3rem 0 0; display: grid; gap: 1.5rem; }
+      @media (min-width: 42rem) { ul.points { grid-template-columns: 1fr 1fr; gap: 1.75rem 2rem; } }
+      h2 { font-size: 1rem; margin: 0 0 0.35rem; }
+      ul.points h2::before { content: ""; display: inline-block; width: 0.6rem; height: 0.6rem;
+        margin-right: 0.5rem; border-radius: 2px;
+        background: linear-gradient(135deg, var(--bright), var(--deep)); }
+      ul.points p { margin: 0; color: var(--quiet); font-size: 0.925rem; }
+      article { margin-top: 2.5rem; }
+      article h1 { margin-top: 0; font-size: 1.6rem; }
+      article h2 { font-size: 1.05rem; margin: 2.25rem 0 0.5rem; }
+      article p { color: var(--quiet); margin: 0 0 0.75rem; }
+      article .updated { font-size: 0.85rem; margin-top: 0.5rem; }
+      article .intro { color: var(--ink); }
+      footer { margin: 3.5rem 0 0; padding-top: 1.5rem; border-top: 1px solid var(--line);
+        color: var(--quiet); font-size: 0.85rem; }
+      footer p { margin: 0 0 0.5rem; }
+      footer nav { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+      .switch { margin-left: auto; font-size: 0.85rem; color: var(--quiet); }
+    </style>
+    {
+      BEACON !== "" && (
+        <script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={`{"token": "${BEACON}"}`}
+        />
+      )
+    }
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="/favicon.svg" alt="" width="56" height="56" />
+        <a class="home" href={at("/")}><strong>hledger-pwa</strong></a>
+        <a class="switch" href={other}>{words.other.label}</a>
+      </header>
+
+      <slot />
+
+      <footer>
+        <p><strong>{words.licenceHeading}</strong></p>
+        <p>{words.licence}</p>
+        <p>{words.builtWith}</p>
+        <nav>
+          <a href={at("/terms/")}>{words.termsTitle}</a>
+          <a href={at("/privacy/")}>{words.privacyTitle}</a>
+        </nav>
+      </footer>
+    </main>
+  </body>
+</html>
