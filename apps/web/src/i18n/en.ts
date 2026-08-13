@@ -110,6 +110,10 @@ export const en = {
     switch: "Which books these are",
     add: "Add a book…",
     addTitle: "Add a book",
+    addBody: "Another set of books, kept apart from the ones already here. Nothing is mixed: each is its own files.",
+    fromGitHub: "Take from a repository",
+    needsToken: "An access token is needed first, in",
+    notTaken: "Nothing came back from there. Check the owner, the repository and the path.",
   },
   library: {
     title: "This journal",

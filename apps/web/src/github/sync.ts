@@ -71,9 +71,29 @@ const reachable = async (): Promise<Result<{ token: string; open: OpenJournal },
 export const pull = async (): Promise<Result<Outcome, Snag>> => {
   const reach = await reachable()
   if (!reach.ok) return reach
-  const { token: key, open } = reach.value
-  const remote = open.remote as Remote
+  return take(reach.value.token, reach.value.open.remote as Remote, reach.value.open.bookId, reach.value.open.source.label)
+}
 
+/**
+ * Take a copy as a book of its own.
+ *
+ * How someone with books already in a repository arrives: nothing has to be
+ * made here first and then thrown away. The name is the repository's, which is
+ * what the reader called it when they made it, and it can be changed after.
+ */
+export const pullAsNewBook = async (remote: Remote): Promise<Result<Outcome, Snag>> => {
+  const key = await token()
+  if (key === undefined || key === "") return Err({ at: "not-connected" })
+  if (remote.path === "") return Err({ at: "no-place" })
+  return take(key, remote, crypto.randomUUID(), `${remote.owner}/${remote.repo}`)
+}
+
+const take = async (
+  key: string,
+  remote: Remote,
+  into: string,
+  name: string,
+): Promise<Result<Outcome, Snag>> => {
   const entry = nameOf(remote.path)
   const directory = directoryOf(remote.path)
   const brought = new Map<string, { text: string; sha: string; repoPath: string }>()
@@ -90,18 +110,17 @@ export const pull = async (): Promise<Result<Outcome, Snag>> => {
   if (!first.ok) return Err({ at: "github", failure: first.error })
   brought.set(entry, { text: first.value.text, sha: first.value.sha, repoPath: remote.path })
 
-  // The copy taken replaces this book rather than becoming another: it is the
-  // same books, fetched from where they are kept.
   const opened = await openBringingMissing(
-    { label: open.source.label, files: { [entry]: first.value.text }, entry: `/${entry}` },
+    { label: name, files: { [entry]: first.value.text }, entry: `/${entry}` },
     bring,
     remote,
+    into,
   )
   if (!opened.ok) return Err({ at: "hledger", trouble: opened.error })
 
   await Promise.all(
     [...brought].map(([path, file]) =>
-      agree(open.bookId, { path, repoPath: file.repoPath, sha: file.sha, baseText: file.text, at: Date.now() }),
+      agree(into, { path, repoPath: file.repoPath, sha: file.sha, baseText: file.text, at: Date.now() }),
     ),
   )
   return Ok({ did: "pulled", files: brought.size })

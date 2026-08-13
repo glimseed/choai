@@ -103,6 +103,10 @@ export const ja: Dictionary = {
     switch: "どの帳簿か",
     add: "帳簿を追加…",
     addTitle: "帳簿を追加",
+    addBody: "もう一組の帳簿を、いまある帳簿とは別に持ちます。混ざりません。それぞれが別のファイルです。",
+    fromGitHub: "リポジトリから取り込む",
+    needsToken: "先にアクセストークンが要ります。場所は",
+    notTaken: "そこからは何も返ってきませんでした。オーナー・リポジトリ・パスを確かめてください。",
   },
   library: {
     title: "いま開いている帳簿",

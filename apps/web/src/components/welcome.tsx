@@ -7,6 +7,7 @@ import { getOrUndefined } from "~/lib/monad"
 import { Button } from "~/components/ui/button"
 import { t } from "~/i18n"
 import { TroubleNote } from "./trouble-note"
+import { TakeFromGitHub } from "./take-from-github"
 
 /**
  * What there is to do when no journal is open yet.
@@ -15,18 +16,18 @@ import { TroubleNote } from "./trouble-note"
  * to open one, a moment before one appears, would be an invitation to undo what
  * the app is in the middle of doing.
  */
-export function Welcome(): JSX.Element {
+export function Welcome(props: { adding?: boolean }): JSX.Element {
   return (
     <Show
       when={!settling()}
       fallback={<p class="mx-auto max-w-md py-16 text-sm text-muted-foreground">{t("welcome.starting")}</p>}
     >
-      <Choices />
+      <Choices adding={props.adding === true} />
     </Show>
   )
 }
 
-function Choices(): JSX.Element {
+function Choices(props: { adding: boolean }): JSX.Element {
   let chooser!: HTMLInputElement
   const navigate = useNavigate()
 
@@ -38,9 +39,11 @@ function Choices(): JSX.Element {
   return (
     <div class="mx-auto flex max-w-md flex-col items-start gap-4 py-16">
       <div>
-        <h2 class="text-lg font-semibold">{t("welcome.heading")}</h2>
+        <h2 class="text-lg font-semibold">
+          {props.adding ? t("books.addTitle") : t("welcome.heading")}
+        </h2>
         <p class="mt-1 text-sm text-muted-foreground">
-          {t("welcome.body")}
+          {props.adding ? t("books.addBody") : t("welcome.body")}
         </p>
       </div>
 
@@ -74,6 +77,8 @@ function Choices(): JSX.Element {
       <Show when={getOrUndefined(openingTrouble())}>
         {(trouble) => <TroubleNote trouble={trouble()} />}
       </Show>
+
+      <TakeFromGitHub />
     </div>
   )
 }

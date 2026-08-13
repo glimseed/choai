@@ -10,5 +10,5 @@ import { Welcome } from "~/components/welcome"
  * so it is shown here rather than written again.
  */
 export default function Add(): JSX.Element {
-  return <Welcome />
+  return <Welcome adding />
 }

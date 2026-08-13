@@ -249,13 +249,14 @@ export const openBringingMissing = async (
   source: Source,
   bring: (path: string) => Promise<string | undefined>,
   remote?: Remote,
+  into?: string,
   left: number = FETCHES,
 ): Promise<Result<OpenJournal, Trouble>> => {
   const read = await attempt(source)
   if (read.ok) {
     const current = getOrUndefined(opened())
     return remember({
-      bookId: current?.bookId ?? crypto.randomUUID(),
+      bookId: into ?? current?.bookId ?? crypto.randomUUID(),
       source,
       remote: remote ?? current?.remote,
       summary: read.value,
@@ -271,7 +272,7 @@ export const openBringingMissing = async (
     setTrouble(Some(read.error))
     return Err(read.error)
   }
-  return openBringingMissing({ ...source, files: { ...source.files, [wanted]: brought } }, bring, remote, left - 1)
+  return openBringingMissing({ ...source, files: { ...source.files, [wanted]: brought } }, bring, remote, into, left - 1)
 }
 
 /**
