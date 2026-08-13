@@ -1,6 +1,8 @@
 {
-  "name": "hledger-pwa-lp",
+  "name": "hledger-pwa-docs",
   "private": true,
+  "license": "MIT",
+  "description": "The site that explains hledger-pwa. Shares no code with the app, so it is MIT rather than GPL.",
   "version": "0.0.0",
   "type": "module",
   "scripts": {

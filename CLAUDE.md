@@ -114,6 +114,10 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
 
 - **GPL-3.0-or-later**, inherited by linking hledger-lib; publishing here is what
   satisfies it. Keep `lib/solid-workbench-ui` MIT and reusable.
+- **`apps/docs` is MIT and must stay separable.** It links against nothing of the
+  app's — no shared config, no shared dependencies, no imports across `apps/` —
+  so hledger's licence does not reach it and it could be lifted into a
+  repository of its own without unpicking anything.
 - **Upstream must stay followable.** Fix a wasm build failure as far from
   hledger's source as possible: `cabal.project` → `shims/` → a `.cabal` patch →
   its source last, recorded in `RESULTS.md`. Currently zero lines changed.
