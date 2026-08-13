@@ -18,3 +18,9 @@ apps/web/dev-dist/
 
 # written by apps/web/scripts/collect-licenses.mjs at build time
 apps/web/src/generated/
+
+# No settings file with a name like this is ever committed, anywhere in here.
+# The ones that are — docs/.env.example — say so in their own name.
+.env
+.env.*
+!.env.example

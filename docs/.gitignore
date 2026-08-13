@@ -2,8 +2,9 @@ dist/
 .astro/
 node_modules/
 
-# Anything private goes here and is never committed. What is checked in --
-# .env and .env.development -- holds only what ends up in the page anyway:
-# where the app is, and the analytics token, which is public by design.
-.env.local
-.env.*.local
+# No .env is committed, only the example. Even the settings here are public
+# once built — they end up in the page — but a file called .env is where a
+# secret eventually gets written, and that is the file nobody should have to
+# think twice about.
+.env*
+!.env.example

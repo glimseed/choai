@@ -7,7 +7,14 @@ import type { Words } from "./words"
 
 const { words } = Astro.props as { words: Words }
 const HLEDGER = "https://hledger.org"
-const APP = import.meta.env.PUBLIC_APP ?? "https://hledger-pwa.dev"
+/**
+ * Where the app is. Development points at the one on this machine, a build at
+ * the published one, and PUBLIC_APP overrides either — so a fresh clone needs
+ * no settings file to link to the right place.
+ */
+const APP =
+  import.meta.env.PUBLIC_APP ??
+  (import.meta.env.DEV ? "http://localhost:8396" : "https://hledger-pwa.dev")
 ---
 
 <Shell words={words}>
