@@ -45,12 +45,17 @@ export function TakeFromGitHub(): JSX.Element {
       <Show
         when={saved() !== undefined && saved() !== ""}
         fallback={
-          <p class="text-xs text-muted-foreground">
-            {t("books.needsToken")}{" "}
-            <A href="/settings" class="underline underline-offset-2 hover:text-foreground">
-              {t("nav.settings")}
+          // Said before the boxes rather than after a refusal: there is nothing
+          // to fill in here until GitHub will answer at all.
+          <div class="flex flex-col items-start gap-1">
+            <p class="text-xs text-muted-foreground">{t("books.needsToken")}</p>
+            <A
+              href="/settings"
+              class="text-xs font-medium underline underline-offset-2 hover:text-foreground"
+            >
+              {t("books.goAndSaveOne")}
             </A>
-          </p>
+          </div>
         }
       >
         <div class="grid w-full grid-cols-2 gap-2">

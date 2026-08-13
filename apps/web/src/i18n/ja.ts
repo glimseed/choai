@@ -106,7 +106,8 @@ export const ja: Dictionary = {
     addTitle: "帳簿を追加",
     addBody: "もう一組の帳簿を、いまある帳簿とは別に持ちます。混ざりません。それぞれが別のファイルです。",
     fromGitHub: "リポジトリから取り込む",
-    needsToken: "先にアクセストークンが要ります。場所は",
+    needsToken: "先にアクセストークンの登録が要ります。GitHub に届くのはそれで、どの帳簿でも同じものを使います。",
+    goAndSaveOne: "設定でトークンを登録する →",
     notTaken: "そこからは何も返ってきませんでした。オーナー・リポジトリ・パスを確かめてください。",
   },
   library: {
