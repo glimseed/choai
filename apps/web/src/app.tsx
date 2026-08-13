@@ -171,6 +171,18 @@ export function Layout(props: ParentProps) {
     }),
   )
 
+  /**
+   * The tab is named after the books in it.
+   *
+   * Two sets of books open in two tabs are otherwise the same word twice, and
+   * an installed app puts this in its window as well — which is the one place
+   * the switcher cannot be seen.
+   */
+  createEffect(() => {
+    const open = getOrUndefined(journal())
+    document.title = open === undefined ? t("app.name") : `${open.source.label} — ${t("app.name")}`
+  })
+
   onMount(() => {
     void reopenKept()
 
