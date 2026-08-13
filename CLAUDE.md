@@ -67,6 +67,14 @@ node scripts/sync-hledger.mjs                  # -> public/hledger.wasm, src/hle
 
 `wasm/README.md` has the rest (`setup.sh`, benching, `serve.sh`).
 
+The landing page is its own Astro project in `apps/lp`, with its own
+dependencies and nothing of the app's:
+
+```sh
+npm --prefix apps/lp run dev     # astro on :45720 (ASTRO in digits), page at /lp/
+scripts/build-site.sh            # both, assembled: app at /, page at /lp/
+```
+
 ## Architecture
 
 `wasm/` makes hledger reachable from JavaScript; `apps/web` is everything around
@@ -92,7 +100,9 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
 - **`app.tsx`** wires `lib/solid-workbench-ui` (MIT, kept app-agnostic); its
   `NAV`/`FOOT`/`INNER` tables pair each route with its explorer, and one query in
   the URL is shared by every view.
-- **`i18n/en.ts` is the type** every other dictionary is checked against.
+- **`i18n/en.ts` is the type** every other dictionary is checked against, and
+  `apps/lp/src/words.ts` does the same for the landing page — which speaks to
+  someone who has not opened the app, so it does not share the app's wording.
 - **Generated or vendored, so don't hand-edit:** `src/generated/` (licences,
   rebuilt each dev/build), `src/components/ui/*` (solid-ui), `wasm/vendor/`.
 
