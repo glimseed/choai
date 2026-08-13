@@ -13,7 +13,7 @@ const { words } = Astro.props as { words: Words }
 const HLEDGER = "https://hledger.org"
 
 /** The app is a site of its own; locally it is whatever is running on 8396. */
-const APP = import.meta.env.PUBLIC_APP ?? "https://hledger-pwa.app"
+const APP = import.meta.env.PUBLIC_APP ?? "https://hledger-pwa.dev"
 ---
 
 <!doctype html>
@@ -114,8 +114,6 @@ const APP = import.meta.env.PUBLIC_APP ?? "https://hledger-pwa.app"
       <footer>
         <p><strong>{words.licenceHeading}</strong></p>
         <p>{words.licence}</p>
-        <p>{words.hledgerCredit}</p>
-        <p><a href={`${APP}/licenses`}>{words.licencesLink}</a></p>
         <p>{words.builtWith}</p>
       </footer>
     </main>

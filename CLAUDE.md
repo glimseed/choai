@@ -76,7 +76,7 @@ npm --prefix docs run dev        # astro on :45720 (ASTRO in digits)
 scripts/build-site.sh            # apps/web/dist and docs/dist, side by side
 ```
 
-`hledger-pwa.app` serves `apps/web/dist`, `docs.hledger-pwa.app` serves
+`hledger-pwa.dev` serves `apps/web/dist`, `docs.hledger-pwa.dev` serves
 `docs/dist`. Where the app lives is `PUBLIC_APP` in `docs/.env`, so development
 links to a local app rather than to the published one.
 

@@ -45,10 +45,11 @@ export const en = {
     },
   ],
   licenceHeading: "Licence",
-  licence:
-    "hledger-pwa is free software under the GNU General Public License, version 3 or later. It ships hledger compiled into its WebAssembly module, and hledger is under the same licence — which is why this is too.",
-  hledgerCredit: "hledger is copyright Simon Michael and contributors.",
-  licencesLink: "Every package and its licence",
+  /**
+   * This site's own, and only this site's. What the app is under is the app's to
+   * say, and it says it — in its settings, with every package it is made of.
+   */
+  licence: "This site is MIT. It shares no code with the app.",
   builtWith: "Built with hledger, GHC's WebAssembly backend, SolidJS and Astro.",
 }
 
@@ -91,9 +92,6 @@ export const ja: Words = {
     },
   ],
   licenceHeading: "ライセンス",
-  licence:
-    "hledger-pwa は GNU General Public License バージョン 3 以降のもとで公開されている自由ソフトウェアです。WebAssembly モジュールに hledger を組み込んでおり、hledger が同じライセンスであるため、これもそうなります。",
-  hledgerCredit: "hledger の著作権は Simon Michael と貢献者にあります。",
-  licencesLink: "すべてのパッケージとライセンス",
+  licence: "このサイトは MIT です。アプリとコードを共有していません。",
   builtWith: "hledger、GHC の WebAssembly バックエンド、SolidJS、Astro で作っています。",
 }

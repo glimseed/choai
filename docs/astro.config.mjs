@@ -10,7 +10,7 @@ import { defineConfig } from "astro/config"
  * running this locally links to a local app rather than to the published one.
  */
 export default defineConfig({
-  site: "https://docs.hledger-pwa.app",
+  site: "https://docs.hledger-pwa.dev",
   // Both /ja and /ja/ answer. The pages are written to directories, so a host
   // serves either spelling, and refusing one of them locally only means a link
   // typed by hand fails on a laptop and works once published.

@@ -1,4 +1,4 @@
-# docs.hledger-pwa.app
+# docs.hledger-pwa.dev
 
 The site that explains the app, to somebody who has not opened it.
 
@@ -13,7 +13,7 @@ applies to it.
 ```sh
 npm install
 npm run dev     # :45720
-npm run build   # -> dist, served at the root of docs.hledger-pwa.app
+npm run build   # -> dist, served at the root of docs.hledger-pwa.dev
 ```
 
 `PUBLIC_APP` in `.env` says where the app is, so a page built here links to the

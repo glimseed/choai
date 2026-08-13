@@ -8,8 +8,8 @@
 # serves at the root of its name.
 #
 #   scripts/build-site.sh
-#     apps/web/dist   -> hledger-pwa.app
-#     docs/dist       -> docs.hledger-pwa.app
+#     apps/web/dist   -> hledger-pwa.dev
+#     docs/dist       -> docs.hledger-pwa.dev
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
@@ -17,5 +17,5 @@ npm --prefix apps/web run build
 npm --prefix docs run build
 
 echo
-echo "apps/web/dist   -> hledger-pwa.app"
-echo "docs/dist       -> docs.hledger-pwa.app"
+echo "apps/web/dist   -> hledger-pwa.dev"
+echo "docs/dist       -> docs.hledger-pwa.dev"
