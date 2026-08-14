@@ -13,8 +13,8 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-npm --prefix apps/web run build
-npm --prefix docs run build
+bun --cwd=apps/web run build
+bun --cwd=docs run build
 
 echo
 echo "apps/web/dist   -> hledger-pwa.dev"

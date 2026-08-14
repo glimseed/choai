@@ -52,9 +52,10 @@ functions will do.
 From `apps/web`. There is no linter and no test runner; `tsc` is the only check.
 
 ```sh
-npm run dev      # licences, then vite on :8396      npm run build   # + tsc -b
-npx tsc -b       # typecheck alone
-node scripts/vendor-ui.mjs <name>...   # re-fetch a solid-ui component
+bun install      # bun is the package manager and the script runner
+bun run dev      # licences, then vite on :8396      bun run build   # + tsc -b
+bunx tsc -b      # typecheck alone
+bun scripts/vendor-ui.mjs <name>...    # re-fetch a solid-ui component
 ```
 
 The engine is a build output of `wasm/`, gitignored, and `src/hledger/ghc-jsffi.mjs`
@@ -62,7 +63,7 @@ is imported by the worker — so a fresh clone cannot even start until:
 
 ```sh
 ../../wasm/scripts/build.sh hledger-bindings   # needs the ghc-wasm toolchain
-node scripts/sync-hledger.mjs                  # -> public/hledger.wasm, src/hledger/ghc-jsffi.mjs
+bun scripts/sync-hledger.mjs                   # -> public/hledger.wasm, src/hledger/ghc-jsffi.mjs
 ```
 
 `wasm/README.md` has the rest (`setup.sh`, benching, `serve.sh`).
@@ -72,7 +73,7 @@ app rather than inside it — where Vite keeps its own site. Its own dependencie
 nothing of the app's, two names, two deployments:
 
 ```sh
-npm --prefix docs run dev        # astro on :45720 (ASTRO in digits)
+bun --cwd=docs run dev           # astro on :45720 (ASTRO in digits)
 scripts/build-site.sh            # apps/web/dist and docs/dist, side by side
 ```
 

@@ -5,17 +5,18 @@
 //   - the engine -- hledger and the Haskell libraries linked into the wasm
 //     module, collected by wasm/scripts/collect-licenses.mjs when the engine is
 //     rebuilt, since that needs the Haskell toolchain
-//   - the web app -- the npm packages that end up in the bundle, plus the
+//   - the web app -- the packages that end up in the bundle, plus the
 //     components copied in from solid-ui
 //
-// The npm half is read here, from the lockfile and from the packages
-// themselves: what is credited is then what is installed, not what someone
-// remembered to write down. Development tools are left out; they build the app
+// The package half is read here, by walking node_modules out from what the app
+// declares it needs: what is credited is then what is installed, not what
+// someone remembered to write down, and not whatever shape an installer has
+// left its lockfile in. Development tools are never reached; they build the app
 // but no part of them is served.
 //
-// Run by `npm run dev` and `npm run build`.
+// Run by `bun run dev` and `bun run build`.
 //
-//   node scripts/collect-licenses.mjs
+//   bun scripts/collect-licenses.mjs
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
@@ -67,19 +68,56 @@ const homepageOf = (manifest) => {
   return repository?.replace(/^git\+/, "").replace(/\.git$/, "")
 }
 
-const lock = readJson(join(webRoot, "package-lock.json"))
+/**
+ * Where a dependency resolves to, from the directory that asks for it.
+ *
+ * Node's own rule, walking node_modules upwards as far as the app: an installer
+ * is free to hoist a package to the top or nest a second copy of it, and this
+ * finds the one that would actually be loaded.
+ */
+const resolveFrom = (fromDir, name) => {
+  const candidate = join(fromDir, "node_modules", name)
+  if (existsSync(join(candidate, "package.json"))) return candidate
+  const parent = dirname(fromDir)
+  if (fromDir === webRoot || parent === fromDir) return undefined
+  return resolveFrom(parent, name)
+}
 
-const npmPackages = Object.entries(lock.packages)
-  .filter(([path, entry]) => path.startsWith("node_modules/") && !entry.dev && !entry.devOptional)
-  .map(([path, entry]) => {
-    const dir = join(webRoot, path)
-    const manifest = readJsonOr(join(dir, "package.json"), {})
-    const text = existsSync(dir) ? licenceTextIn(dir) : undefined
+const requiredBy = (manifest) => [
+  ...Object.keys(manifest.dependencies ?? {}),
+  ...Object.keys(manifest.optionalDependencies ?? {}),
+]
+
+/**
+ * Every package reachable from a directory, keyed by where it is installed.
+ *
+ * An optional dependency that was not installed is not shipped either, so it
+ * simply does not resolve and nothing is credited for it.
+ */
+const gather = (found, dir) => {
+  if (found.has(dir)) return found
+  const manifest = readJsonOr(join(dir, "package.json"), {})
+  return requiredBy(manifest)
+    .map((name) => resolveFrom(dir, name))
+    .filter((each) => each !== undefined)
+    .reduce(gather, new Map(found).set(dir, manifest))
+}
+
+const app = readJson(join(webRoot, "package.json"))
+
+const bundledPackages = [
+  ...requiredBy(app)
+    .map((name) => resolveFrom(webRoot, name))
+    .filter((each) => each !== undefined)
+    .reduce(gather, new Map()),
+]
+  .map(([dir, manifest]) => {
+    const text = licenceTextIn(dir)
     return {
-      name: manifest.name ?? path.replace(/^node_modules\//, ""),
-      version: entry.version,
+      name: manifest.name,
+      version: manifest.version,
       origin: "npm",
-      license: entry.license ?? manifest.license,
+      license: manifest.license,
       copyright: copyrightIn(text, manifest.author),
       homepage: homepageOf(manifest),
       text,
@@ -98,7 +136,7 @@ const output = {
   hledgerRevision: engine.hledgerRevision,
   groups: [
     { id: "engine", packages: engine.packages },
-    { id: "web", packages: [...vendored, ...npmPackages] },
+    { id: "web", packages: [...vendored, ...bundledPackages] },
   ],
 }
 

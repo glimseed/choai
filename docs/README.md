@@ -13,9 +13,9 @@ output, and no imports in either direction. Nothing about the licence changes
 that, and it could still be lifted out into a repository of its own.
 
 ```sh
-npm install
-npm run dev     # :45720
-npm run build   # -> dist, served at the root of docs.hledger-pwa.dev
+bun install
+bun run dev     # :45720
+bun run build   # -> dist, served at the root of docs.hledger-pwa.dev
 ```
 
 `PUBLIC_APP` in `.env` says where the app is, so a page built here links to the
