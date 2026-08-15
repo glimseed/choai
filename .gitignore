@@ -10,9 +10,12 @@ node_modules/
 wasm/web/probe.jsffi.mjs
 wasm/web/*.journal
 
-# built wasm, copied in by apps/web/scripts/sync-hledger.mjs
-apps/web/public/hledger.wasm
-apps/web/src/hledger/ghc-jsffi.mjs
+# The engine the app ships, copied in by apps/web/scripts/sync-hledger.mjs. The
+# rest of the wasm in here is measurement and is ignored above; this pair is the
+# only one that is published, and rebuilding it needs the ghc-wasm toolchain, so
+# it travels with the source that produced it rather than being derived on
+# whichever machine happens to deploy.
+!apps/web/public/hledger.wasm
 apps/web/dist/
 apps/web/dev-dist/
 

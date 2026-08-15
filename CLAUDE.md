@@ -58,13 +58,19 @@ bunx tsc -b      # typecheck alone
 bun scripts/vendor-ui.mjs <name>...    # re-fetch a solid-ui component
 ```
 
-The engine is a build output of `wasm/`, gitignored, and `src/hledger/ghc-jsffi.mjs`
-is imported by the worker — so a fresh clone cannot even start until:
+The engine — `public/hledger.wasm` and the `src/hledger/ghc-jsffi.mjs` the worker
+imports — is committed, so a fresh clone runs. It is the one wasm here that is
+not a measurement, and it is checked in because rebuilding it needs the ghc-wasm
+toolchain, which the machine that deploys will not have. Everything under
+`wasm/out/` stays ignored. To move the engine to a new hledger:
 
 ```sh
 ../../wasm/scripts/build.sh hledger-bindings   # needs the ghc-wasm toolchain
 bun scripts/sync-hledger.mjs                   # -> public/hledger.wasm, src/hledger/ghc-jsffi.mjs
 ```
+
+Both land in the same commit as the `wasm/` source they came from, which is what
+records which source the published binary was built from.
 
 `wasm/README.md` has the rest (`setup.sh`, benching, `serve.sh`).
 
