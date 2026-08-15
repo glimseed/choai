@@ -8,8 +8,12 @@
     "directory": "./dist",
     // Every route is drawn by the router in the page, so a path that is not a
     // file is not a missing page — it is the app, asked for somewhere other
-    // than its front door. public/_redirects says this to any host that reads
-    // it; this says it to the one that actually serves the site.
+    // than its front door.
+    //
+    // This is the only place to say it. A _redirects rule sending /* to
+    // /index.html is refused before it is ever served: paths are normalised
+    // before they are matched, `/index` is what normalising strips, and so a
+    // rule pointing at /index.html reads as a rule that triggers itself.
     "not_found_handling": "single-page-application"
   }
 }

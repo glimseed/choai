@@ -1,7 +1,0 @@
-# Every route is drawn by the router in the page, so a path that is not a file
-# is not a missing page — it is the app, asked for somewhere other than its
-# front door. The host serves what it has first and falls back to here, so this
-# only answers what was never a file: a link opened straight into a report, or a
-# reload where the reader already was. Without it those arrive as 404 on the
-# first visit, before the service worker exists to answer them.
-/*  /index.html  200
