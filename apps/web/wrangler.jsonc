@@ -1,0 +1,15 @@
+// How the app is served: static files and nothing else. There is no backend
+// anywhere in this project, so there is no Worker script here either — only the
+// directory vite writes, handed to the host to serve at the root of its name.
+{
+  "name": "choai",
+  "compatibility_date": "2026-08-15",
+  "assets": {
+    "directory": "./dist",
+    // Every route is drawn by the router in the page, so a path that is not a
+    // file is not a missing page — it is the app, asked for somewhere other
+    // than its front door. public/_redirects says this to any host that reads
+    // it; this says it to the one that actually serves the site.
+    "not_found_handling": "single-page-application"
+  }
+}

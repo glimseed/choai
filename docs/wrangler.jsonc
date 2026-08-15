@@ -1,0 +1,14 @@
+// How the page that explains the app is served. Its own name and its own
+// deployment, sharing nothing with the app next door — which is the same
+// separation the rest of this directory keeps.
+{
+  "name": "choai-docs",
+  "compatibility_date": "2026-08-15",
+  "assets": {
+    // Astro writes each page as a directory, and the default handling answers
+    // both spellings of a path, which is what astro.config.mjs asks for. There
+    // is no single page to fall back to and no 404 page to serve, so a path
+    // that is not a page is a 404 and says so.
+    "directory": "./dist"
+  }
+}
