@@ -65,7 +65,24 @@ exports its functions to JavaScript, in `wasm/hledger-wasm/src/Bindings.hs`.
   no fonts, runs no scripts and tracks nobody, which is the same claim it makes
   on the app's behalf.
 
-`scripts/build-site.sh` builds both.
+`scripts/build-site.sh` builds both locally.
+
+Each is published on its own as a Cloudflare Worker serving static assets, built
+from this repository on a push to `main`. What the directory is and how it is
+served is in the `wrangler.jsonc` beside it; the rest lives in the dashboard,
+where each of the two is configured the same way but for its own directory:
+
+| | `choai` | `choai-docs` |
+| --- | --- | --- |
+| Root directory | `apps/web` | `docs` |
+| Build command | `bun install && bun run build` | `bun install && bun run build` |
+| Deploy command | `bunx wrangler deploy` | `bunx wrangler deploy` |
+| `BUN_VERSION` | `1.3.14` | `1.3.14` |
+
+No output directory is set in either, because `assets.directory` already says
+it. Nothing else is needed: the engine is committed, so the build wants no
+Haskell toolchain, and `docs` needs no `PUBLIC_APP` because a build that is not
+a development one already points at the published app.
 
 ## License
 

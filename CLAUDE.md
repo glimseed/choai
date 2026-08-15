@@ -87,6 +87,11 @@ scripts/build-site.sh            # apps/web/dist and docs/dist, side by side
 the app lives is `PUBLIC_APP` in `docs/.env`, so development links to a local
 app rather than to the published one.
 
+Each is published as a Cloudflare Worker serving static assets, built from
+`main`. The `wrangler.jsonc` beside each directory says what is served and how;
+what the dashboard is set to is in `README.md`. A `_redirects` cannot carry the
+app's fallback — the reason is written where it is handled instead.
+
 ## Architecture
 
 `wasm/` makes hledger reachable from JavaScript; `apps/web` is everything around
