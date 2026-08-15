@@ -4,6 +4,11 @@
 {
   "name": "choai",
   "compatibility_date": "2026-08-15",
+  // The app answers on choai.dev, so the workers.dev address it was reached at
+  // before that is turned off rather than left as a second name for the same
+  // thing. The site next door still has only the one it was given, and keeps
+  // it until a name of its own is pointed at it.
+  "workers_dev": false,
   "assets": {
     "directory": "./dist",
     // Every route is drawn by the router in the page, so a path that is not a
