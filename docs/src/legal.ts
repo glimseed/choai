@@ -24,7 +24,7 @@ export const termsEn: Document = {
   title: "Terms of use",
   updated: `Last updated ${UPDATED}`,
   intro:
-    "hledger-pwa is offered free of charge, as it is, by its contributors. Using it means accepting what follows. It is short because the service is small: there is no account, and there is no server holding anything of yours.",
+    "choai is offered free of charge, as it is, by its contributors. Using it means accepting what follows. It is short because the service is small: there is no account, and there is no server holding anything of yours.",
   sections: [
     {
       heading: "What this is",
@@ -137,7 +137,7 @@ export const termsJa: Document = {
   title: "利用規約",
   updated: `最終更新 ${UPDATED}`,
   intro:
-    "hledger-pwa は、貢献者が無償で、現状のまま提供しています。利用にあたっては以下に同意していただきます。短いのは、サービスが小さいからです。アカウントはなく、あなたのものを預かるサーバーもありません。",
+    "choai は、貢献者が無償で、現状のまま提供しています。利用にあたっては以下に同意していただきます。短いのは、サービスが小さいからです。アカウントはなく、あなたのものを預かるサーバーもありません。",
   sections: [
     {
       heading: "これは何か",

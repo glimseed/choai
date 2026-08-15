@@ -11,7 +11,7 @@ export const en = {
   lang: "en",
   /** Where the same page is in the other language, and what to call it there. */
   other: { href: "/ja/", label: "日本語" },
-  title: "hledger-pwa — your hledger journal, in the browser",
+  title: "choai — your hledger journal, in the browser",
   description:
     "Keep hledger journals in a private GitHub repository, from a phone or a desktop. hledger itself does the accounting, compiled to WebAssembly. Free, without advertising.",
   tagline: "Your hledger journal, in the browser.",
@@ -64,7 +64,7 @@ export type Words = typeof en
 export const ja: Words = {
   lang: "ja",
   other: { href: "/", label: "English" },
-  title: "hledger-pwa — hledger の帳簿を、ブラウザで",
+  title: "choai — hledger の帳簿を、ブラウザで",
   description:
     "hledger の帳簿を private な GitHub リポジトリに置いて、スマホからでもパソコンからでも。計算しているのは hledger 本体を WebAssembly にしたものです。無料、広告なし。",
   tagline: "hledger の帳簿を、ブラウザで。",

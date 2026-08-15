@@ -28,8 +28,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
-        name: "hledger-pwa",
-        short_name: "hledger-pwa",
+        name: "choai",
+        short_name: "choai",
         description: "Your hledger journal, in the browser",
         // From the icon: its navy for the browser's own furniture, and the
         // colour the app actually paints for the screen shown while it starts,

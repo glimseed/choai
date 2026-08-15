@@ -15,7 +15,7 @@ description:
 -- one for the other changes nothing for whoever redistributes the result.
 license:            MIT
 license-file:       LICENSE
-copyright:          hledger-pwa contributors
+copyright:          choai contributors
 build-type:         Simple
 
 library

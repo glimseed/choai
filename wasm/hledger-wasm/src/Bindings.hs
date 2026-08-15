@@ -1,5 +1,5 @@
--- hledger-pwa — hledger journals in the browser
--- Copyright (C) 2026  hledger-pwa contributors
+-- choai — hledger journals in the browser
+-- Copyright (C) 2026  choai contributors
 --
 -- Free software under the GNU General Public License, version 3 or later, and
 -- distributed with no warranty of any kind. The full notice is in LICENSE at

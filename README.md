@@ -1,4 +1,4 @@
-# hledger-pwa
+# choai
 
 A PWA for keeping [hledger](https://hledger.org/) journals in a GitHub repository.
 
@@ -10,6 +10,20 @@ is what makes it possible to offer the service free of charge and free of ads.
 The UI is built with SolidJS, Solid Router, TailwindCSS and Kobalte. Components
 adapted from solid-ui are vendored into the source tree rather than taken as a
 runtime dependency.
+
+## The name
+
+Western bookkeeping reached Japan under a borrowed name. In 1873, Fukuzawa
+Yukichi translated Bryant and Stratton's *Common School Book-keeping* and
+published it as 帳合之法, *Chōai no Hō* — the method of chōai. He did not coin
+the word for the occasion: chōai was already what the merchant houses called
+the work of setting the books against what was there until the two agreed.
+Double-entry arrived in the country under a name it found waiting for it,
+imported whole rather than invented anew.
+
+This is the same kind of carrying across. The accounting here is hledger's own,
+compiled and brought into the browser intact, not reimplemented in it. So the
+app is named for the crossing rather than for the cargo: **choai**.
 
 ## What it does
 
@@ -45,8 +59,8 @@ exports its functions to JavaScript, in `wasm/hledger-wasm/src/Bindings.hs`.
 
 ## Two sites
 
-- **`hledger-pwa.dev`** — the app itself, from `apps/web/dist`.
-- **`docs.hledger-pwa.dev`** — the page that explains it, from `docs/dist`:
+- **`choai.dev`** — the app itself, from `apps/web/dist`.
+- **`docs.choai.dev`** — the page that explains it, from `docs/dist`:
   a separate Astro project, English at the root and Japanese at `/ja/`. It loads
   no fonts, runs no scripts and tracks nobody, which is the same claim it makes
   on the app's behalf.

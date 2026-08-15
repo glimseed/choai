@@ -22,11 +22,11 @@ const BEACON = import.meta.env.PUBLIC_CF_BEACON ?? ""
 
 /** Where all of this is, app and site together, for anyone who wants to read it
  * or run their own. */
-const SOURCE = "https://github.com/glimseed/hledger-pwa"
+const SOURCE = "https://github.com/glimseed/choai"
 const ja = words.lang === "ja"
 const here = Astro.url.pathname
 const inEnglish = here.replace(/^\/ja/, "") || "/"
-const title = heading === undefined ? words.title : `${heading} — hledger-pwa`
+const title = heading === undefined ? words.title : `${heading} — choai`
 const at = (path: string): string => (ja ? `/ja${path}` : path)
 
 /**
@@ -64,7 +64,7 @@ const other = ja ? inEnglish : `/ja${inEnglish}`
     <main>
       <header>
         <img src="/favicon.svg" alt="" width="56" height="56" />
-        <a class="home" href={at("/")}><strong>hledger-pwa</strong></a>
+        <a class="home" href={at("/")}><strong>choai</strong></a>
         <a class="switch" href={other}>{words.other.label}</a>
       </header>
 

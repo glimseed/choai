@@ -1,4 +1,4 @@
-# docs.hledger-pwa.dev
+# docs.choai.dev
 
 The site that explains the app, to somebody who has not opened it.
 
@@ -15,7 +15,7 @@ that, and it could still be lifted out into a repository of its own.
 ```sh
 bun install
 bun run dev     # :45720
-bun run build   # -> dist, served at the root of docs.hledger-pwa.dev
+bun run build   # -> dist, served at the root of docs.choai.dev
 ```
 
 `PUBLIC_APP` in `.env` says where the app is, so a page built here links to the

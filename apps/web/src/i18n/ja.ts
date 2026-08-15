@@ -3,7 +3,7 @@ import type { Dictionary } from "./en"
 /** Japanese. Typed against the English dictionary, so a missing key will not compile. */
 export const ja: Dictionary = {
   app: {
-    name: "hledger-pwa",
+    name: "choai",
   },
   nav: {
     journal: "仕訳帳",
@@ -162,8 +162,8 @@ export const ja: Dictionary = {
   },
   licenses: {
     title: "ライセンス",
-    app: "hledger-pwa は GNU General Public License バージョン 3 以降のもとで公開されている自由ソフトウェアです。",
-    copyright: "Copyright © 2026 hledger-pwa contributors.",
+    app: "choai は GNU General Public License バージョン 3 以降のもとで公開されている自由ソフトウェアです。",
+    copyright: "Copyright © 2026 choai contributors.",
     warranty:
       "法律が認める範囲で、一切の保証はありません。このライセンスの条件のもとで再配布できます。",
     hledger:

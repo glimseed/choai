@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "hledger-pwa",
+      "name": "choai",
       "dependencies": {
         "@bjorn3/browser_wasi_shim": "^0.4.2",
         "@kobalte/core": "^0.13.7",

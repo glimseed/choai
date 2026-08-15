@@ -23,7 +23,7 @@ export const LOCALE_NAMES: Readonly<Record<Locale, string>> = {
   ja: "日本語",
 }
 
-const REMEMBERED = "hledger-pwa.locale"
+const REMEMBERED = "choai.locale"
 
 const isLocale = (value: string): value is Locale => LOCALES.some((known) => known === value)
 

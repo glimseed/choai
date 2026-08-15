@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# hledger-pwa
+# choai
 
 A PWA for keeping hledger journals in a GitHub repository. The accounting is done
 by hledger itself — hledger-lib compiled to WebAssembly — and the code in this
@@ -77,9 +77,9 @@ bun --cwd=docs run dev           # astro on :45720 (ASTRO in digits)
 scripts/build-site.sh            # apps/web/dist and docs/dist, side by side
 ```
 
-`hledger-pwa.dev` serves `apps/web/dist`, `docs.hledger-pwa.dev` serves
-`docs/dist`. Where the app lives is `PUBLIC_APP` in `docs/.env`, so development
-links to a local app rather than to the published one.
+`choai.dev` serves `apps/web/dist`, `docs.choai.dev` serves `docs/dist`. Where
+the app lives is `PUBLIC_APP` in `docs/.env`, so development links to a local
+app rather than to the published one.
 
 ## Architecture
 

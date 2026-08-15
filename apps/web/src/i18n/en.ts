@@ -10,7 +10,7 @@
  */
 export const en = {
   app: {
-    name: "hledger-pwa",
+    name: "choai",
   },
   nav: {
     journal: "Journal",
@@ -169,8 +169,8 @@ export const en = {
   },
   licenses: {
     title: "Licences",
-    app: "hledger-pwa is free software under the GNU General Public License, version 3 or later.",
-    copyright: "Copyright © 2026 hledger-pwa contributors.",
+    app: "choai is free software under the GNU General Public License, version 3 or later.",
+    copyright: "Copyright © 2026 choai contributors.",
     warranty:
       "It comes with absolutely no warranty, to the extent the law allows. You are welcome to redistribute it under the terms of that licence.",
     hledger:

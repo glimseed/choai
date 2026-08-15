@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "hledger-pwa-lp",
+      "name": "choai-docs",
       "devDependencies": {
         "astro": "^7.2.1",
       },

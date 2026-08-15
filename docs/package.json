@@ -1,8 +1,8 @@
 {
-  "name": "hledger-pwa-docs",
+  "name": "choai-docs",
   "private": true,
   "license": "GPL-3.0-or-later",
-  "description": "The site that explains hledger-pwa. Shares no code with the app; copyleft by choice rather than by inheritance.",
+  "description": "The site that explains choai. Shares no code with the app; copyleft by choice rather than by inheritance.",
   "version": "0.0.0",
   "type": "module",
   "scripts": {

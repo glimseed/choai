@@ -6,7 +6,7 @@
  * its own. Depends on nothing but the browser.
  */
 
-const DB = "hledger-pwa"
+const DB = "choai"
 
 /**
  * Raised whenever the shape changes. Each step from an older version is written
