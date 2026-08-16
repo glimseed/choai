@@ -9,7 +9,7 @@ description:
 -- Linked against hledger-lib, which is GPL, so this is too.
 license:            GPL-3.0-or-later
 copyright:          choai contributors
-homepage:           https://github.com/glimseed/choai
+homepage:           https://github.com/mrksye/choai
 build-type:         Simple
 
 common probe
