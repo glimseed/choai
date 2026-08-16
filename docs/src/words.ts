@@ -43,6 +43,10 @@ export const en = {
       heading: "Free, and without advertising",
       body: "Nothing is served but static files, so it costs almost nothing to run and there is nothing to sell. No account to make, and nothing counted but the fact that a page was opened — without cookies, and never anything from a journal.",
     },
+    {
+      heading: "It does not end if this site does",
+      body: "All of it is public on GitHub, and what is published is static files. Put your own copy on Cloudflare — as of August 2026 this fits well inside what they give away — and carry on at an address of your own, with the journals already in your repository.",
+    },
   ],
   sourceTitle: "Source",
   termsTitle: "Terms of use",
@@ -95,6 +99,10 @@ export const ja: Words = {
     {
       heading: "無料、広告なし",
       body: "配っているのは静的ファイルだけなので、動かす費用がほとんどかかりません。売るものもありません。登録は不要で、数えているのは「ページが開かれた」ことだけ ── クッキーは使わず、帳簿の中身は一切含みません。",
+    },
+    {
+      heading: "このサイトが止まっても終わりません",
+      body: "コードはすべて GitHub で公開しています。配っているのは静的ファイルなので、Cloudflare にご自身でデプロイすれば ── 2026 年 8 月現在、これくらいなら無料の範囲に十分収まります ── 自分のアドレスで使い続けられます。帳簿はもともとあなたのリポジトリにあります。",
     },
   ],
   sourceTitle: "ソース",
