@@ -118,6 +118,28 @@ const serve = async (message: Incoming): Promise<Reply> => {
   }
 }
 
+const queue: { last: Promise<void> } = { last: Promise.resolve() }
+
+/**
+ * One at a time.
+ *
+ * Every message shares one filesystem and one parsed journal, and an open
+ * replaces both wholesale. Two of those in flight would clear the directory
+ * from under each other, and whichever finished last would be left as the
+ * journal every query afterwards answers from — not the one anybody asked for.
+ *
+ * Answers still carry the id they were asked under, so waiting here changes the
+ * order the work is done in and nothing else. A message that fails outside
+ * serve would otherwise break the chain and strand everything behind it, so it
+ * is answered here rather than thrown.
+ */
 self.onmessage = (event: MessageEvent<Incoming>): void => {
-  void serve(event.data).then((reply) => self.postMessage({ id: event.data.id, ...reply }))
+  queue.last = queue.last
+    .then(() => serve(event.data))
+    .then((reply) => {
+      self.postMessage({ id: event.data.id, ...reply })
+    })
+    .catch((cause: unknown) => {
+      self.postMessage({ id: event.data.id, ok: false, trouble: { kind: "unreachable", detail: String(cause) } })
+    })
 }
