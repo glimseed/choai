@@ -7,7 +7,9 @@
     "licenses": "bun scripts/collect-licenses.mjs",
     "dev": "bun run licenses && vite",
     "build": "bun run licenses && tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "bun test tests",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "^0.4.2",
@@ -20,7 +22,9 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/bun": "^1.3.14",
     "@types/node": "^24.13.3",
     "tailwindcss": "^4.3.3",
     "tw-animate-css": "^1.4.0",

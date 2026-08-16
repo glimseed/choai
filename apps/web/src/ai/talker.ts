@@ -1,0 +1,144 @@
+import type { JsonSchema, Result } from "~/lib/monad"
+
+/**
+ * What every model this app can talk to has in common.
+ *
+ * The rest of `ai/` is written against this and not against anyone's API. What
+ * differs between them is not small — one calls a turn's parts `content` and the
+ * other `parts`, one names a stop reason `end_turn` and the other
+ * `STOP`, one takes a JSON Schema whole and the other only a subset of it — so
+ * the shape below is the *meaning* they share, and each `Talker` is where one
+ * provider's spelling of it lives.
+ *
+ * A turn's blocks stay opaque on the way through. Both of these keep things in a
+ * turn that have to come back exactly as they were sent — thinking, signatures,
+ * the identity of a call — and a union of the kinds we happened to know about
+ * would quietly drop the rest.
+ */
+
+export type Which = "anthropic" | "gemini"
+
+/** One part of a turn, in whatever shape the provider that made it uses. */
+export type Block = Readonly<Record<string, unknown>>
+
+export interface Turn {
+  /** `model` rather than any one provider's word for it. */
+  readonly role: "user" | "model"
+  readonly content: readonly Block[]
+}
+
+/** A capability offered to a model, before any provider has spelled it out. */
+export interface Tool {
+  readonly name: string
+  readonly description: string
+  readonly schema: JsonSchema
+}
+
+/** Something the model asked to have run. */
+export interface Called {
+  /** How the answer is matched back. Not every provider gives one; then it is the name. */
+  readonly id: string
+  readonly name: string
+  readonly input: unknown
+}
+
+export interface Answered {
+  readonly id: string
+  readonly name: string
+  readonly answer: unknown
+}
+
+/** Something attached to what was said, already small enough to send. */
+export interface Shown {
+  /** As the provider wants it named: `image/jpeg` and the like. */
+  readonly mediaType: string
+  /** The bytes, base64, without any `data:` prefix. */
+  readonly data: string
+}
+
+export interface Model {
+  readonly id: string
+  readonly label: string
+}
+
+export interface Ask {
+  readonly model: string
+  readonly system: string
+  readonly turns: readonly Turn[]
+  readonly tools: readonly Tool[]
+  /** Room for thinking and answer together, where the provider counts them as one. */
+  readonly maxTokens: number
+}
+
+/**
+ * Why the model stopped, in the four ways that mean different things here.
+ *
+ * Every provider has more names than this and none of them has the same set, so
+ * they are narrowed at the edge rather than carried inward — `loop.ts` should
+ * not have to know one vocabulary, let alone two.
+ */
+export type Stopped = "done" | "tools" | "refused" | "cut-off"
+
+export interface Reply {
+  readonly model: string
+  readonly stopped: Stopped
+  readonly why?: string
+  /** Exactly what arrived, for putting back into the next ask. */
+  readonly content: readonly Block[]
+}
+
+export type Failure =
+  | { readonly kind: "offline"; readonly detail: string }
+  | { readonly kind: "unauthorised" }
+  | { readonly kind: "rate-limited"; readonly retryAfter?: number }
+  | { readonly kind: "overloaded" }
+  | { readonly kind: "refused"; readonly status: number; readonly detail: string }
+  | { readonly kind: "unreadable"; readonly detail: string }
+
+/** One provider, and everything the rest of the app needs of it. */
+export interface Talker {
+  readonly id: Which
+  readonly label: string
+  /** Where the reader goes to get a key. Shown beside the box asking for one. */
+  readonly keysFrom: string
+  readonly defaultModel: string
+  /** Which models this key can reach — and, by answering at all, that it works. */
+  readonly models: (key: string) => Promise<Result<readonly Model[], Failure>>
+  readonly send: (key: string, ask: Ask) => Promise<Result<Reply, Failure>>
+  /**
+   * A person's words and whatever they attached, as a turn this provider takes.
+   *
+   * What is attached goes ahead of the words. Both of these read an image better
+   * when they are shown it before being asked about it.
+   */
+  readonly said: (text: string, shown?: readonly Shown[]) => Turn
+  /** What ran, on its way back. One turn holds all of them. */
+  readonly answering: (results: readonly Answered[]) => Turn
+  readonly textIn: (blocks: readonly Block[]) => string
+  readonly calledIn: (blocks: readonly Block[]) => readonly Called[]
+}
+
+/**
+ * Nothing leaves a talker by throwing, including failing to reach the network.
+ *
+ * Shared because both of them are a `fetch` against somebody else's host, and
+ * neither has anything of its own to say about not arriving.
+ */
+export const reach = async (
+  url: string,
+  init: RequestInit,
+): Promise<Result<Response, Failure>> => {
+  try {
+    return { ok: true, value: await fetch(url, init) }
+  } catch (cause) {
+    return { ok: false, error: { kind: "offline", detail: String(cause) } }
+  }
+}
+
+export const readJson = async <T,>(response: Response): Promise<Result<T, Failure>> => {
+  try {
+    return { ok: true, value: (await response.json()) as T }
+  } catch (cause) {
+    return { ok: false, error: { kind: "unreadable", detail: String(cause) } }
+  }
+}

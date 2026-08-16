@@ -1,0 +1,283 @@
+import { For, Show, createResource, createSignal, type JSX } from "solid-js"
+
+import { key, which } from "~/ai/kept"
+import { talkerFor } from "~/ai/talkers"
+import type { Beat, Ending } from "~/ai/loop"
+import { asUrl, shrink } from "~/ai/photo"
+import { looksTabular, rowsOf } from "~/lib/csv"
+import { anythingSaid, ask, askingTrouble, beats, forgetChat, howItEnded, sending } from "~/ai/store"
+import type { Shown } from "~/ai/talker"
+import { wording } from "~/components/ai-key-panel"
+import { Button } from "~/components/ui/button"
+import { Ellipsis } from "~/lib/ui/ellipsis"
+import { PaperclipIcon, XIcon } from "~/lib/ui/icons"
+import { getOrUndefined } from "~/lib/monad"
+import { t } from "~/i18n"
+
+/**
+ * Asking about the books in words, beside the books.
+ *
+ * What runs in between is shown rather than hidden: a line per capability, so
+ * an answer can be traced to the questions it was built from. Nothing here can
+ * change the journal — the model is offered only what reads.
+ */
+export function AiChat(): JSX.Element {
+  const [written, setWritten] = createSignal("")
+  const [carrying, setCarrying] = createSignal<readonly Brought[]>([])
+  const [tooBig, setTooBig] = createSignal(false)
+  /** Read when the panel opens, which is the only moment it can have changed. */
+  const [saved] = createResource(async () => key(talkerFor(await which()).id))
+  const ready = (): boolean => saved() !== undefined
+
+  const send = async (): Promise<void> => {
+    const along = carrying()
+    const text = withTables(written(), along)
+    setWritten("")
+    setCarrying([])
+    await ask(text, along.flatMap((one) => (one.is === "photo" ? [one.shown] : [])))
+  }
+
+  /**
+   * A photograph is shrunk before it is held; a statement is read to see that it
+   * is one. Anything that is neither is left off and said so, rather than being
+   * sent as whatever it happens to be.
+   */
+  const attach = async (chosen: FileList | null): Promise<void> => {
+    setTooBig(false)
+    const files = [...(chosen ?? [])]
+    const brought = await Promise.all(files.map(bring))
+    const kept = brought.flatMap((one) => (one === undefined ? [] : [one]))
+    if (kept.length < files.length) setTooBig(true)
+    setCarrying((was) => [...was, ...kept])
+  }
+
+  const unattach = (at: number): void => {
+    setCarrying((was) => was.filter((_, each) => each !== at))
+  }
+
+  return (
+    <div class="flex h-full flex-col">
+      <div class="flex-1 overflow-y-auto p-3">
+        <Show when={ready()} fallback={<p class="text-sm text-muted-foreground">{t("ai.needsKey")}</p>}>
+        <Show when={anythingSaid()} fallback={<Nothing />}>
+          <div class="flex flex-col gap-3">
+            <For each={beats()}>{(beat) => <One beat={beat} />}</For>
+            <Show when={sending()}>
+              <p class="text-xs text-muted-foreground">
+                {t("ai.thinking")}
+                <Ellipsis />
+              </p>
+            </Show>
+            <Show when={getOrUndefined(howItEnded())}>
+              {(ending) => <Note ending={ending()} />}
+            </Show>
+            <Show when={getOrUndefined(askingTrouble())}>
+              {(went) => <p class="text-xs text-destructive">{wording(went())}</p>}
+            </Show>
+          </div>
+        </Show>
+        </Show>
+      </div>
+
+      <div class="flex flex-col gap-2 border-t p-3">
+        <Show when={carrying().length > 0}>
+          <div class="flex flex-wrap gap-2">
+            <For each={carrying()}>
+              {(one, at) => (
+                <span class="relative">
+                  <Show
+                    when={one.is === "photo" ? one : undefined}
+                    fallback={
+                      <span class="inline-flex h-16 items-center rounded border border-border px-2 text-xs text-muted-foreground">
+                        {t("ai.rows", { name: one.name, rows: one.is === "table" ? one.rows : 0 })}
+                      </span>
+                    }
+                  >
+                    {(photo) => (
+                      <img
+                        src={asUrl(photo().shown)}
+                        alt=""
+                        class="h-16 w-16 rounded border border-border object-cover"
+                      />
+                    )}
+                  </Show>
+                  <button
+                    type="button"
+                    onClick={() => unattach(at())}
+                    aria-label={t("ai.unattach")}
+                    title={t("ai.unattach")}
+                    class="absolute -right-1.5 -top-1.5 inline-flex size-5 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm hover:text-foreground"
+                  >
+                    <XIcon class="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+            </For>
+          </div>
+        </Show>
+        <Show when={tooBig()}>
+          <p class="text-xs text-destructive">{t("ai.notAnImage")}</p>
+        </Show>
+
+        <textarea
+          class="min-h-16 w-full resize-none rounded-md border border-border bg-transparent p-2 text-sm"
+          placeholder={t("ai.placeholder")}
+          value={written()}
+          onInput={(event) => setWritten(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || event.shiftKey) return
+            event.preventDefault()
+            void send()
+          }}
+        />
+        <div class="flex items-center gap-2">
+          {/* `capture` is what puts a phone straight into its camera rather than
+              into a folder of photographs it has already taken. */}
+          <label
+            class="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label={t("ai.attach")}
+            title={t("ai.attach")}
+          >
+            <PaperclipIcon class="h-4 w-4" />
+            <input
+              type="file"
+              accept="image/*,text/csv,.csv"
+              capture="environment"
+              multiple
+              class="hidden"
+              disabled={!ready() || sending()}
+              onChange={(event) => {
+                void attach(event.currentTarget.files)
+                event.currentTarget.value = ""
+              }}
+            />
+          </label>
+          <Button
+            size="sm"
+            disabled={
+              !ready() || (written().trim() === "" && carrying().length === 0) || sending()
+            }
+            onClick={() => void send()}
+          >
+            {t("ai.send")}
+          </Button>
+          <Show when={anythingSaid()}>
+            <Button size="sm" variant="ghost" disabled={sending()} onClick={forgetChat}>
+              {t("ai.forget")}
+            </Button>
+          </Show>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Something attached: a photograph to be looked at, or a table to be read. */
+type Brought =
+  | { readonly is: "photo"; readonly name: string; readonly shown: Shown }
+  | { readonly is: "table"; readonly name: string; readonly text: string; readonly rows: number }
+
+const bring = async (file: File): Promise<Brought | undefined> => {
+  if (file.type.startsWith("image/")) {
+    const small = await shrink(file)
+    return small.ok ? { is: "photo", name: file.name, shown: small.value } : undefined
+  }
+
+  const text = await file.text().catch(() => "")
+  const rows = rowsOf(text)
+  return looksTabular(rows) ? { is: "table", name: file.name, text, rows: rows.length } : undefined
+}
+
+/**
+ * A statement goes over as the text it is.
+ *
+ * Not as rows we have re-serialised: the columns a bank chooses are its own, and
+ * anything read out and written back is a chance to change somebody's figures on
+ * the way. It is read here only to know that it is a table and how long.
+ */
+const withTables = (written: string, along: readonly Brought[]): string => {
+  const tables = along.flatMap((one) => (one.is === "table" ? [one] : []))
+  if (tables.length === 0) return written
+
+  return [
+    written,
+    ...tables.map((one) => [`${one.name} (${one.rows} rows):`, "```csv", one.text.trim(), "```"].join("\n")),
+  ]
+    .filter((part) => part !== "")
+    .join("\n\n")
+}
+
+const Nothing = (): JSX.Element => (
+  <div class="flex flex-col gap-2">
+    <p class="text-sm text-muted-foreground">{t("ai.empty")}</p>
+    <p class="text-xs text-muted-foreground">{t("ai.emptyHint")}</p>
+  </div>
+)
+
+function One(props: { beat: Beat }): JSX.Element {
+  return (
+    <Show
+      when={props.beat.is === "said" ? props.beat : undefined}
+      fallback={<Looked beat={props.beat} />}
+    >
+      {(beat) => (
+        <div class={beat().said.from === "you" ? "self-end" : ""}>
+          <Show when={beat().said.shown}>
+            {(shown) => (
+              <div class="mb-1 flex flex-wrap justify-end gap-1">
+                <For each={shown()}>
+                  {(one) => (
+                    <img
+                      src={asUrl(one)}
+                      alt=""
+                      class="h-16 w-16 rounded border border-border object-cover"
+                    />
+                  )}
+                </For>
+              </div>
+            )}
+          </Show>
+          <p
+            class={`max-w-full whitespace-pre-wrap rounded-md px-3 py-2 text-sm ${
+              beat().said.from === "you" ? "bg-muted" : ""
+            }`}
+          >
+            {beat().said.text}
+          </p>
+        </div>
+      )}
+    </Show>
+  )
+}
+
+/** One capability, and whether it answered. The working, kept where it can be seen. */
+function Looked(props: { beat: Beat }): JSX.Element {
+  return (
+    <Show when={props.beat.is === "ran" ? props.beat : undefined}>
+      {(beat) => (
+        <p class="text-xs text-muted-foreground">
+          {beat().ran.answer.ok
+            ? t("ai.ran", { capability: beat().ran.capability })
+            : t("ai.ranBadly", { capability: beat().ran.capability })}
+        </p>
+      )}
+    </Show>
+  )
+}
+
+function Note(props: { ending: Ending }): JSX.Element {
+  const word = (): string | undefined => {
+    switch (props.ending.stopped) {
+      case "done":
+        return undefined
+      case "refused":
+        return t("ai.stoppedRefused")
+      case "cut-off":
+        return t("ai.stoppedCutOff")
+      case "too-many-turns":
+        return t("ai.stoppedTooMany")
+    }
+  }
+
+  return <Show when={word()}>{(said) => <p class="text-xs text-muted-foreground">{said()}</p>}</Show>
+}

@@ -3,9 +3,11 @@ import { createRoot, createSignal, type Accessor } from "solid-js"
 import { openJournal } from "~/hledger/client"
 import { missingFile } from "~/hledger/diagnose"
 import type { JournalSummary, Trouble } from "~/hledger/wire"
+import { deferred } from "~/lib/deferred"
 import { createTask } from "~/lib/pending"
 import { Err, None, Ok, Some, getOrUndefined, match, type Option, type Result } from "~/lib/monad"
 import { t } from "~/i18n"
+import { atTheJournal } from "~/hledger/turn"
 import { demoJournal } from "./demo"
 import { retitled, titleOf } from "./title"
 import {
@@ -106,10 +108,17 @@ export const openBook = async (id: string): Promise<Result<OpenJournal, Trouble>
   })
 }
 
-/** Whatever happens below, an answer comes back rather than a rejection. */
+/**
+ * Whatever happens below, an answer comes back rather than a rejection.
+ *
+ * Every read of a journal in this module goes through here and therefore
+ * through the one queue, because hledger keeps only the last one it read: two
+ * of these overlapping would each end up describing what the other had already
+ * replaced.
+ */
 const attempt = (source: Source): Promise<Result<JournalSummary, Trouble>> =>
-  task
-    .run(() => openJournal(source.files, source.entry))
+  atTheJournal
+    .through(() => task.run(() => openJournal(source.files, source.entry)))
     .catch((cause: unknown) => Err<Trouble, JournalSummary>({ kind: "unreachable", detail: String(cause) }))
 
 const remember = (raw: OpenJournal): Result<OpenJournal, Trouble> => {
@@ -169,6 +178,17 @@ const [settled, setSettled] = createSignal(false)
  */
 export const settling = (): boolean => !settled()
 
+const arrival = deferred<void>()
+
+/**
+ * The same moment, for anything outside the reactive graph to wait on.
+ *
+ * It says only that the app has decided what is open, not that hledger is
+ * ready: with nothing kept on this device nothing is opened, and no module is
+ * compiled until something asks a question.
+ */
+export const whenSettled: Promise<void> = arrival.promise
+
 /**
  * Reopen whatever was left open on this device.
  *
@@ -186,6 +206,7 @@ export const reopenKept = async (): Promise<void> => {
     // Nothing to reopen is the same as nothing kept.
   } finally {
     setSettled(true)
+    arrival.settle()
   }
 }
 
@@ -246,6 +267,41 @@ export const openIfItReads = async (source: Source): Promise<Result<OpenJournal,
     return Err(read.error)
   }
   return remember({ ...current, source, summary: read.value })
+}
+
+/**
+ * Offer a journal to hledger without keeping it.
+ *
+ * hledger holds the last journal it read and answers every report from that one,
+ * so reading a candidate moves what the screens are talking about — and a
+ * candidate that reads is exactly the case where it moves. So what was open goes
+ * back in before this returns.
+ *
+ * A candidate that does not read costs nothing to put back, because hledger only
+ * replaces what it holds once it has read the new one. That is also why a failed
+ * change has always been safe to walk away from.
+ *
+ * The trial and the putting back are one turn at the journal, so nothing can be
+ * written in between and then read back out of the older text.
+ *
+ * Nothing on screen moves either way. What is open is not touched, what last
+ * went wrong is not touched, and the work is kept off the spinner so that
+ * something trying candidates in the background does not look like an opening.
+ */
+export const tryOut = async (
+  files: Source["files"],
+  entry: string,
+): Promise<Result<JournalSummary, Trouble>> => {
+  const current = getOrUndefined(opened())
+  if (current === undefined) return Err({ kind: "no-journal" })
+
+  return atTheJournal
+    .through(async () => {
+      const read = await openJournal(files, entry)
+      if (read.ok) await openJournal(current.source.files, current.source.entry)
+      return read
+    })
+    .catch((cause: unknown) => Err<Trouble, JournalSummary>({ kind: "unreachable", detail: String(cause) }))
 }
 
 const change = (from: OpenJournal, files: Source["files"]): Promise<Result<OpenJournal, Trouble>> =>

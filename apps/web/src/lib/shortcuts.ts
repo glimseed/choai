@@ -5,7 +5,7 @@
  * shortcut cannot be listed without working or work without being listed.
  */
 
-export type Action = "compose" | "togglePanels" | "close"
+export type Action = "compose" | "chat" | "togglePanels" | "close"
 
 interface Shortcut {
   readonly action: Action
@@ -14,11 +14,16 @@ interface Shortcut {
   /** The key itself, as `KeyboardEvent.key` reports it, lower case. */
   readonly key: string
   /** What to call it in the list. */
-  readonly labelKey: "shortcuts.compose" | "shortcuts.togglePanels" | "shortcuts.close"
+  readonly labelKey:
+    | "shortcuts.compose"
+    | "shortcuts.chat"
+    | "shortcuts.togglePanels"
+    | "shortcuts.close"
 }
 
 export const SHORTCUTS: readonly Shortcut[] = [
   { action: "compose", withCommand: true, key: "k", labelKey: "shortcuts.compose" },
+  { action: "chat", withCommand: true, key: "j", labelKey: "shortcuts.chat" },
   { action: "togglePanels", withCommand: true, key: "b", labelKey: "shortcuts.togglePanels" },
   { action: "close", withCommand: false, key: "escape", labelKey: "shortcuts.close" },
 ]

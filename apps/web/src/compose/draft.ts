@@ -50,14 +50,32 @@ export const todayISO = (): string => {
 const written = (draft: Draft): readonly DraftPosting[] =>
   draft.postings.filter((posting) => posting.account.trim() !== "")
 
+/** Something a draft has to have before anyone can write it down. */
+export type Missing = "date" | "payee" | "postings"
+
 /**
  * Enough to write: a date, someone it was with, and two accounts.
  *
- * An amount is not required anywhere. hledger works out the last one from the
+ * An amount is not among them anywhere. hledger works out the last one from the
  * rest, which is the whole reason a two-line entry only needs one figure.
  */
-export const isWritable = (draft: Draft): boolean =>
-  draft.date.trim() !== "" && draft.payee.trim() !== "" && written(draft).length >= 2
+const NEEDS: readonly { readonly missing: Missing; readonly met: (draft: Draft) => boolean }[] = [
+  { missing: "date", met: (draft) => draft.date.trim() !== "" },
+  { missing: "payee", met: (draft) => draft.payee.trim() !== "" },
+  { missing: "postings", met: (draft) => written(draft).length >= 2 },
+]
+
+/**
+ * What this draft still needs.
+ *
+ * Which one it is rather than whether there is one, because a screen can then
+ * say what is missing instead of only refusing, and something writing a draft
+ * without a screen has somewhere to look.
+ */
+export const whatIsMissing = (draft: Draft): readonly Missing[] =>
+  NEEDS.filter((need) => !need.met(draft)).map((need) => need.missing)
+
+export const isWritable = (draft: Draft): boolean => whatIsMissing(draft).length === 0
 
 /**
  * Payee and note joined the way hledger reads them apart.

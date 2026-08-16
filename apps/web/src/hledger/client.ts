@@ -1,4 +1,5 @@
 import { Err, Ok, type Result } from "~/lib/monad"
+import { atTheJournal } from "./turn"
 import type { Ask, Outgoing } from "./worker"
 import type { Answer, JournalSummary, Request, Trouble } from "./wire"
 
@@ -74,13 +75,23 @@ const send = <T>(message: Ask): Promise<Reply<T>> => {
  * Paths are as hledger will see them, so `include` directives between them
  * resolve normally. This is the call that costs; the reports afterwards are
  * cheap.
+ *
+ * Taking a turn at the journal is left to whoever calls this, because opening
+ * is sometimes half of something larger — reading a candidate and putting the
+ * old one back is two opens meaning one thing.
  */
 export const openJournal = (
   files: Readonly<Record<string, string>>,
   entry: string,
 ): Promise<Reply<JournalSummary>> => send<JournalSummary>({ op: "open", files, entry })
 
-/** Run a report against the journal already open. */
+/**
+ * Run a report against the journal already open.
+ *
+ * Waits its turn, so that a question never lands between the two halves of
+ * somebody else's trial and comes back describing a journal nobody agreed to
+ * keep.
+ */
 export const ask = <K extends Request["kind"]>(
   request: Extract<Request, { kind: K }>,
-): Promise<Reply<Answer[K]>> => send<Answer[K]>({ op: "query", request })
+): Promise<Reply<Answer[K]>> => atTheJournal.through(() => send<Answer[K]>({ op: "query", request }))

@@ -2,6 +2,12 @@
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+    { "path": "./tsconfig.node.json" },
+    { "path": "./tsconfig.test.json" }
+  ],
+  /* Not used for building — the references carry their own. Here because the
+     test runner reads this file, and nothing else, to resolve `~`. */
+  "compilerOptions": {
+    "paths": { "~/*": ["./src/*"] }
+  }
 }

@@ -49,14 +49,20 @@ functions will do.
 
 ## Commands
 
-From `apps/web`. There is no linter and no test runner; `tsc` is the only check.
+From `apps/web`. There is no linter; `tsc` is the check that runs over everything.
 
 ```sh
 bun install      # bun is the package manager and the script runner
 bun run dev      # licences, then vite on :8396      bun run build   # + tsc -b
-bunx tsc -b      # typecheck alone
+bunx tsc -b      # typecheck alone: src, vite.config, tests and e2e
+bun run test     # bun test over tests/ — the pure functions only
+bun run e2e      # playwright over e2e/ — drives window.choai, not the screen
 bun scripts/vendor-ui.mjs <name>...    # re-fetch a solid-ui component
 ```
+
+`playwright.config.ts` starts its own dev server with `CHOAI_TEST=1`, which
+turns the service worker off: it precaches the ~7 MB engine and updates itself,
+which is right on a phone and wrong under a test.
 
 The engine — `public/hledger.wasm` and the `src/hledger/ghc-jsffi.mjs` the worker
 imports — is committed, so a fresh clone runs. It is the one wasm here that is
@@ -103,6 +109,50 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   entry point needs `createPipe` and because `include` then resolves itself.
 - **`hledger/client.ts` is the only way in**, answering `Result<T, Trouble>`;
   nothing throws or rejects, and a dead worker settles everyone stranded.
+- **`hledger/turn.ts` is the one queue.** hledger holds a single parsed journal,
+  so `ask` and every open wait their turn. A trial — read a candidate, then put
+  the old one back — is one turn, which is why `openJournal` is left ungated and
+  its callers take the turn instead. The worker takes its messages one at a time
+  for the same reason.
+- **`api/` is the app without a screen.** One table in `api/table.ts` yields all
+  three faces: the typed `window.choai.report.balance(...)`, the by-name
+  `call(name, args)`, and the manifest `describe()` — so none can drift from
+  another. It sits strictly on `journal/store.ts`, `compose/commit.ts` and
+  `hledger/client.ts`; nothing there reaches `lib/idb.ts` or the worker, no
+  capability writes raw text or reads back a token, and answers are rebuilt in
+  `api/answered.ts` rather than passed through, because what is published is a
+  promise and hledger's floats are not part of it. `README.md` documents it.
+- **`journal/proposals.ts` is the write path for anything without a screen.**
+  Entries are trialled as one candidate (hledger re-reads the whole journal per
+  open, so one call per entry is two orders of magnitude of waiting), the text is
+  derived from the items every time rather than stored, and `apply` compares the
+  entry file to what it was before handing over — **with no `await` in between**,
+  which is the only thing stopping a concurrent write from being replaced by text
+  composed before it.
+- **`ai/` sits on `api/` and nowhere else.** The tools are `describe()` filtered
+  to `offered`, which is a fact of its own and not derivable from `writes`:
+  `transaction.create` writes one entry nobody saw first and is withheld, while
+  `proposal.apply` writes many and is offered, because they were shown.
+- **`ai/talker.ts` is the seam between providers.** `loop.ts`, `prompt.ts` and
+  the panels are written against it and against nobody's API; `anthropic.ts` and
+  `gemini.ts` are each one provider's spelling of it, and `talkers.ts` is the
+  table the settings picker and the per-provider key are read off. A turn's
+  blocks stay opaque all the way through because both providers keep things in a
+  turn that must come back byte for byte. **A conversation belongs to one
+  provider** — `ai/store.ts` starts again on a switch rather than handing one
+  provider's blocks to another. Gemini takes only a subset of JSON Schema and
+  refuses `additionalProperties`, so `gemini.ts` trims it on the way out; that
+  is why the schema is not written twice. `ai/kept.ts` holds the key and names its
+  only two permitted importers; nothing under `api/` may read it. A turn goes
+  back to the model exactly as it arrived — thinking and tool blocks unedited —
+  which is why `anthropic.ts` holds blocks opaque instead of parsing them into a
+  union. Leave adaptive thinking on: with it off, a tool call is sometimes
+  written out as ordinary text and silently runs nothing.
+- **Attachments are read before they are sent.** A photograph is scaled to
+  1568px and re-encoded (`ai/photo.ts`) — a phone writes 4000px and every model
+  charges by area. A statement is parsed by `lib/csv.ts` only to know it is a
+  table and how long; **the file's own text is what goes over**, because rows
+  read out and written back is a chance to change somebody's figures on the way.
 - **`hledger/wire.ts` mirrors `Bindings.hs`** — `Request`, `Answer`, `Trouble`
   against its `Request` parser and `Failure` type. A new report means editing
   both. Shapes are hledger's own `ToJSON`, so they follow upstream.

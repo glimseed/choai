@@ -12,6 +12,8 @@ import { render } from "solid-js/web"
 import { Route, Router } from "@solidjs/router"
 
 import "./app.css"
+/* Puts window.choai in place before anything is drawn. */
+import "~/api/install"
 import { Layout } from "~/app"
 import Journal from "~/routes/journal"
 import BalanceSheet from "~/routes/balance-sheet"

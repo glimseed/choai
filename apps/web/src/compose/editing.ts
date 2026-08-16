@@ -1,9 +1,10 @@
 import { createSignal, type Accessor } from "solid-js"
 
 import type { Transaction, Trouble } from "~/hledger/wire"
-import { journal, rewriteFile } from "~/journal/store"
-import { replaceAt, spanOf, textAt, type Span } from "~/journal/lines"
+import { journal } from "~/journal/store"
+import { spanOf, textAt, type Span } from "~/journal/lines"
 import { None, Some, getOrUndefined, type Option } from "~/lib/monad"
+import { commitEntry } from "./commit"
 import { stopComposing } from "./store"
 
 /**
@@ -62,14 +63,11 @@ export const editEntry = (written: string): void => {
  */
 export const saveEntry = async (written: string): Promise<boolean> => {
   const span = where()
-  const open = getOrUndefined(journal())
-  if (span === undefined || open === undefined) return false
-  const file = open.source.files[span.path]
-  if (file === undefined) return false
+  if (span === undefined) return false
 
   setSaving(true)
   setTrouble(None)
-  const result = await rewriteFile(span.path, replaceAt(file, span, written))
+  const result = await commitEntry(span, written)
   setSaving(false)
 
   if (!result.ok) {

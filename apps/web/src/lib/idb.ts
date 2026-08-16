@@ -13,7 +13,7 @@ const DB = "choai"
  * out below, because someone's books are already in the database by the time it
  * runs.
  */
-const VERSION = 3
+const VERSION = 4
 
 /** The stores, by the name they are opened with. */
 export const STORE = {
@@ -25,6 +25,14 @@ export const STORE = {
   state: "state",
   /** What syncing knows: the token, and what each file was last agreed at. */
   remote: "remote",
+  /**
+   * What talking to a model needs: the key, and which model.
+   *
+   * Apart from `remote` on purpose. Disconnecting from GitHub clears that store
+   * whole, for a reason of its own, and a key for somewhere else should not go
+   * with it.
+   */
+  keys: "keys",
 } as const
 
 export type StoreName = (typeof STORE)[keyof typeof STORE]
@@ -68,9 +76,12 @@ const raise = (db: IDBDatabase, upgrade: IDBTransaction, from: number): void => 
     db.createObjectStore(STORE.books, { keyPath: "id" })
     if (from === 0) {
       db.createObjectStore(STORE.files, { keyPath: ["book", "path"] })
-      return
+    } else {
+      carryOverTheOneBook(db, upgrade)
     }
-    carryOverTheOneBook(db, upgrade)
+  }
+  if (from < 4) {
+    db.createObjectStore(STORE.keys, { keyPath: "id" })
   }
 }
 

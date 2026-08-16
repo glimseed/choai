@@ -147,6 +147,36 @@
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Menlo", monospace;
 
+  /* Dots that arrive one at a time while something is being waited for. The
+     edges are hard rather than faded: this is a count, not a shimmer. Both run
+     on the same 1.2s so the three of them land a third of it apart. */
+  --animate-dot-two: dot-two 1.2s linear infinite;
+  --animate-dot-three: dot-three 1.2s linear infinite;
+
+  @keyframes dot-two {
+    0%,
+    32.9% {
+      opacity: 0;
+    }
+
+    33%,
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes dot-three {
+    0%,
+    65.9% {
+      opacity: 0;
+    }
+
+    66%,
+    100% {
+      opacity: 1;
+    }
+  }
+
   @keyframes accordion-down {
     from {
       height: 0;

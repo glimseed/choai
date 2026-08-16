@@ -25,6 +25,10 @@ export default defineConfig({
     solid(),
     tailwindcss(),
     VitePWA({
+      // A service worker that precaches ~7 MB and updates itself is the right
+      // thing for someone keeping books on a phone, and the wrong thing under a
+      // test, where it can reload the page from under a run in progress.
+      disable: process.env.CHOAI_TEST === "1",
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {

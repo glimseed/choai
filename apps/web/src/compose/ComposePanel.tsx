@@ -1,6 +1,6 @@
 import { For, Index, Show, type JSX } from "solid-js"
 
-import { entryText, journal } from "~/journal/store"
+import { journal } from "~/journal/store"
 import { getOrUndefined } from "~/lib/monad"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
@@ -8,6 +8,7 @@ import { TroubleNote } from "~/components/trouble-note"
 import { XIcon } from "~/lib/ui/icons"
 import { t } from "~/i18n"
 import { draftToJournal, type Tag } from "./draft"
+import { amountExample } from "./hint"
 import {
   addPosting,
   addPostingTag,
@@ -37,22 +38,9 @@ import {
 export function ComposePanel(): JSX.Element {
   const accounts = (): readonly string[] => getOrUndefined(journal())?.summary.accounts ?? []
 
-  /**
-   * An example in the currency the books are already kept in.
-   *
-   * A bare number is a commodity of its own as far as hledger is concerned, so
-   * typing one into yen books quietly starts a second currency. Showing the
-   * symbol here is a nudge; what gets written is still exactly what was typed.
-   */
-  const amountHint = (): string => {
-    const symbol = getOrUndefined(journal())?.summary.commodities[0]
-    return symbol === undefined ? t("compose.amount") : `${symbol}1200`
-  }
-
-  const write = async (): Promise<void> => {
-    const text = entryText()
-    if (text !== undefined) await save(text)
-  }
+  /** What gets written is still exactly what was typed; the symbol is a nudge. */
+  const amountHint = (): string =>
+    amountExample(getOrUndefined(journal())?.summary.commodities ?? []) ?? t("compose.amount")
 
   return (
     <div class="flex flex-col gap-3 p-3">
@@ -157,7 +145,7 @@ export function ComposePanel(): JSX.Element {
         {(trouble) => <TroubleNote trouble={trouble()} />}
       </Show>
 
-      <Button disabled={!writable() || saving()} onClick={() => void write()}>
+      <Button disabled={!writable() || saving()} onClick={() => void save()}>
         {t("compose.add")}
       </Button>
     </div>

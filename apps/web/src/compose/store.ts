@@ -2,10 +2,10 @@ import { createSignal, type Accessor } from "solid-js"
 
 import { ask } from "~/hledger/client"
 import type { Transaction, Trouble } from "~/hledger/wire"
-import { appendToEntry, journal } from "~/journal/store"
+import { journal } from "~/journal/store"
 import { getOrUndefined, None, Some, type Option } from "~/lib/monad"
+import { commitDraft } from "./commit"
 import {
-  appendToJournal,
   emptyDraft,
   emptyPosting,
   isWritable,
@@ -136,10 +136,10 @@ export const writable = (): boolean => isWritable(draft())
  * The date stays behind afterwards: entries are usually written in runs, and
  * the run is usually one day's worth.
  */
-export const save = async (journalText: string): Promise<boolean> => {
+export const save = async (): Promise<boolean> => {
   setSaving(true)
   setTrouble(None)
-  const result = await appendToEntry(appendToJournal(journalText, draft()))
+  const result = await commitDraft(draft())
   setSaving(false)
 
   if (!result.ok) {

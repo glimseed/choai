@@ -5,6 +5,7 @@ import { LOCALES, LOCALE_NAMES, locale, setLocale, t } from "~/i18n"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
 import { journal, removeBook, renameBook } from "~/journal/store"
+import { AiKeyPanel } from "~/components/ai-key-panel"
 import { GitHubPanel } from "~/components/github-panel"
 import { handOver } from "~/journal/handover"
 import { keptForGood } from "~/journal/kept"
@@ -49,6 +50,7 @@ export default function Settings(): JSX.Element {
         <p class="text-xs text-muted-foreground">{t("settings.appearanceHint")}</p>
       </section>
       <Library />
+      <AiKeyPanel />
       <GitHubPanel />
       <section class="flex flex-col gap-2">
         <h2 class="text-sm font-medium">{t("licenses.title")}</h2>

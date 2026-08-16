@@ -8,7 +8,7 @@ import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem }
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
-import { DownloadIcon, FileCodeIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
+import { DownloadIcon, FileCodeIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SparklesIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
@@ -17,6 +17,11 @@ import { SettingsExplorer } from "~/explorer/SettingsExplorer"
 import { journal, reopenKept } from "~/journal/store"
 import { handOver } from "~/journal/handover"
 import { useQuery } from "~/journal/query"
+import { AiChat } from "~/components/ai-chat"
+import { ProposalReview } from "~/components/proposal-review"
+import { chatting, startChatting, stopChatting, toggleChatting } from "~/ai/store"
+import { underReview } from "~/journal/proposals"
+import { showed, wantedQuery } from "~/journal/showing"
 import { ComposePanel } from "~/compose/ComposePanel"
 import { EntryEditor } from "~/compose/EntryEditor"
 import { editing, stopEditingEntry } from "~/compose/editing"
@@ -26,6 +31,23 @@ import { actionFor } from "~/lib/shortcuts"
 import { ShortcutsHelp } from "~/components/shortcuts-help"
 import { BookSwitcher } from "~/components/book-switcher"
 import { t } from "~/i18n"
+
+/** What the dock is called, by what is in it. */
+const dockTitle = (
+  showing: "editing" | "reviewing" | "chatting" | "composing" | undefined,
+): string => {
+  switch (showing) {
+    case "editing":
+      return t("edit.title")
+    case "reviewing":
+      return t("propose.title")
+    case "chatting":
+      return t("ai.dock")
+    case "composing":
+    case undefined:
+      return t("compose.title")
+  }
+}
 
 // The daily journal comes first because that is what the app is opened for;
 // the statements are things you go and look at, not things you live in.
@@ -139,10 +161,42 @@ export function Layout(props: ParentProps) {
     navigate(href + location.search)
   }
 
-  /** Whichever of the two is open in the dock, closed. */
+  /**
+   * Which proposal has been set aside, so that closing the dock closes it.
+   *
+   * A proposal opens the dock by existing rather than by being opened, so there
+   * is nothing to stop; putting it down is remembering which one, and a
+   * different one — including what is left after applying part of this — opens
+   * it again.
+   */
+  const [asideFrom, setAsideFrom] = createSignal<string | undefined>(undefined)
+
+  const reviewing = (): boolean => {
+    const proposal = underReview()
+    return proposal !== undefined && proposal.id !== asideFrom()
+  }
+
+  /** Whichever of the four is open in the dock, closed. Not cleared — closed. */
   const putDown = (): void => {
     stopComposing()
     stopEditingEntry()
+    stopChatting()
+    setAsideFrom(underReview()?.id)
+  }
+
+  /**
+   * What the dock is showing, if anything.
+   *
+   * Editing wins because it is started from a row in the journal and is about
+   * that row. A proposal comes next because it is waiting on a decision and
+   * arriving unbidden — it should not sit behind a panel somebody left open.
+   */
+  const inTheDock = (): "editing" | "reviewing" | "chatting" | "composing" | undefined => {
+    if (editing() !== undefined) return "editing"
+    if (reviewing()) return "reviewing"
+    if (chatting()) return "chatting"
+    if (composing()) return "composing"
+    return undefined
   }
 
   /**
@@ -158,6 +212,15 @@ export function Layout(props: ParentProps) {
     startComposing()
   }
 
+  /** The dock needs the same room whichever of the three is in it. */
+  const chat = (): void => {
+    if (narrow()) {
+      setRailVisible(false)
+      setPanelOpen(false)
+    }
+    startChatting()
+  }
+
   /**
    * Editing an entry is started from the journal, which does not know about the
    * rails, so the folding that opening the composer does by hand is done here
@@ -168,6 +231,22 @@ export function Layout(props: ParentProps) {
       if (open === undefined || !narrow()) return
       setRailVisible(false)
       setPanelOpen(false)
+    }),
+  )
+
+  /**
+   * A query asked for from outside the tree lands here.
+   *
+   * The title bar's query is in the URL, which takes a router hook, which takes
+   * being inside the tree — and a capability answering a question is not. So it
+   * is left in a signal and picked up here, and cleared once it has been acted
+   * on so that asking for it again is a second request.
+   */
+  createEffect(
+    on(wantedQuery, (query) => {
+      if (query === undefined) return
+      setQuery(query)
+      showed()
     }),
   )
 
@@ -191,6 +270,7 @@ export function Layout(props: ParentProps) {
       if (action === undefined) return
       event.preventDefault()
       if (action === "compose") composing() ? toggleComposing() : compose()
+      if (action === "chat") chatting() ? toggleChatting() : chat()
       if (action === "togglePanels") toggleChrome()
       if (action === "close") putDown()
     }
@@ -258,19 +338,24 @@ export function Layout(props: ParentProps) {
               </Show>
             }
             right={
-              <Show when={getOrUndefined(journal())}>
-                {(open) => (
-                  <button
-                    type="button"
-                    onClick={() => void handOver(open().source)}
-                    aria-label={t("journal.export")}
-                    title={t("journal.export")}
-                    class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  >
-                    <DownloadIcon class="h-4 w-4" />
-                  </button>
-                )}
-              </Show>
+              <>
+                <Show when={getOrUndefined(journal())}>
+                  {(open) => (
+                    <button
+                      type="button"
+                      onClick={() => void handOver(open().source)}
+                      aria-label={t("journal.export")}
+                      title={t("journal.export")}
+                      class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    >
+                      <DownloadIcon class="h-4 w-4" />
+                    </button>
+                  )}
+                </Show>
+                {/* Last, and there whether or not a journal is open: the keys
+                    work either way. */}
+                <ShortcutsHelp />
+              </>
             }
           />
         }
@@ -326,6 +411,18 @@ export function Layout(props: ParentProps) {
                       {onSource() ? <Undo2Icon class="h-4 w-4" /> : <FileCodeIcon class="h-[18px] w-[18px]" />}
                     </button>
                   </Show>
+                  <Show when={getOrUndefined(journal()) !== undefined}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={chat}
+                      aria-label={t("ai.dock")}
+                      title={t("ai.dock")}
+                      class="size-6 text-muted-foreground"
+                    >
+                      <SparklesIcon />
+                    </Button>
+                  </Show>
                   <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
                     <Button
                       variant="outline"
@@ -353,24 +450,30 @@ export function Layout(props: ParentProps) {
             initialWidth={420}
             minWidth={320}
             maxWidth={withinWindow}
-            open={composing() || editing() !== undefined}
-            header={<span>{editing() === undefined ? t("compose.title") : t("edit.title")}</span>}
+            open={inTheDock() !== undefined}
+            header={<span>{dockTitle(inTheDock())}</span>}
             onClose={putDown}
             closeLabel={t("compose.close")}
           >
-            {/* One dock, two things to write in: a new entry, or the lines an
-                existing one is written on. */}
-            <Show when={editing() !== undefined} fallback={<ComposePanel />}>
+            {/* One dock, three things beside the books: a new entry, the lines an
+                existing one is written on, or a question about the lot. */}
+            <Show when={inTheDock() === "editing"}>
               <EntryEditor />
+            </Show>
+            <Show when={inTheDock() === "reviewing"}>
+              <ProposalReview />
+            </Show>
+            <Show when={inTheDock() === "chatting"}>
+              <AiChat />
+            </Show>
+            <Show when={inTheDock() === "composing"}>
+              <ComposePanel />
             </Show>
           </AuxPanel>
         }
       >
         <div class="p-4">{props.children}</div>
       </Shell>
-      {/* Outside the shell, since it belongs to the window rather than to any
-          one region of it. */}
-      <ShortcutsHelp />
     </>
   )
 }

@@ -1,26 +1,17 @@
 import { For, Show, createResource, type JSX } from "solid-js"
 
-import { ask } from "~/hledger/client"
 import { formatMixed } from "~/hledger/amount"
 import type { BalanceReport, MixedAmount } from "~/hledger/wire"
 import { journal } from "~/journal/store"
 import { useQuery } from "~/journal/query"
+import { askBalance, narrowed, type BalanceKind } from "~/reports/ask"
 import { linesOf, type Line } from "~/reports/tree"
 import { getOrUndefined, matchResource } from "~/lib/monad"
 import { TroubleNote } from "./trouble-note"
 import { t } from "~/i18n"
 
-/**
- * Any of hledger's balance reports.
- *
- * The balance sheet and the income statement are one report under a different
- * account-type filter and accumulation, which is how hledger's own commands are
- * defined, so they share this rather than being written twice.
- */
-type Kind = "balancesheet" | "incomestatement" | "balance"
-
 export function BalanceReportView(props: {
-  kind: Kind
+  kind: BalanceKind
   /** Query terms of the screen's own, added to the one in the title bar. */
   narrowing?: string
   nothingToShow: string
@@ -34,9 +25,9 @@ export function BalanceReportView(props: {
   const [report] = createResource(
     () => {
       const open = getOrUndefined(journal())
-      return open === undefined ? undefined : { open, terms: terms(query(), props.narrowing) }
+      return open === undefined ? undefined : { open, terms: narrowed(query(), props.narrowing) }
     },
-    (asked) => askFor(props.kind, asked.terms),
+    (asked) => askBalance(props.kind, asked.terms),
   )
 
   return (
@@ -49,21 +40,6 @@ export function BalanceReportView(props: {
     </Show>
   )
 }
-
-/** Each branch narrows the kind to a literal, which is what gives the answer its type. */
-const askFor = (kind: Kind, query: string) => {
-  switch (kind) {
-    case "balancesheet":
-      return ask({ kind, query })
-    case "incomestatement":
-      return ask({ kind, query })
-    case "balance":
-      return ask({ kind, query })
-  }
-}
-
-const terms = (query: string, narrowing: string | undefined): string =>
-  [query, narrowing].filter((part) => part !== undefined && part !== "").join(" ")
 
 function Rows(props: { report: BalanceReport; nothingToShow: string }): JSX.Element {
   return (

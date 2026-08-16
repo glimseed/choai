@@ -3,15 +3,8 @@ import { For, createSignal, type JSX } from "solid-js"
 import { BalanceReportView } from "~/components/balance-report"
 import { DeclareTypes } from "~/components/declare-types"
 import { Button } from "~/components/ui/button"
+import { PERIODS } from "~/reports/periods"
 import { t } from "~/i18n"
-
-/** Periods are hledger query terms, so hledger decides what they mean. */
-const PERIODS = [
-  { key: "incomeStatement.thisMonth", term: "date:thismonth" },
-  { key: "incomeStatement.thisYear", term: "date:thisyear" },
-  { key: "incomeStatement.lastYear", term: "date:lastyear" },
-  { key: "incomeStatement.allTime", term: "" },
-] as const
 
 export default function IncomeStatement(): JSX.Element {
   const [period, setPeriod] = createSignal<string>("")

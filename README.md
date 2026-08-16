@@ -43,9 +43,60 @@ screens ask. Nothing is uploaded anywhere by the app.
 - **Keep**: the files stay on the device, one record per path, and the journal
   left open comes back on the next visit.
 - **Take away**: the share sheet on a phone, a download elsewhere.
+- **Ask**: questions in a sentence, answered by hledger. Attach a photograph of
+  a receipt or a bank statement and get entries back, offered rather than
+  written: what is confident is ticked, what is not is set aside with a reason,
+  and nothing joins the journal until you press. The browser talks to the model
+  directly with a key of your own -- Claude or Gemini -- and what it may call is
+  the same table `window.choai` publishes, minus anything that could change the
+  books without showing you first, and minus anything that leaves the device.
 - **Sync**: a path in a GitHub repository, reached from the browser straight to
   api.github.com. Entries written in two places are laid one after the other;
   when the same part changed on both sides, nothing is merged and it says so.
+
+## `window.choai`
+
+Everything above is reachable without a screen. Opening the app puts a
+`window.choai` in the page: the same core, answering a script, a test, or an
+agent instead of a person.
+
+```js
+await window.choai.ready                                 // which journal is open, decided
+window.choai.describe()                                  // every capability, with its JSON Schema
+await window.choai.report.balance({ query: "date:lastmonth acct:expenses" })
+await window.choai.call("journal.similar", { description: "Amazon" })
+await window.choai.idle()                                // everything asked has been answered
+```
+
+`describe()` returns a manifest with a `version` that names this promise. Adding
+a capability, or an argument that may be left out, leaves anything already
+written against it working; taking one away, or narrowing one, does not, and
+that is what the version moves for.
+
+- **Two doors, one table.** `choai.report.balance(...)` is for names known when
+  the code is written; `choai.call(name, args)` is for anything that read
+  `describe()` and chose. Both are read off one table, so what a capability
+  takes cannot drift from what it says it takes.
+- **Nothing throws.** Every call answers `{ok: true, value}` or
+  `{ok: false, error}`, and the error is a case with its particulars rather than
+  a sentence — a missing field comes back with the path to it and the whole
+  schema, so a correction can be made without asking again.
+- **Figures are exact.** Amounts cross as a mantissa and a scale, with the same
+  figure written out. hledger's floating-point copy is left behind.
+- **Writing is two acts.** `transaction.propose` writes entries down without
+  keeping them and says whether hledger read them; `proposal.apply` keeps them,
+  or the ones named and no others. So a diff exists before anything is decided,
+  a hundred entries with three doubtful ones is one glance and one press, and a
+  proposal made against a journal that has since moved is refused rather than
+  applied over the top of it.
+- **What is deliberately absent.** No way to run code, no way to write a file as
+  text, and no way to read back the tokens this app keeps. A capability names an
+  act, and the acts are the ones the screens also perform — so an agent goes
+  through the same door as a person, and hledger reads everything before it is
+  kept.
+
+Being reachable is the point: this is a local application with no server, and
+what it can do it can be asked to do.
 
 The feasibility spike that decided all this lives in [`wasm/`](wasm/); its
 answer -- that hledger-lib can be compiled to `wasm32-wasi`, kept small enough
