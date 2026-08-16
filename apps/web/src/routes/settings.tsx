@@ -9,6 +9,7 @@ import { GitHubPanel } from "~/components/github-panel"
 import { handOver } from "~/journal/handover"
 import { keptForGood } from "~/journal/kept"
 import { getOrUndefined } from "~/lib/monad"
+import { SCHEMES, scheme, setScheme } from "~/lib/theme"
 
 export default function Settings(): JSX.Element {
   return (
@@ -29,6 +30,23 @@ export default function Settings(): JSX.Element {
           </For>
         </div>
         <p class="text-xs text-muted-foreground">{t("settings.languageHint")}</p>
+      </section>
+      <section class="flex flex-col gap-2">
+        <h2 class="text-sm font-medium">{t("settings.appearance")}</h2>
+        <div class="flex flex-wrap gap-2">
+          <For each={SCHEMES}>
+            {(option) => (
+              <Button
+                variant={scheme() === option ? "default" : "outline"}
+                size="sm"
+                onClick={() => setScheme(option)}
+              >
+                {t(`settings.scheme.${option}`)}
+              </Button>
+            )}
+          </For>
+        </div>
+        <p class="text-xs text-muted-foreground">{t("settings.appearanceHint")}</p>
       </section>
       <Library />
       <GitHubPanel />

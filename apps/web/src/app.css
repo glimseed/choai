@@ -48,46 +48,53 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* The one place these tokens are no longer solid-ui's: its dark end is nearly
+   black and entirely grey, which reads as a hole at night rather than as paper
+   turned down. Everything here is lifted off black and carries a little of the
+   blue the app is marked with, and the surfaces are set apart by lightness so
+   that a panel is still a panel with the lights off. */
 .dark,
 [data-kb-theme="dark"] {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.205 0.011 265);
+  --foreground: oklch(0.94 0.004 265);
+  --card: oklch(0.245 0.012 265);
+  --card-foreground: oklch(0.94 0.004 265);
+  --popover: oklch(0.245 0.012 265);
+  --popover-foreground: oklch(0.94 0.004 265);
+  --primary: oklch(0.94 0.004 265);
+  --primary-foreground: oklch(0.245 0.012 265);
+  --secondary: oklch(0.288 0.012 265);
+  --secondary-foreground: oklch(0.94 0.004 265);
+  --muted: oklch(0.288 0.012 265);
+  --muted-foreground: oklch(0.735 0.014 265);
+  --accent: oklch(0.318 0.014 265);
+  --accent-foreground: oklch(0.94 0.004 265);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
 
-  --info: oklch(0.28 0.0875 267.91);
+  /* Lifted with the ground they sit on, or a note stops looking like one. */
+  --info: oklch(0.34 0.0875 267.91);
   --info-foreground: oklch(0.68 0.148143 238.1044);
-  --success: oklch(0.26 0.0487 172.54);
+  --success: oklch(0.32 0.0487 172.54);
   --success-foreground: oklch(0.69 0.1481 162.37);
-  --warning: oklch(0.29 0.0638 53.82);
+  --warning: oklch(0.35 0.0638 53.82);
   --warning-foreground: oklch(0.71 0.186 48.13);
-  --error: oklch(0.26 0.0886 26.05);
+  --error: oklch(0.32 0.0886 26.05);
   --error-foreground: oklch(0.64 0.2082 25.38);
 
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --border: oklch(0.305 0.012 265);
+  --input: oklch(0.335 0.013 265);
+  --ring: oklch(0.55 0.02 265);
 
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  /* Recessed against the ground, as it is in the light, rather than raised. */
+  --sidebar: oklch(0.183 0.011 265);
+  --sidebar-foreground: oklch(0.94 0.004 265);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --sidebar-accent: oklch(0.318 0.014 265);
+  --sidebar-accent-foreground: oklch(0.94 0.004 265);
+  --sidebar-border: oklch(0.305 0.012 265);
+  --sidebar-ring: oklch(0.55 0.02 265);
 }
 
 @theme {

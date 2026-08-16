@@ -70,6 +70,13 @@ export const ja: Dictionary = {
   settings: {
     language: "言語",
     languageHint: "ここで選ばないかぎり、ブラウザの言語に従います。",
+    appearance: "外観",
+    appearanceHint: "自動にすると端末に従います。夜になると暗くなる設定も、そのまま反映されます。",
+    scheme: {
+      system: "自動",
+      light: "ライト",
+      dark: "ダーク",
+    },
   },
   source: {
     title: "テキストを編集",

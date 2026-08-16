@@ -77,6 +77,14 @@ export const en = {
   settings: {
     language: "Language",
     languageHint: "Chosen from your browser unless you pick one here.",
+    appearance: "Appearance",
+    appearanceHint: "Automatic follows the device, including a screen that darkens itself at night.",
+    /** Named for what each does, not for the colour it lands on. */
+    scheme: {
+      system: "Automatic",
+      light: "Light",
+      dark: "Dark",
+    },
   },
   source: {
     title: "Edit the text",
