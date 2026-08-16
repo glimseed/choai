@@ -3,7 +3,7 @@ import type { Hitch } from "~/api/hitch"
 import { Ok, type Result } from "~/lib/monad"
 import { capabilityOf } from "./naming"
 import { instructions, toolsOffered } from "./prompt"
-import type { Failure, Shown, Talker, Turn } from "./talker"
+import { NOTHING_SPENT, alsoSpent, type Failure, type Shown, type Spent, type Talker, type Turn } from "./talker"
 
 /**
  * One exchange: ask, run whatever was asked for, ask again with the answers.
@@ -50,6 +50,8 @@ export interface Conversed {
   readonly ending: Ending
   /** The conversation as it now stands, for the next thing said to be added to. */
   readonly turns: readonly Turn[]
+  /** Every exchange this took, added up. One question can be several. */
+  readonly spent: Spent
 }
 
 export const converse = (
@@ -58,7 +60,8 @@ export const converse = (
   model: string,
   turns: readonly Turn[],
   onBeat: (beat: Beat) => void,
-): Promise<Result<Conversed, Failure>> => step(talker, key, model, turns, onBeat, TURNS)
+): Promise<Result<Conversed, Failure>> =>
+  step(talker, key, model, turns, onBeat, TURNS, NOTHING_SPENT)
 
 const step = async (
   talker: Talker,
@@ -67,8 +70,9 @@ const step = async (
   turns: readonly Turn[],
   onBeat: (beat: Beat) => void,
   left: number,
+  sofar: Spent,
 ): Promise<Result<Conversed, Failure>> => {
-  if (left <= 0) return Ok({ ending: { stopped: "too-many-turns" }, turns })
+  if (left <= 0) return Ok({ ending: { stopped: "too-many-turns" }, turns, spent: sofar })
 
   const reply = await talker.send(key, {
     model,
@@ -79,9 +83,11 @@ const step = async (
   })
   if (!reply.ok) return reply
 
+  const spent = alsoSpent(sofar, reply.value.spent)
+
   if (reply.value.stopped === "refused") {
     const why = reply.value.why
-    return Ok({ ending: { stopped: "refused", ...(why === undefined ? {} : { why }) }, turns })
+    return Ok({ ending: { stopped: "refused", ...(why === undefined ? {} : { why }) }, turns, spent })
   }
 
   const grown: readonly Turn[] = [...turns, { role: "model", content: reply.value.content }]
@@ -89,10 +95,10 @@ const step = async (
   const spoke = talker.textIn(reply.value.content)
   if (spoke !== "") onBeat({ is: "said", said: { from: "ai", text: spoke } })
 
-  if (reply.value.stopped === "cut-off") return Ok({ ending: { stopped: "cut-off" }, turns: grown })
+  if (reply.value.stopped === "cut-off") return Ok({ ending: { stopped: "cut-off" }, turns: grown, spent })
 
   const asked = talker.calledIn(reply.value.content)
-  if (asked.length === 0) return Ok({ ending: { stopped: "done" }, turns: grown })
+  if (asked.length === 0) return Ok({ ending: { stopped: "done" }, turns: grown, spent })
 
   const answers = await Promise.all(
     asked.map(async (one) => {
@@ -103,5 +109,5 @@ const step = async (
     }),
   )
 
-  return step(talker, key, model, [...grown, talker.answering(answers)], onBeat, left - 1)
+  return step(talker, key, model, [...grown, talker.answering(answers)], onBeat, left - 1, spent)
 }

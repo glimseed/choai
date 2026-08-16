@@ -10,6 +10,7 @@ import {
   type Model,
   type Reply,
   type Shown,
+  type Spent,
   type Stopped,
   type Talker,
   type Turn,
@@ -86,6 +87,29 @@ const trimmed = (schema: JsonSchema): Record<string, unknown> => {
 const parametersOf = (schema: JsonSchema): Record<string, unknown> | undefined =>
   Object.keys(schema.properties ?? {}).length === 0 ? undefined : trimmed(schema)
 
+/**
+ * What the exchange cost.
+ *
+ * The prompt count here is the whole prompt already. Thinking is counted apart
+ * from the answer and is not in `candidatesTokenCount`, so what came back is
+ * taken from the total instead — it is the one figure that includes everything
+ * generated.
+ */
+const spentOn = (usage: {
+  promptTokenCount?: number
+  candidatesTokenCount?: number
+  totalTokenCount?: number
+  cachedContentTokenCount?: number
+}): Spent => {
+  const sent = usage.promptTokenCount ?? 0
+  const total = usage.totalTokenCount
+  return {
+    sent,
+    back: total === undefined ? (usage.candidatesTokenCount ?? 0) : Math.max(0, total - sent),
+    cached: usage.cachedContentTokenCount ?? 0,
+  }
+}
+
 const models = async (key: string): Promise<Result<readonly Model[], Failure>> => {
   const reached = await reach(`${ROOT}/models?pageSize=200`, { method: "GET", headers: headers(key) })
   if (!reached.ok) return reached
@@ -142,6 +166,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
     modelVersion?: string
     candidates?: readonly { content?: { parts?: readonly Block[] }; finishReason?: string }[]
     promptFeedback?: { blockReason?: string }
+    usageMetadata?: Parameters<typeof spentOn>[0]
   }>(reached.value)
   if (!body.ok) return body
 
@@ -155,6 +180,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
       blocked === undefined ? stoppedBy(candidate?.finishReason ?? "STOP", calledIn(content).length) : "refused",
     ...(blocked === undefined ? {} : { why: blocked }),
     content,
+    spent: spentOn(body.value.usageMetadata ?? {}),
   })
 }
 

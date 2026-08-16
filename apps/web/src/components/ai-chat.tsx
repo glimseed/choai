@@ -5,8 +5,17 @@ import { talkerFor } from "~/ai/talkers"
 import type { Beat, Ending } from "~/ai/loop"
 import { asUrl, shrink } from "~/ai/photo"
 import { looksTabular, rowsOf } from "~/lib/csv"
-import { anythingSaid, ask, askingTrouble, beats, forgetChat, howItEnded, sending } from "~/ai/store"
-import type { Shown } from "~/ai/talker"
+import {
+  anythingSaid,
+  ask,
+  askingTrouble,
+  beats,
+  forgetChat,
+  howItEnded,
+  sending,
+  spentSoFar,
+} from "~/ai/store"
+import type { Shown, Spent } from "~/ai/talker"
 import { wording } from "~/components/ai-key-panel"
 import { Button } from "~/components/ui/button"
 import { Ellipsis } from "~/lib/ui/ellipsis"
@@ -130,6 +139,9 @@ export function AiChat(): JSX.Element {
             void send()
           }}
         />
+        <Show when={spentSoFar().sent > 0}>
+          <Counted spent={spentSoFar()} />
+        </Show>
         <div class="flex items-center gap-2">
           {/* `capture` is what puts a phone straight into its camera rather than
               into a folder of photographs it has already taken. */}
@@ -205,6 +217,28 @@ const withTables = (written: string, along: readonly Brought[]): string => {
   ]
     .filter((part) => part !== "")
     .join("\n\n")
+}
+
+/**
+ * What this conversation has cost, in tokens.
+ *
+ * Kept where it can be seen rather than in a settings page nobody opens: the key
+ * is the reader's own, so what a question costs is theirs to know before they
+ * ask the next one. What was served from cache is said beside it, because that
+ * is the difference between a conversation that grows linearly and one that
+ * grows by the square.
+ */
+function Counted(props: { spent: Spent }): JSX.Element {
+  const round = (many: number): string => many.toLocaleString()
+  return (
+    <p class="text-[11px] text-muted-foreground">
+      {t("ai.spent", { sent: round(props.spent.sent), back: round(props.spent.back) })}
+      <Show when={props.spent.cached > 0}>
+        {" "}
+        {t("ai.ofThatCached", { cached: round(props.spent.cached) })}
+      </Show>
+    </p>
+  )
 }
 
 const Nothing = (): JSX.Element => (

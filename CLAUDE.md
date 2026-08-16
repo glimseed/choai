@@ -123,12 +123,14 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   `api/answered.ts` rather than passed through, because what is published is a
   promise and hledger's floats are not part of it. `README.md` documents it.
 - **`journal/proposals.ts` is the write path for anything without a screen.**
-  Entries are trialled as one candidate (hledger re-reads the whole journal per
-  open, so one call per entry is two orders of magnitude of waiting), the text is
-  derived from the items every time rather than stored, and `apply` compares the
-  entry file to what it was before handing over — **with no `await` in between**,
-  which is the only thing stopping a concurrent write from being replaced by text
-  composed before it.
+  Changes are trialled as one candidate (hledger re-reads the whole journal per
+  open, so one call per change is two orders of magnitude of waiting), the files
+  are derived from the items every time rather than stored, and `apply` compares
+  every touched file to what it was before handing over — **with no `await` in
+  between**, which is the only thing stopping a concurrent write from being
+  replaced by text composed before it. A removal is an item like an addition, so
+  a correction is one shown, atomic write; removals are applied bottom-up
+  because every line taken out shifts the ones below it.
 - **`ai/` sits on `api/` and nowhere else.** The tools are `describe()` filtered
   to `offered`, which is a fact of its own and not derivable from `writes`:
   `transaction.create` writes one entry nobody saw first and is withheld, while

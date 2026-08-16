@@ -9,6 +9,7 @@ import {
   type Model,
   type Reply,
   type Shown,
+  type Spent,
   type Stopped,
   type Talker,
   type Turn,
@@ -58,6 +59,27 @@ const stoppedBy = (reason: string): Stopped => {
       return "cut-off"
     default:
       return "done"
+  }
+}
+
+/**
+ * What the exchange cost.
+ *
+ * `input_tokens` is the part that was not cached, not the whole prompt — the
+ * cached and newly-cached parts are counted beside it — so the three are added
+ * to get what was actually sent.
+ */
+const spentOn = (usage: {
+  input_tokens?: number
+  output_tokens?: number
+  cache_read_input_tokens?: number
+  cache_creation_input_tokens?: number
+}): Spent => {
+  const cached = usage.cache_read_input_tokens ?? 0
+  return {
+    sent: (usage.input_tokens ?? 0) + cached + (usage.cache_creation_input_tokens ?? 0),
+    back: usage.output_tokens ?? 0,
+    cached,
   }
 }
 
@@ -118,6 +140,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
     stop_reason?: string
     stop_details?: { category?: string | null } | null
     content?: readonly Block[]
+    usage?: Parameters<typeof spentOn>[0]
   }>(reached.value)
   if (!body.ok) return body
 
@@ -127,6 +150,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
     stopped: stoppedBy(body.value.stop_reason ?? "end_turn"),
     ...(typeof category === "string" ? { why: category } : {}),
     content: body.value.content ?? [],
+    spent: spentOn(body.value.usage ?? {}),
   })
 }
 

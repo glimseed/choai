@@ -108,6 +108,8 @@ export const ja: Dictionary = {
     refused: "リクエストが拒否されました（{{ status }}）。",
     unreadable: "答えを読み取れませんでした。",
     needsKey: "ここで尋ねるには、設定で API キーを保存してください。",
+    spent: "送信 {{ sent }} / 応答 {{ back }} トークン",
+    ofThatCached: "· うち {{ cached }} はキャッシュから",
   },
   shortcuts: {
     title: "キーボード操作",

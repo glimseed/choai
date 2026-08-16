@@ -79,12 +79,38 @@ export interface Ask {
  */
 export type Stopped = "done" | "tools" | "refused" | "cut-off"
 
+/**
+ * What one exchange cost, in the only unit that does not rot.
+ *
+ * Tokens rather than money: a price list would have to be kept in step with two
+ * providers' and would be quietly wrong the week either changed one. What
+ * matters here is visible either way — how much of the conversation is being
+ * re-sent every turn, and how much of that is being served from cache instead
+ * of read again.
+ */
+export interface Spent {
+  /** The whole prompt, cached part included. */
+  readonly sent: number
+  readonly back: number
+  /** How much of `sent` did not have to be read again. */
+  readonly cached: number
+}
+
+export const NOTHING_SPENT: Spent = { sent: 0, back: 0, cached: 0 }
+
+export const alsoSpent = (a: Spent, b: Spent): Spent => ({
+  sent: a.sent + b.sent,
+  back: a.back + b.back,
+  cached: a.cached + b.cached,
+})
+
 export interface Reply {
   readonly model: string
   readonly stopped: Stopped
   readonly why?: string
   /** Exactly what arrived, for putting back into the next ask. */
   readonly content: readonly Block[]
+  readonly spent: Spent
 }
 
 export type Failure =

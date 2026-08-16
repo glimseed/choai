@@ -5,7 +5,7 @@ import { None, Some, getOrUndefined, type Option } from "~/lib/monad"
 import { key, model as keptModel, which } from "./kept"
 import { converse, type Beat, type Ending } from "./loop"
 import { groundingFor } from "./prompt"
-import type { Failure, Shown, Turn } from "./talker"
+import { NOTHING_SPENT, alsoSpent, type Failure, type Shown, type Spent, type Turn } from "./talker"
 import { talkerFor } from "./talkers"
 
 /**
@@ -26,12 +26,16 @@ const [sending, setSending] = createSignal(false)
 const [failure, setFailure] = createSignal<Option<Failure>>(None)
 const [ending, setEnding] = createSignal<Option<Ending>>(None)
 const [usedBy, setUsedBy] = createSignal<string | undefined>(undefined)
+const [spent, setSpent] = createSignal<Spent>(NOTHING_SPENT)
 
 export { beats, sending }
 
 export const chatting: Accessor<boolean> = shown
 export const askingTrouble: Accessor<Option<Failure>> = failure
 export const howItEnded: Accessor<Option<Ending>> = ending
+
+/** What this conversation has cost so far, counting every exchange in it. */
+export const spentSoFar: Accessor<Spent> = spent
 export const anythingSaid = (): boolean => beats().length > 0
 
 export const startChatting = (): void => {
@@ -57,6 +61,7 @@ export const forgetChat = (): void => {
   setFailure(None)
   setEnding(None)
   setUsedBy(undefined)
+  setSpent(NOTHING_SPENT)
 }
 
 export const ask = async (text: string, shown: readonly Shown[] = []): Promise<void> => {
@@ -105,4 +110,5 @@ export const ask = async (text: string, shown: readonly Shown[] = []): Promise<v
   }
   setTurns(done.value.turns)
   setEnding(Some(done.value.ending))
+  setSpent((was) => alsoSpent(was, done.value.spent))
 }

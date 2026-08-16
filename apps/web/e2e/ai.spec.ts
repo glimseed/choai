@@ -74,7 +74,18 @@ const CLAUDE: Wire = {
       { type: "tool_use", id: "toolu_1", name: "report__incomeStatement", input: { query: "" } },
     ],
   },
-  answers: { model: "claude-opus-5", stop_reason: "end_turn", content: [{ type: "text", text: SAID }] },
+  answers: {
+    model: "claude-opus-5",
+    stop_reason: "end_turn",
+    content: [{ type: "text", text: SAID }],
+    // 100 read afresh, 900 served from cache, 50 generated.
+    usage: {
+      input_tokens: 100,
+      cache_read_input_tokens: 900,
+      cache_creation_input_tokens: 0,
+      output_tokens: 50,
+    },
+  },
   refuses: {
     model: "claude-opus-5",
     stop_reason: "refusal",
@@ -128,6 +139,14 @@ const GEMINI: Wire = {
   answers: {
     modelVersion: "gemini-2.5-flash",
     candidates: [{ content: { role: "model", parts: [{ text: SAID }] }, finishReason: "STOP" }],
+    // The same exchange, said the other way round: the prompt counted whole,
+    // and what came back taken from the total so thinking is not left out.
+    usageMetadata: {
+      promptTokenCount: 1000,
+      candidatesTokenCount: 40,
+      totalTokenCount: 1050,
+      cachedContentTokenCount: 900,
+    },
   },
   refuses: {
     modelVersion: "gemini-2.5-flash",
@@ -295,6 +314,19 @@ for (const wire of [CLAUDE, GEMINI]) {
     expect(sent).toContain("statement.csv (3 rows)")
     expect(sent).toContain("Smith, John")
     expect(sent).toContain("line one")
+  })
+
+  test(`${wire.label}: what the exchange cost is counted the same either way`, async ({ page }) => {
+    await answerWith(page, wire, (route) => asJson(route, wire.answers))
+
+    await connect(page, wire)
+    await openTheDemo(page)
+    await askThat(page, "How did the year go?")
+    await expect(page.getByText(SAID)).toBeVisible()
+
+    // Two providers, two shapes, one reading of them.
+    await expect(page.getByText("1,000 sent, 50 back")).toBeVisible()
+    await expect(page.getByText("900 of it from cache")).toBeVisible()
   })
 
   test(`${wire.label}: a refusal is noticed rather than read past`, async ({ page }) => {

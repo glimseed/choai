@@ -115,6 +115,8 @@ export const en = {
     refused: "The request was refused ({{ status }}).",
     unreadable: "The answer could not be read.",
     needsKey: "Save an API key in settings to ask questions here.",
+    spent: "{{ sent }} sent, {{ back }} back",
+    ofThatCached: "· {{ cached }} of it from cache",
   },
   shortcuts: {
     title: "Keyboard shortcuts",
