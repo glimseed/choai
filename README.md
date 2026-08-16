@@ -99,7 +99,11 @@ that is what the version moves for.
   kept.
 
 Being reachable is the point: this is a local application with no server, and
-what it can do it can be asked to do.
+what it can do it can be asked to do. So it says so where something that is not
+a person would look: `choai.dev/llms.txt` and `docs.choai.dev/llms.txt`, and a
+line on the console when the app loads. None of the three writes the capability
+list down — they point at `describe()`, which is derived from the one table and
+cannot disagree with what runs.
 
 The feasibility spike that decided all this lives in [`wasm/`](wasm/); its
 answer -- that hledger-lib can be compiled to `wasm32-wasi`, kept small enough

@@ -64,3 +64,20 @@ const choai = (): Choai => {
 }
 
 window.choai = choai()
+
+/**
+ * Said out loud, once, because an interface nobody knows about is not one.
+ *
+ * A page is a poor place to advertise a thing that is not on it: an agent
+ * driving a browser sees the screens, and nothing in them says there is another
+ * way in. The console is the one surface such an agent reads by habit and a
+ * person does not, which is what makes one line there worth more than a
+ * paragraph anywhere else.
+ *
+ * The line names `describe` rather than listing anything, for the same reason
+ * `llms.txt` does not: what this app can do is derived from one table, and a
+ * second telling of it would be wrong before long.
+ */
+console.info(
+  `choai — window.choai is here. Call window.choai.describe() for what it can do. https://choai.dev/llms.txt`,
+)

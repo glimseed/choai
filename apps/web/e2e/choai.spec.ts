@@ -164,6 +164,39 @@ test("what the agent looked at can be put in the title bar, and the screens foll
   await expect(page.getByText("supermarket")).toHaveCount(0)
 })
 
+test("something arriving at the app is told there is a way in that is not the screen", async ({
+  page,
+}) => {
+  // An agent driving a browser sees the screens, and nothing in them says there
+  // is another door. The console is the one surface it reads by habit.
+  const said: string[] = []
+  page.on("console", (message) => {
+    if (message.type() === "info") said.push(message.text())
+  })
+
+  await page.goto("/")
+  await page.evaluate(() => window.choai.ready)
+  expect(said.join("\n")).toContain("window.choai.describe()")
+
+  // And one arriving by fetching the host is told the same, and told that
+  // fetching is not how this one is called.
+  const served = await page.request.get("/llms.txt")
+  expect(served.status()).toBe(200)
+
+  const text = await served.text()
+  expect(text).toContain("The interface lives in the page")
+  expect(text).toContain("describe()")
+
+  // It illustrates rather than catalogues. Naming one to show the shape is what
+  // an example is for; writing the list out would make a second telling of the
+  // table, and that is the one that would be wrong within a month. The line is
+  // drawn at a count because that is what actually distinguishes the two.
+  const manifest = await page.evaluate(() => window.choai.describe())
+  const all = Object.keys(manifest.capabilities)
+  const named = all.filter((name) => text.includes(name))
+  expect(named.length).toBeLessThan(all.length / 2)
+})
+
 test("with no journal open, a question about one says so rather than answering", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => window.choai.ready)

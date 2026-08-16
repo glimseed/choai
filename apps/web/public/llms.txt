@@ -1,0 +1,66 @@
+# choai
+
+> An hledger journal kept in the browser. hledger itself, compiled to
+> WebAssembly, does the accounting; there is no backend anywhere. Opening this
+> page puts a `window.choai` in it — the same core the screens use, answering a
+> script, a test, or an agent instead of a person.
+
+**The interface lives in the page, not at a URL.** Nothing here is an HTTP API:
+there is no server to call, and fetching a path from this host returns the
+application, not an answer. To use it, open https://choai.dev in a browser and
+call it from there.
+
+```js
+await window.choai.ready          // the app has decided which journal is open
+window.choai.describe()           // every capability, with its JSON Schema
+await window.choai.call("report.balance", { query: "date:lastmonth" })
+await window.choai.idle()         // everything asked for has been answered
+```
+
+## Start with describe()
+
+`describe()` returns the whole capability list with, for each one, a description
+written to be read by a model, its arguments as JSON Schema, and three facts:
+whether it writes, whether it sends anything off the device, and whether a model
+is given it at all.
+
+**Do not work from a copy of that list.** It is derived from a single table in
+the source, so it cannot disagree with what actually runs, and it carries a
+`version` that moves when the promise narrows. Any list written down elsewhere —
+including this file — would be wrong within a month.
+
+## Two doors
+
+- `choai.report.balance(args)` — for names known when the code is written, where
+  a typo is caught by the editor.
+- `choai.call(name, args)` — for anything that read `describe()` and chose.
+
+Both are the same table. Nothing throws: every call answers `{ok: true, value}`
+or `{ok: false, error}`, and the error is a case with its particulars — a
+missing field comes back with the path to it and the whole schema, so a
+correction can be made without asking again.
+
+## Writing is two acts
+
+`transaction.propose` writes changes down without making them and says whether
+hledger read the result. `proposal.apply` keeps them, or only the ones named. A
+diff therefore exists before anything is decided, and a proposal made against a
+journal that has since moved is refused rather than written over the top of it.
+Taking an entry out is a proposal like putting one in.
+
+## What is deliberately absent
+
+There is no way to run code, no way to write a file as raw text, and no way to
+read back the tokens this app keeps. A capability names an act, and the acts are
+the ones the screens also perform. Figures cross as a mantissa and a scale, never
+as a float.
+
+## Worked examples
+
+- [e2e tests](https://github.com/mrksye/choai/tree/main/apps/web/e2e): the app
+  driven entirely through `window.choai`, with no selectors and no waiting on
+  spinners.
+- [README](https://github.com/mrksye/choai#windowchoai): the same interface,
+  explained.
+- [Source](https://github.com/mrksye/choai): GPL-3.0-or-later.
+- [What choai is](https://docs.choai.dev/): for a person rather than a program.
