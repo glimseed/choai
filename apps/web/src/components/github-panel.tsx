@@ -84,6 +84,18 @@ export function GitHubPanel(): JSX.Element {
     <section class="flex flex-col gap-2">
       <h2 class="text-sm font-medium">{t("github.title")}</h2>
       <p class="text-xs text-muted-foreground">{t("github.lead")}</p>
+      {/* The token comes first because nothing below it can be checked without
+          one: the boxes name a place, and the token is what lets anyone go and
+          look. Each has the instructions for getting it kept beside it. */}
+      <Field
+        label={t("github.token")}
+        value={key()}
+        secret
+        onChange={setTyped}
+      />
+      <p class="text-xs text-muted-foreground">{t("github.tokenHint")}</p>
+      <Folded summary={t("github.howTo")} steps={STEPS} link={MAKE_ONE} linkText={t("github.tokenPage")} />
+
       <Folded
         summary={t("github.firstTime")}
         steps={FIRST}
@@ -107,14 +119,6 @@ export function GitHubPanel(): JSX.Element {
         placeholder={t("github.branchHint")}
         onChange={(branch) => change({ branch })}
       />
-      <Field
-        label={t("github.token")}
-        value={key()}
-        secret
-        onChange={setTyped}
-      />
-      <p class="text-xs text-muted-foreground">{t("github.tokenHint")}</p>
-      <Folded summary={t("github.howTo")} steps={STEPS} link={MAKE_ONE} linkText={t("github.tokenPage")} />
 
       <div class="flex flex-wrap gap-2">
         <Button size="sm" disabled={!ready() || busy()} onClick={() => void save()}>
