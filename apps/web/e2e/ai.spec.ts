@@ -208,6 +208,39 @@ test("a key is checked before it is kept, and a refused one is not kept", async 
   await expect(page.getByRole("button", { name: "Disconnect and forget the key" })).toBeHidden()
 })
 
+/**
+ * The encoding is decided rather than assumed, which matters because assuming
+ * wrongly does not fail. A Japanese bank exports Shift_JIS; decoded as UTF-8 the
+ * commas and the line endings survive, so it still reads as a table and still
+ * parses into rows — and what reaches the model is a statement whose payees have
+ * all become replacement characters, with nothing anywhere having gone wrong.
+ */
+test("a statement in the encoding a Japanese bank writes reaches the model readable", async ({
+  page,
+}) => {
+  const asked = await answerWith(page, CLAUDE, (route) => asJson(route, CLAUDE.answers))
+
+  await connect(page, CLAUDE)
+  await openTheDemo(page)
+  await page.getByRole("button", { name: "Ask", exact: true }).first().click()
+
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "meisai.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from([148, 78, 140, 142, 147, 250, 44, 130, 168, 136, 248, 143, 111, 130, 181, 44, 130, 168, 142, 230, 136, 181, 147, 224, 151, 101, 10, 50, 48, 50, 54, 47, 48, 55, 47, 48, 49, 44, 56, 53, 48, 48, 48, 44, 183, 213, 179, 214, 32, 182, 41, 180, 178, 193, 188, 222, 180, 178, 10, 50, 48, 50, 54, 47, 48, 55, 47, 48, 51, 44, 51, 50, 56, 48, 44, 189, 192, 176, 202, 222, 194, 184, 189, 10]),
+  })
+  await expect(page.getByText("meisai.csv — 3 rows")).toBeVisible()
+
+  await page.getByPlaceholder("Ask about these books").fill("これ7月の明細")
+  await page.getByRole("button", { name: "Ask", exact: true }).last().click()
+  await expect(page.getByText(SAID)).toBeVisible()
+
+  const sent = JSON.stringify(asked[0])
+  expect(sent).toContain("ｷﾕｳﾖ")
+  expect(sent).toContain("ｽﾀｰﾊﾞﾂｸｽ")
+  expect(sent).not.toContain("\\ufffd")
+})
+
 for (const wire of [CLAUDE, GEMINI]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,

@@ -5,6 +5,7 @@ import { talkerFor } from "~/ai/talkers"
 import type { Beat, Ending } from "~/ai/loop"
 import { asUrl, shrink } from "~/ai/photo"
 import { looksTabular, rowsOf } from "~/lib/csv"
+import { readText } from "~/lib/text"
 import {
   anythingSaid,
   ask,
@@ -195,7 +196,7 @@ const bring = async (file: File): Promise<Brought | undefined> => {
     return small.ok ? { is: "photo", name: file.name, shown: small.value } : undefined
   }
 
-  const text = await file.text().catch(() => "")
+  const text = await readText(file).catch(() => "")
   const rows = rowsOf(text)
   return looksTabular(rows) ? { is: "table", name: file.name, text, rows: rows.length } : undefined
 }

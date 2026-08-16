@@ -155,6 +155,13 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   charges by area. A statement is parsed by `lib/csv.ts` only to know it is a
   table and how long; **the file's own text is what goes over**, because rows
   read out and written back is a chance to change somebody's figures on the way.
+- **`lib/text.ts` decides a file's encoding rather than assuming it**, and is
+  what every file read off the filesystem goes through — an attachment and a
+  journal alike. Japanese banks and much of the accounting software here write
+  Shift_JIS, and assuming UTF-8 does not fail: the commas and line endings
+  survive, so it still parses, and the payees quietly become replacement
+  characters. UTF-8 is tried strictly first because plenty of it decodes as
+  Shift_JIS into nonsense, while almost no Shift_JIS is accidentally valid UTF-8.
 - **`hledger/wire.ts` mirrors `Bindings.hs`** — `Request`, `Answer`, `Trouble`
   against its `Request` parser and `Failure` type. A new report means editing
   both. Shapes are hledger's own `ToJSON`, so they follow upstream.

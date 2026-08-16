@@ -4,6 +4,7 @@ import { amountExample } from "~/compose/hint"
 import { emptyDraft, isWritable, whatIsMissing } from "~/compose/draft"
 import { digits, fields, listOf, nothing, oneOf, spare, text } from "~/lib/monad/shape"
 import { looksTabular, rowsOf } from "~/lib/csv"
+import { textOf } from "~/lib/text"
 import { narrowed } from "~/reports/ask"
 import { PERIODS, TERMS, periodByTerm } from "~/reports/periods"
 
@@ -162,5 +163,34 @@ describe("reading a statement", () => {
     expect(looksTabular(rowsOf("a,b\n1,2"))).toBe(true)
     expect(looksTabular(rowsOf("just a note"))).toBe(false)
     expect(looksTabular(rowsOf("a,b"))).toBe(false)
+  })
+})
+
+describe("reading a file's bytes", () => {
+  const bytes = (...of: number[]) => new Uint8Array(of).buffer
+  const utf8 = (text: string) => new TextEncoder().encode(text).buffer
+
+  test("ASCII is the same either way it is read", () => {
+    expect(textOf(utf8("date,payee\n2026-01-01,Shop"))).toBe("date,payee\n2026-01-01,Shop")
+  })
+
+  test("UTF-8 Japanese is read as UTF-8", () => {
+    expect(textOf(utf8("取扱内容,金額"))).toBe("取扱内容,金額")
+  })
+
+  test("Shift_JIS is not mangled into replacement characters", () => {
+    // What a Japanese bank exports: キユウ in Shift_JIS, which is not valid UTF-8.
+    const said = textOf(bytes(0x83, 0x4c, 0x83, 0x86, 0x83, 0x45))
+    expect(said).toBe("キユウ")
+    expect(said).not.toContain("\uFFFD")
+  })
+
+  test("a byte-order mark is believed, and not left in the text", () => {
+    expect(textOf(bytes(0xef, 0xbb, 0xbf, 0x61, 0x2c, 0x62))).toBe("a,b")
+    expect(textOf(bytes(0xff, 0xfe, 0x61, 0x00, 0x2c, 0x00, 0x62, 0x00))).toBe("a,b")
+  })
+
+  test("UTF-8 is tried first, since plenty of it is decodable as Shift_JIS into nonsense", () => {
+    expect(textOf(utf8("スターバックス"))).toBe("スターバックス")
   })
 })

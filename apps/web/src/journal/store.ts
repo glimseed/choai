@@ -4,6 +4,7 @@ import { openJournal } from "~/hledger/client"
 import { missingFile } from "~/hledger/diagnose"
 import type { JournalSummary, Trouble } from "~/hledger/wire"
 import { deferred } from "~/lib/deferred"
+import { readText } from "~/lib/text"
 import { createTask } from "~/lib/pending"
 import { Err, None, Ok, Some, getOrUndefined, match, type Option, type Result } from "~/lib/monad"
 import { t } from "~/i18n"
@@ -442,7 +443,7 @@ export const openDemo = (): Promise<Result<OpenJournal, Trouble>> => {
  */
 export const openFiles = async (chosen: FileList): Promise<Result<OpenJournal, Trouble>> => {
   const contents = await Promise.all(
-    [...chosen].map(async (file) => [file.name, await file.text()] as const),
+    [...chosen].map(async (file) => [file.name, await readText(file)] as const),
   )
   const files = Object.fromEntries(contents)
   const names = contents.map(([name]) => name)
