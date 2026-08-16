@@ -74,13 +74,33 @@ export const accountTypes = (): Promise<Result<Placed, Hitch>> =>
     return Ok({ types: reply.value, unplaced: unplaced(open.summary.accounts, reply.value) })
   })
 
+export interface Resembling {
+  readonly to: string
+  readonly entries: readonly Entry[]
+}
+
+/**
+ * Several descriptions at once, because they are asked about together.
+ *
+ * A bank statement arrives as a page of payees none of which have been seen
+ * before, and the accounts for them are only worth choosing once all of them
+ * have been looked up. Asked one at a time, that is a round trip per row —
+ * which, for whoever is doing the asking, is a budget spent on waiting rather
+ * than on the work. The lookups themselves are cheap and stay sequential; it is
+ * the asking that is made one act.
+ */
 export const similar = (args: {
-  readonly description: string
+  readonly descriptions: readonly string[]
   readonly limit?: number
-}): Promise<Result<readonly Entry[], Hitch>> =>
+}): Promise<Result<readonly Resembling[], Hitch>> =>
   withJournal(async () => {
-    const reply = await ask({ kind: "similar", description: args.description, limit: args.limit ?? 5 })
-    return reply.ok ? Ok(reply.value.map(entryOf)) : Err(fromHledger(reply.error))
+    const found: Resembling[] = []
+    for (const to of args.descriptions) {
+      const reply = await ask({ kind: "similar", description: to, limit: args.limit ?? 5 })
+      if (!reply.ok) return Err(fromHledger(reply.error))
+      found.push({ to, entries: reply.value.map(entryOf) })
+    }
+    return Ok(found)
   })
 
 export const text = (args: { readonly path?: string }): Promise<Result<Written, Hitch>> =>

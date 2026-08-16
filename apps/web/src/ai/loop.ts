@@ -22,8 +22,14 @@ import { NOTHING_SPENT, alsoSpent, type Failure, type Shown, type Spent, type Ta
 /** Room for thinking and an answer together, where a provider counts them as one. */
 const ROOM = 16000
 
-/** How many times round before we stop, whatever the model still wants. */
-const TURNS = 12
+/**
+ * How many times round before we stop, whatever the model still wants.
+ *
+ * A month of a bank statement is the shape that sets this: look at the journal,
+ * look up the payees, offer the lot, and there has to be room left to be told it
+ * does not read and to try again. Twelve was not enough for eleven rows.
+ */
+const TURNS = 20
 
 export interface Said {
   readonly from: "you" | "ai"

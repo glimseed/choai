@@ -19,7 +19,7 @@ import { handOver } from "~/journal/handover"
 import { useQuery } from "~/journal/query"
 import { AiChat } from "~/components/ai-chat"
 import { ProposalReview } from "~/components/proposal-review"
-import { chatting, startChatting, stopChatting, toggleChatting } from "~/ai/store"
+import { chatting, sending, startChatting, stopChatting, toggleChatting } from "~/ai/store"
 import { underReview } from "~/journal/proposals"
 import { showed, wantedQuery } from "~/journal/showing"
 import { ComposePanel } from "~/compose/ComposePanel"
@@ -171,9 +171,20 @@ export function Layout(props: ParentProps) {
    */
   const [asideFrom, setAsideFrom] = createSignal<string | undefined>(undefined)
 
+  /**
+   * A proposal opens the dock — but not while the thing that made it is still
+   * working.
+   *
+   * Something writing up a statement offers, reads back what it wrote, thinks
+   * better of it and offers again; every one of those is a proposal, and a panel
+   * that opened on each would flap through a dozen states nobody was asked to
+   * decide about. The one worth showing is the one it stopped on. Anything
+   * proposing without a conversation in flight — a script, a test — is not
+   * waiting on anything, so it opens at once.
+   */
   const reviewing = (): boolean => {
     const proposal = underReview()
-    return proposal !== undefined && proposal.id !== asideFrom()
+    return proposal !== undefined && proposal.id !== asideFrom() && !sending()
   }
 
   /** Whichever of the four is open in the dock, closed. Not cleared — closed. */

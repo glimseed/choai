@@ -37,7 +37,7 @@ test("the manifest says enough to be used by something that was not written agai
   const manifest = await page.evaluate(() => window.choai.describe())
 
   expect(manifest.name).toBe("choai")
-  expect(manifest.version).toBe("1")
+  expect(manifest.version).toBe("2")
   expect(Object.keys(manifest.capabilities).length).toBeGreaterThan(0)
 
   Object.entries(manifest.capabilities).forEach(([name, told]) => {
@@ -100,7 +100,7 @@ test("figures come back exact, and never as a float", async ({ page }) => {
     JSON.stringify([
       await window.choai.report.balanceSheet({}),
       await window.choai.report.entries({ limit: 5 }),
-      await window.choai.journal.similar({ description: "スーパー" }),
+      await window.choai.journal.similar({ descriptions: ["スーパー", "カフェ"] }),
     ]),
   )
 
@@ -144,10 +144,10 @@ test("a refusal says which case it was and what would have fitted", async ({ pag
   if (wrong.error.at !== "bad-arguments") return
 
   expect(wrong.error.wrong).toEqual([
-    { path: "description", wanted: "to be given" },
+    { path: "descriptions", wanted: "to be given" },
     { path: "limit", wanted: "a number" },
   ])
-  expect(wrong.error.wanted.required).toEqual(["description"])
+  expect(wrong.error.wanted.required).toEqual(["descriptions"])
 })
 
 test("what the agent looked at can be put in the title bar, and the screens follow", async ({

@@ -81,10 +81,13 @@ export const CAPABILITIES = {
 
   "journal.similar": {
     summary:
-      "Past transactions resembling a description, most alike first. Call this before writing an entry for a payee you have not seen in this journal, and use the accounts it comes back with: they are what these books already call that kind of thing, which is worth more than a sensible guess.",
+      "Past transactions resembling each description, most alike first. Call this before writing entries for payees you have not seen in this journal, and use the accounts it comes back with: they are what these books already call that kind of thing, which is worth more than a sensible guess. Ask about every payee in one call rather than one at a time.",
     takes: fields({
-      description: text("The payee or description to look for, as it would be written on the entry."),
-      limit: spare(digits("How many to return. Five if left out.")),
+      descriptions: listOf(
+        "The payees or descriptions to look for, as they would be written on the entries.",
+        text("One payee or description."),
+      ),
+      limit: spare(digits("How many to return for each. Five if left out.")),
     }),
     writes: false,
     needsJournal: true,

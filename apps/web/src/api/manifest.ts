@@ -17,7 +17,7 @@ import { CAPABILITIES, type Name } from "./table"
  * with narrows. Adding a capability, or adding a spare argument to one, leaves
  * anything already written against it working, and leaves this alone.
  */
-export const VERSION = "1"
+export const VERSION = "2"
 
 export interface Told {
   readonly summary: string

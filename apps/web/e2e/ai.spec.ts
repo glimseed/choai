@@ -241,6 +241,69 @@ test("a statement in the encoding a Japanese bank writes reaches the model reada
   expect(sent).not.toContain("\\ufffd")
 })
 
+/**
+ * A model at work offers, reads back what it wrote, thinks better of it and
+ * offers again. Each of those is a proposal, and the dock opening on every one
+ * would flap through a run of states nobody was asked to decide about — which is
+ * exactly what a page of bank statement produces. What is waited for is the one
+ * it stopped on.
+ *
+ * The last reply is held open so the assertion lands while the exchange is
+ * genuinely still in flight, rather than in whatever gap happened to be there.
+ */
+test("proposals made along the way do not open the dock; the one it stops on does", async ({
+  page,
+}) => {
+  const written = (payees: readonly string[]): unknown => ({
+    model: "claude-opus-5",
+    stop_reason: "tool_use",
+    content: [
+      {
+        type: "tool_use",
+        id: `toolu_${payees.length}`,
+        name: "transaction__propose",
+        input: {
+          transactions: payees.map((payee, at) => ({
+            date: `2026-07-0${at + 1}`,
+            payee,
+            postings: [
+              { account: "expenses:food", amount: "$10.00" },
+              { account: "assets:bank:checking" },
+            ],
+          })),
+        },
+      },
+    ],
+  })
+
+  const held: { let_go: () => void } = { let_go: () => {} }
+  const waiting = new Promise<void>((resolve) => {
+    held.let_go = resolve
+  })
+
+  await answerWith(page, CLAUDE, async (route, sofar) => {
+    if (sofar === 1) return asJson(route, written(["Seven Eleven"]))
+    if (sofar === 2) return asJson(route, written(["Seven Eleven", "Starbucks"]))
+    await waiting
+    return asJson(route, CLAUDE.answers)
+  })
+
+  await connect(page, CLAUDE)
+  await openTheDemo(page)
+  await askThat(page, "この明細を仕訳して")
+
+  // Two proposals have been made and the third reply is being waited on.
+  await expect.poll(async () => (await page.evaluate(() => window.choai.proposal.list({}))).ok
+    ? (await page.evaluate(() => window.choai.proposal.list({})) as { value: readonly unknown[] }).value.length
+    : 0).toBeGreaterThan(1)
+  await expect(page.getByText("Written, not yet kept")).toBeHidden()
+
+  // Letting it finish is what opens the dock, and the dock opening is the proof
+  // it finished: a proposal takes the dock from the conversation that made it.
+  held.let_go()
+  await expect(page.getByText("Written, not yet kept")).toBeVisible()
+})
+
 for (const wire of [CLAUDE, GEMINI]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,

@@ -64,7 +64,7 @@ agent instead of a person.
 await window.choai.ready                                 // which journal is open, decided
 window.choai.describe()                                  // every capability, with its JSON Schema
 await window.choai.report.balance({ query: "date:lastmonth acct:expenses" })
-await window.choai.call("journal.similar", { description: "Amazon" })
+await window.choai.call("journal.similar", { descriptions: ["Amazon", "Starbucks"] })
 await window.choai.idle()                                // everything asked has been answered
 ```
 
