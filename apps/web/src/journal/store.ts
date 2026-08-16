@@ -394,6 +394,26 @@ export const rewriteFile = async (path: string, text: string): Promise<Result<Op
   return change(current, { ...current.source.files, [path]: text })
 }
 
+/**
+ * Change several files at once, as one thing hledger either reads or does not.
+ *
+ * Taking an entry out of one file and writing another into a second is one act
+ * to the person doing it, and it has to be one to hledger as well: two writes
+ * would leave a moment where the first had happened and the second had not, and
+ * whichever of them the journal could not read would decide which half stayed.
+ */
+export const rewriteFiles = async (
+  written: Readonly<Record<string, string>>,
+): Promise<Result<OpenJournal, Trouble>> => {
+  const current = getOrUndefined(opened())
+  if (current === undefined) return Err({ kind: "no-journal" })
+
+  const missing = Object.keys(written).find((path) => current.source.files[path] === undefined)
+  if (missing !== undefined) return Err({ kind: "file-missing", path: missing })
+
+  return change(current, { ...current.source.files, ...written })
+}
+
 /** The entry path as hledger sees it, back to the key the files are held under. */
 const entryName = (source: Source): string => source.entry.replace(/^\//, "")
 

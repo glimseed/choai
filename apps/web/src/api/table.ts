@@ -167,8 +167,20 @@ export const CAPABILITIES = {
 
   "transaction.propose": {
     summary:
-      "Write transactions down without keeping them, and find out whether hledger reads them. This is how to write an entry: offer it, see what comes back, then call proposal.apply. Offer everything you mean to write in one call rather than one at a time — the whole journal is re-read per call, so a hundred calls is a hundred re-reads. Say how sure you are of each with confidence, so the doubtful ones can be picked out.",
-    takes: fields({ transactions: listOf("The transactions to offer, in the order they should be written.", fields(SUGGESTED)) }),
+      "Offer changes to the journal without making them, and find out whether hledger reads the result. This is how to write an entry and how to take one out: offer it, see what comes back, then call proposal.apply. Offer everything you mean to change in one call rather than one at a time — the whole journal is re-read per call, so a hundred calls is a hundred re-reads. Say how sure you are of each with confidence, so the doubtful ones can be picked out. To correct an entry, remove it and add the corrected one in the same call: both are shown together and kept together.",
+    takes: fields({
+      transactions: spare(listOf("Transactions to write, in the order they should appear.", fields(SUGGESTED))),
+      remove: spare(
+        listOf(
+          "Entries to take out, by the index report.entries gave them. hledger numbers them as it parses, so read them first and offer the removal in the same breath.",
+          fields({
+            index: digits("The entry's index, as report.entries reported it."),
+            confidence: spare(digits("How sure you are, from 0 to 1.")),
+            why: spare(text("Why it should go, in a phrase.")),
+          }),
+        ),
+      ),
+    }),
     writes: false,
     needsJournal: true,
     leaves: false,

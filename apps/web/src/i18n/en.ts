@@ -71,6 +71,7 @@ export const en = {
     title: "Written, not yet kept",
     counted: "{{ sure }} ready, {{ unsure }} worth a look",
     worthALook: "Worth a look",
+    taken: "This one would be taken out.",
     doesNotRead: "hledger will not read these as they stand, so none of them can be kept.",
     keep: "Add {{ count }} to the journal",
     onlySure: "Tick only the ready ones",

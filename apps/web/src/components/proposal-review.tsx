@@ -1,6 +1,5 @@
 import { For, Show, createEffect, createSignal, on, type JSX } from "solid-js"
 
-import { draftToJournal } from "~/compose/draft"
 import { TroubleNote } from "~/components/trouble-note"
 import { Button } from "~/components/ui/button"
 import {
@@ -8,6 +7,7 @@ import {
   apply,
   drop,
   sureIn,
+  textOf,
   underReview,
   type Proposal,
   type Refusal,
@@ -94,7 +94,17 @@ function One(props: { proposal: Proposal }): JSX.Element {
                   onChange={() => toggle(at())}
                 />
                 <span class="flex min-w-0 flex-1 flex-col gap-1">
-                  <pre class="overflow-x-auto whitespace-pre text-xs">{draftToJournal(item.draft)}</pre>
+                  {/* A removal is shown as the lines that would go, struck
+                      through: the entry itself, not a number naming it. */}
+                  <pre
+                    class="overflow-x-auto whitespace-pre text-xs"
+                    classList={{ "text-destructive line-through": item.is === "remove" }}
+                  >
+                    {textOf(item)}
+                  </pre>
+                  <Show when={item.is === "remove"}>
+                    <span class="text-xs text-destructive">{t("propose.taken")}</span>
+                  </Show>
                   <Show when={item.confidence < SURE}>
                     <span class="text-xs text-muted-foreground">
                       {t("propose.worthALook")}

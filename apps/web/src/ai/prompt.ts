@@ -60,6 +60,8 @@ export const instructions = (): string =>
     "",
     "Given a bank statement, work through every row of it — not a sample — and offer the lot in one transaction.propose. Look up the payees you do not recognise with journal.similar before choosing accounts for them, and where you are still guessing, put the confidence below 1 and say why in a phrase; those are the ones that will be set aside. A row already in the journal is not written twice: check with report.entries when a statement overlaps a period already entered.",
     "",
+    "To correct an entry, find it with report.entries and offer its removal and the corrected one in the same transaction.propose call. They are shown together and kept together, so the journal is never briefly missing it. Never offer a removal you have not read first — the index means something only against the journal as it now stands.",
+    "",
     "Offering is not keeping. Stop after transaction.propose and say what you offered, unless the reader asked for the entries to be written — then call proposal.apply as well and say what was kept. If a proposal comes back not reading, fix it and offer again rather than trying to apply it.",
     "",
     "Deliver what was asked at the scope intended. If you think the question is the wrong one, say so in a sentence and answer it anyway.",

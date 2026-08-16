@@ -30,6 +30,7 @@ export type Hitch =
   | { readonly at: "no-journal" }
   | { readonly at: "incomplete"; readonly missing: readonly Missing[] }
   | { readonly at: "nothing-proposed" }
+  | { readonly at: "no-such-entry"; readonly indexes: readonly number[] }
   | { readonly at: "no-such-proposal"; readonly id: string }
   | { readonly at: "stale-proposal"; readonly id: string }
   | { readonly at: "hledger"; readonly trouble: Trouble }

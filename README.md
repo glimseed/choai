@@ -83,9 +83,12 @@ that is what the version moves for.
   schema, so a correction can be made without asking again.
 - **Figures are exact.** Amounts cross as a mantissa and a scale, with the same
   figure written out. hledger's floating-point copy is left behind.
-- **Writing is two acts.** `transaction.propose` writes entries down without
-  keeping them and says whether hledger read them; `proposal.apply` keeps them,
-  or the ones named and no others. So a diff exists before anything is decided,
+- **Writing is two acts.** `transaction.propose` writes changes down without
+  making them and says whether hledger read the result; `proposal.apply` keeps
+  them, or the ones named and no others. Taking an entry out is a proposal like
+  putting one in — an addition nobody wanted can be deleted afterwards, a
+  deletion nobody wanted is gone — so a correction is a removal and an addition
+  shown together and written at once. A diff exists before anything is decided,
   a hundred entries with three doubtful ones is one glance and one press, and a
   proposal made against a journal that has since moved is refused rather than
   applied over the top of it.

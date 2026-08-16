@@ -141,3 +141,69 @@ test("a proposal made against a journal that has since moved is refused rather t
   // Ten, not eleven: the write that got there first is still the only one.
   expect(await HOW_MANY(page)).toBe(10)
 })
+
+test("an entry is corrected by taking it out and putting one in, together", async ({ page }) => {
+  await openTheDemo(page)
+
+  // The newest entry, and what it says now.
+  const before = await page.evaluate(() => window.choai.report.entries({ limit: 1 }))
+  expect(before.ok).toBe(true)
+  if (!before.ok) return
+  const wrong = before.value.items[0]!
+  expect(wrong.description).toBe("employer")
+
+  const offered = await page.evaluate(
+    (index) =>
+      window.choai.transaction.propose({
+        remove: [{ index, why: "the payee was wrong" }],
+        transactions: [
+          {
+            date: "2026-02-25",
+            payee: "Acme Corporation",
+            postings: [
+              { account: "assets:bank:checking", amount: "$3,100.00" },
+              { account: "income:salary" },
+            ],
+          },
+        ],
+      }),
+    wrong.index,
+  )
+  expect(offered.ok).toBe(true)
+  if (!offered.ok) return
+
+  expect(offered.value.reads).toBe(true)
+  expect(offered.value.items.map((one) => one.is)).toEqual(["remove", "add"])
+
+  // The lines that would go are shown as themselves, not as a number.
+  await expect(page.getByText("This one would be taken out.")).toBeVisible()
+  await expect(page.getByText("2 ready, 0 worth a look")).toBeVisible()
+
+  // Nothing has happened yet.
+  expect(await HOW_MANY(page)).toBe(9)
+
+  await page.getByRole("button", { name: "Add 2 to the journal" }).click()
+
+  // One out and one in, in a single write: still nine, and the new wording is
+  // there while the old one is not. Query terms are split on whitespace before
+  // hledger sees them, so each is one word.
+  await expect.poll(() => HOW_MANY(page)).toBe(9)
+  const after = await page.evaluate(() => window.choai.report.entries({ query: "desc:Acme" }))
+  expect(after.ok && after.value.items.length).toBe(1)
+
+  // One "employer" entry is left: the January one. The February one it replaced
+  // is gone, which is what makes this a correction rather than an addition.
+  const gone = await page.evaluate(() => window.choai.report.entries({ query: "desc:employer" }))
+  expect(gone.ok && gone.value.items.length).toBe(1)
+})
+
+test("an entry that is not there is refused by number rather than guessed at", async ({ page }) => {
+  await openTheDemo(page)
+
+  const offered = await page.evaluate(() =>
+    window.choai.transaction.propose({ remove: [{ index: 9999 }] }),
+  )
+  expect(offered.ok).toBe(false)
+  expect(offered.ok ? "" : offered.error.at).toBe("no-such-entry")
+  expect(await HOW_MANY(page)).toBe(9)
+})
