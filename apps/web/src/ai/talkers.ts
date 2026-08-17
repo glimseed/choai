@@ -19,6 +19,12 @@ export const TALKERS: Readonly<Record<Which, Talker>> = {
 /** In the order they are offered. */
 export const EVERYONE: readonly Talker[] = [openai, anthropic, gemini]
 
-/** Whoever is meant, or Claude, which is what this app is named after. */
+/**
+ * Whoever is meant, or Claude, which is only where it starts.
+ *
+ * Something has to be assumed before anybody has said, and the assumption is
+ * thrown away by the first key saved. It is Claude for no better reason than
+ * that Claude was the one this was built against first.
+ */
 export const talkerFor = (which: string | undefined): Talker =>
   which !== undefined && Object.hasOwn(TALKERS, which) ? TALKERS[which as Which] : anthropic
