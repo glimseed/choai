@@ -1,14 +1,13 @@
 import { For, Show, createResource, createSignal, type JSX } from "solid-js"
 
 import { Button } from "~/components/ui/button"
-import { TextField, TextFieldInput } from "~/components/ui/text-field"
+import { TextField, TextFieldInput, TextFieldLabel } from "~/components/ui/text-field"
 import { TroubleNote } from "~/components/trouble-note"
 import { forgetToken, keepToken, token } from "~/github/kept"
 import { whoami, type Failure } from "~/github/api"
-import { pull, push, type Outcome, type Snag } from "~/github/sync"
+import { pull, pullAsNewBook, push, type Outcome, type Snag } from "~/github/sync"
 import { journal, setRemote } from "~/journal/store"
 import type { Remote } from "~/journal/kept"
-import { startFresh } from "~/journal/fresh"
 import { getOrUndefined } from "~/lib/monad"
 import { t } from "~/i18n"
 
@@ -54,12 +53,28 @@ export function GitHubPanel(): JSX.Element {
       await keepToken(key())
       await setRemote(place())
       setTyped(undefined)
-      setEdited(undefined)
+      // What was typed is let go of only once a book has taken it. With none
+      // open there is nowhere else for it to live, and dropping it empties the
+      // boxes somebody has just filled in — which is what left the take button
+      // unpressable at exactly the moment it was the only thing to press.
+      if (getOrUndefined(journal()) !== undefined) setEdited(undefined)
       await refetch()
       setSaid(t("github.connectedAs", { login: who.value }))
     })
 
-  const take = (): Promise<void> => run(async () => report(await pull()))
+  /**
+   * With a book open this is a sync; with none it is how one begins.
+   *
+   * There is no such thing as taking a copy from halfway, so nothing has to
+   * exist here first — a book is made out of what arrives, and a copy that does
+   * not arrive leaves nothing behind. Making an empty one to import into was
+   * the step that had to be explained, which is a sign it should not have been
+   * there.
+   */
+  const take = (): Promise<void> =>
+    run(async () =>
+      report(getOrUndefined(journal()) === undefined ? await pullAsNewBook(place()) : await pull()),
+    )
   const send = (): Promise<void> => run(async () => report(await push()))
 
   const report = (result: { ok: true; value: Outcome } | { ok: false; error: Snag }): void => {
@@ -125,18 +140,10 @@ export function GitHubPanel(): JSX.Element {
           {t("github.connect")}
         </Button>
         <Button variant="outline" size="sm" disabled={!ready() || busy()} onClick={() => void take()}>
-          {t("github.pull")}
+          {getOrUndefined(journal()) === undefined ? t("github.pullAsNew") : t("github.pull")}
         </Button>
-        {/* With nothing open there is nothing to send, and the way to have
-            something is an empty journal named after the path above. */}
-        <Show
-          when={getOrUndefined(journal()) !== undefined}
-          fallback={
-            <Button variant="outline" size="sm" disabled={busy()} onClick={() => void startFresh()}>
-              {t("welcome.startFresh")}
-            </Button>
-          }
-        >
+        {/* With nothing open there is nothing to send. */}
+        <Show when={getOrUndefined(journal()) !== undefined}>
           <Button variant="outline" size="sm" disabled={!ready() || busy()} onClick={() => void send()}>
             {t("github.push")}
           </Button>
@@ -214,7 +221,12 @@ function Field(props: {
 }): JSX.Element {
   return (
     <TextField class="flex flex-col gap-1">
-      <span class="text-xs font-medium text-muted-foreground">{props.label}</span>
+      {/* A real label rather than a span beside the box: without it the field
+          has no name, which is what a screen reader and anything else driving
+          this app go looking for. */}
+      <TextFieldLabel class="text-xs font-medium text-muted-foreground">
+        {props.label}
+      </TextFieldLabel>
       <TextFieldInput
         type={props.secret === true ? "password" : "text"}
         class="h-8 text-sm"

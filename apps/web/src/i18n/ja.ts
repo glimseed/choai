@@ -218,6 +218,7 @@ export const ja: Dictionary = {
     disconnect: "接続を解除してトークンを消す",
     connectedAs: "{{ login }} として接続しています。",
     pull: "GitHub から取り込む",
+    pullAsNew: "GitHub から新しい帳簿として取り込む",
     push: "GitHub へ送る",
     working: "GitHub と通信しています…",
     pulled: "取り込みました。{{ files }} ファイルを開いています。",

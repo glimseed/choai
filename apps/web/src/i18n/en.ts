@@ -226,6 +226,7 @@ export const en = {
     disconnect: "Disconnect and forget the token",
     connectedAs: "Connected as {{ login }}.",
     pull: "Take from GitHub",
+    pullAsNew: "Take from GitHub as a new journal",
     push: "Send to GitHub",
     working: "Talking to GitHub…",
     pulled: "Taken: {{ files }} files, opened here.",

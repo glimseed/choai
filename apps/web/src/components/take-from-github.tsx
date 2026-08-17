@@ -3,7 +3,7 @@ import { useNavigate } from "@solidjs/router"
 import { A } from "@solidjs/router"
 
 import { Button } from "~/components/ui/button"
-import { TextField, TextFieldInput } from "~/components/ui/text-field"
+import { TextField, TextFieldInput, TextFieldLabel } from "~/components/ui/text-field"
 import { token } from "~/github/kept"
 import { pullAsNewBook } from "~/github/sync"
 import type { Remote } from "~/journal/kept"
@@ -98,7 +98,12 @@ function Field(props: {
 }): JSX.Element {
   return (
     <TextField class="flex flex-col gap-1">
-      <span class="text-xs font-medium text-muted-foreground">{props.label}</span>
+      {/* A real label rather than a span beside the box: without it the field
+          has no name, which is what a screen reader and anything else driving
+          this app go looking for. */}
+      <TextFieldLabel class="text-xs font-medium text-muted-foreground">
+        {props.label}
+      </TextFieldLabel>
       <TextFieldInput
         type="text"
         class="h-8 text-sm"
