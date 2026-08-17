@@ -1264,6 +1264,31 @@ test("Qwen and OpenRouter are the same talker at another address", async ({ page
   ])
 })
 
+/**
+ * A red line about a provider, shown before a key is typed for it.
+ *
+ * Both of these are true of the provider rather than of this app, and both are
+ * the sort of thing somebody would want to know first: what Google does with a
+ * free tier's contents, and that DeepSeek cannot be shown a receipt at all.
+ * They live on the talker, so a provider added with one cannot be added without
+ * anybody seeing it.
+ */
+test("a provider's caveat is said before its key is asked for", async ({ page }) => {
+  await page.goto("/settings")
+
+  await page.getByRole("button", { name: "DeepSeek", exact: true }).click()
+  await expect(page.getByText("cannot be read here")).toBeVisible()
+
+  await page.getByRole("button", { name: "Gemini", exact: true }).click()
+  await expect(page.getByText("cannot be read here")).toBeHidden()
+  await expect(page.getByText("reviewers may read it")).toBeVisible()
+
+  // And whoever has nothing to declare says nothing.
+  await page.getByRole("button", { name: "Claude", exact: true }).click()
+  await expect(page.getByText("reviewers may read it")).toBeHidden()
+  await expect(page.getByText("cannot be read here")).toBeHidden()
+})
+
 for (const wire of [CLAUDE, GEMINI, OPENAI, COMPATIBLE]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,

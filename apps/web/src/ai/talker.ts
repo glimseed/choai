@@ -155,6 +155,15 @@ export interface Talker {
    */
   readonly modelsFrom: string
   /**
+   * Something worth knowing before a key is typed here, where there is
+   * something — a red line about this provider rather than about the app.
+   *
+   * Read at the moment it is shown, so it comes out in the reader's language;
+   * on the talker rather than on the panel, so that adding a provider with a
+   * caveat cannot mean adding one whose caveat nobody sees.
+   */
+  readonly caveat?: () => string
+  /**
    * The one host a key typed here is ever sent to, said on the page beside the
    * box. Here rather than on the screen because a third provider added without
    * it would quietly claim to be sending somebody's key somewhere it is not.

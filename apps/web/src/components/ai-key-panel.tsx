@@ -310,8 +310,8 @@ export function AiKeyPanel(): JSX.Element {
         </For>
       </div>
 
-      <Show when={talker().id === "gemini"}>
-        <p class="text-xs text-destructive">{t("ai.freeIsRead")}</p>
+      <Show when={talker().caveat}>
+        {(said) => <p class="text-xs text-destructive">{said()()}</p>}
       </Show>
 
       <label class="flex flex-col gap-1">

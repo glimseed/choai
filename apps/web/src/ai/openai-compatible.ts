@@ -53,6 +53,7 @@ export interface Compatible {
   readonly keysFrom: string
   readonly modelsFrom: string
   readonly defaultModel: string
+  readonly caveat?: () => string
 }
 
 const headers = (key: string): HeadersInit => ({
@@ -211,6 +212,7 @@ export const speaksOpenAI = (of: Compatible): Talker => {
     label: of.label,
     host: of.host,
     modelsFrom: of.modelsFrom,
+    ...(of.caveat === undefined ? {} : { caveat: of.caveat }),
     keysFrom: of.keysFrom,
     defaultModel: of.defaultModel,
     models,

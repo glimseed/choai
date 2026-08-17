@@ -1,3 +1,4 @@
+import { t } from "~/i18n"
 import type { JsonSchema } from "~/lib/monad"
 import { Err, Ok, type Result } from "~/lib/monad"
 import {
@@ -262,6 +263,7 @@ export const gemini: Talker = {
   id: "gemini",
   label: "Gemini",
   host: "generativelanguage.googleapis.com",
+  caveat: () => t("ai.freeIsRead"),
   modelsFrom: "https://ai.google.dev/gemini-api/docs/models",
   keysFrom: "https://aistudio.google.com/apikey",
   defaultModel: "gemini-2.5-flash",
