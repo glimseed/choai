@@ -137,9 +137,11 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   `proposal.apply` writes many and is offered, because they were shown.
 - **`ai/talker.ts` is the seam between providers.** `loop.ts`, `prompt.ts` and
   the panels are written against it and against nobody's API; `anthropic.ts`,
-  `gemini.ts` and `openai.ts` are each one provider's spelling of it, and
-  `talkers.ts` is the table the settings picker and the per-provider key are
-  read off. A turn's blocks stay opaque all the way through because all three
+  `gemini.ts` and `openai.ts` are each one provider's spelling of it,
+  `openai-compatible.ts` is one spelling shared by everyone who answers to
+  OpenAI's older chat-completions shape (DeepSeek, Qwen, OpenRouter — a
+  hostname and a default apart), and `talkers.ts` is the table the settings
+  picker and the per-provider key are read off. A turn's blocks stay opaque all the way through because all three
   keep things in a turn that must come back byte for byte. The host a key is
   sent to is a field on the talker, so a provider cannot be added without the
   page saying where what is typed will go. **A conversation belongs to one

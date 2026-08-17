@@ -235,6 +235,63 @@ const OPENAI: Wire = {
   },
 }
 
+/**
+ * DeepSeek, Qwen and OpenRouter are one implementation with three addresses, so
+ * one wire stands for all of them: what is proved down this one is proved down
+ * each. The address is the only thing that differs, and it is checked by the
+ * `host` each talker carries.
+ */
+const COMPATIBLE: Wire = {
+  label: "DeepSeek",
+  host: "**/api.deepseek.com/**",
+  toolNamesIn: (body: { tools: readonly { function: { name: string } }[] }) =>
+    body.tools.map((one) => one.function.name),
+  returned: (body: { messages: readonly Record<string, unknown>[] }) => ({
+    kinds: body.messages
+      .filter((one) => one["role"] === "assistant")
+      .map((one) => (one["tool_calls"] === undefined ? "content" : "tool_calls")),
+    result: String(body.messages.at(-1)?.["content"] ?? ""),
+  }),
+  shownIn: (body: {
+    messages: readonly { content?: readonly Record<string, unknown>[] }[]
+  }) => {
+    const part = body.messages[1]?.content?.[0]?.["image_url"] as { url?: string } | undefined
+    const [head = "", data = ""] = String(part?.url ?? "").split(";base64,")
+    return { mediaType: head.replace(/^data:/, ""), bytes: data.length }
+  },
+  models: { data: [{ id: "deepseek-chat" }, { id: "deepseek-reasoner" }] },
+  wantsTool: {
+    model: "deepseek-chat",
+    choices: [
+      {
+        finish_reason: "tool_calls",
+        message: {
+          role: "assistant",
+          content: null,
+          reasoning_content: "thought about it",
+          tool_calls: [
+            {
+              id: "call_1",
+              type: "function",
+              function: { name: "report__incomeStatement", arguments: '{"query":""}' },
+            },
+          ],
+        },
+      },
+    ],
+  },
+  answers: {
+    model: "deepseek-chat",
+    choices: [{ finish_reason: "stop", message: { role: "assistant", content: SAID } }],
+    // The prompt counted whole with the cached part named beside it.
+    usage: { prompt_tokens: 1000, completion_tokens: 50, prompt_tokens_details: { cached_tokens: 900 } },
+  },
+  refuses: {
+    model: "deepseek-chat",
+    choices: [{ finish_reason: "content_filter", message: { role: "assistant", content: "" } }],
+  },
+}
+
 const asJson = (route: Route, body: unknown, status = 200): Promise<void> =>
   route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) })
 
@@ -1153,7 +1210,61 @@ test("ChatGPT: a null for a spare argument is an absent one by the time it runs"
   await expect(page.getByText(SAID)).toBeVisible()
 })
 
-for (const wire of [CLAUDE, GEMINI, OPENAI]) {
+/**
+ * The one field a turn does not carry back.
+ *
+ * A reasoning model here puts its thinking in `reasoning_content` and then
+ * refuses to be handed it again, which makes this the single exception to the
+ * rule that a turn goes back exactly as it arrived — and the exception is
+ * theirs rather than ours. Everything else about that turn, the tool call
+ * included, still goes back untouched.
+ */
+test("DeepSeek: a turn goes back whole, less the thinking it will not take", async ({ page }) => {
+  const asked = await answerWith(page, COMPATIBLE, (route, sofar) =>
+    asJson(route, sofar === 1 ? COMPATIBLE.wantsTool : COMPATIBLE.answers),
+  )
+
+  await connect(page, COMPATIBLE)
+  await openTheDemo(page)
+  await askThat(page, "how did the year go")
+  await expect(page.getByText(SAID)).toBeVisible()
+
+  const back = asked[1] as {
+    messages: readonly Record<string, unknown>[]
+  }
+  const said = back.messages.find((one) => one["role"] === "assistant")
+  expect(said).toBeDefined()
+  expect(said!["tool_calls"]).toBeDefined()
+  expect(said!).not.toHaveProperty("reasoning_content")
+})
+
+/** Each of the three is the same code answering at its own address. */
+test("Qwen and OpenRouter are the same talker at another address", async ({ page }) => {
+  const reached: string[] = []
+  for (const host of ["**/dashscope-intl.aliyuncs.com/**", "**/openrouter.ai/**"]) {
+    await page.route(host, (route) => {
+      reached.push(new URL(route.request().url()).host)
+      return route.request().method() === "GET"
+        ? asJson(route, COMPATIBLE.models)
+        : asJson(route, COMPATIBLE.answers)
+    })
+  }
+
+  for (const label of ["Qwen", "OpenRouter"]) {
+    await page.goto("/settings")
+    await page.getByRole("button", { name: label, exact: true }).click()
+    await page.getByLabel("API key").fill(NOT_A_KEY)
+    await page.getByRole("button", { name: "Check the connection" }).click()
+    await expect(page.getByText("answered")).toBeVisible()
+  }
+
+  expect([...new Set(reached)].sort()).toEqual([
+    "dashscope-intl.aliyuncs.com",
+    "openrouter.ai",
+  ])
+})
+
+for (const wire of [CLAUDE, GEMINI, OPENAI, COMPATIBLE]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,
   }) => {

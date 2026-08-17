@@ -16,7 +16,7 @@ import type { JsonSchema, Result } from "~/lib/monad"
  * would quietly drop the rest.
  */
 
-export type Which = "anthropic" | "gemini" | "openai"
+export type Which = "anthropic" | "gemini" | "openai" | "deepseek" | "qwen" | "openrouter"
 
 /** One part of a turn, in whatever shape the provider that made it uses. */
 export type Block = Readonly<Record<string, unknown>>

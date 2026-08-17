@@ -47,7 +47,7 @@ screens ask. Nothing is uploaded anywhere by the app.
   a receipt or a bank statement and get entries back, offered rather than
   written: what is confident is ticked, what is not is set aside with a reason,
   and nothing joins the journal until you press. The browser talks to the model
-  directly with a key of your own -- Claude, Gemini or ChatGPT -- and what it may call is
+  directly with a key of your own -- ChatGPT, Claude, Gemini, DeepSeek, Qwen or OpenRouter -- and what it may call is
   the same table `window.choai` publishes, minus anything that could change the
   books without showing you first, and minus anything that leaves the device.
 - **Sync**: a path in a GitHub repository, reached from the browser straight to
