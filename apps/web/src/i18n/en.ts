@@ -43,6 +43,7 @@ export const en = {
     openFiles: "Open journal files",
     startFresh: "Start an empty journal",
     tryDemo: "Try the demo",
+    demoBody: "A few entries to look around, opened here and kept nowhere. Nothing of yours is touched.",
     starting: "Starting hledger…",
     demoLabel: "demo journal",
   },

@@ -36,6 +36,7 @@ export const ja: Dictionary = {
     openFiles: "帳簿ファイルを開く",
     startFresh: "空の帳簿をはじめる",
     tryDemo: "デモを見る",
+    demoBody: "中を見て回るための、仕訳がいくつか入った帳簿です。ここで開くだけで、どこにも保存しません。あなたの帳簿には触れません。",
     starting: "hledger を起動しています…",
     demoLabel: "デモ帳簿",
   },

@@ -47,15 +47,14 @@ function Choices(props: { adding: boolean }): JSX.Element {
         </p>
       </div>
 
-      <div class="flex gap-2">
+      {/* The two ways of starting your own books. Wrapping, because three
+          buttons on one line is a phone's whole width and then some. */}
+      <div class="flex flex-wrap gap-2">
         <Button onClick={() => chooser.click()} disabled={opening()}>
           {t("welcome.openFiles")}
         </Button>
         <Button variant="outline" onClick={() => void then(startFresh())} disabled={opening()}>
           {t("welcome.startFresh")}
-        </Button>
-        <Button variant="ghost" onClick={() => void then(openDemo())} disabled={opening()}>
-          {t("welcome.tryDemo")}
         </Button>
       </div>
 
@@ -79,6 +78,16 @@ function Choices(props: { adding: boolean }): JSX.Element {
       </Show>
 
       <TakeFromGitHub />
+
+      {/* Last, and set apart. The demo is not a third way to start your books —
+          it is somebody else's, to look around in — and standing it beside the
+          two that are yours only made all three harder to tell apart. */}
+      <section class="flex w-full flex-col items-start gap-2 border-t border-border pt-4">
+        <Button variant="ghost" onClick={() => void then(openDemo())} disabled={opening()}>
+          {t("welcome.tryDemo")}
+        </Button>
+        <p class="text-xs text-muted-foreground">{t("welcome.demoBody")}</p>
+      </section>
     </div>
   )
 }
