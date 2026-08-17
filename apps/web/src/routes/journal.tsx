@@ -15,6 +15,17 @@ import { t } from "~/i18n"
 
 const PAGE = 50
 
+/**
+ * How far the entries are let out across a wide window.
+ *
+ * Held to a width rather than given the window's. Three columns stretched
+ * across a desktop put what an entry came to a screen away from who it was paid
+ * to, and reading a row means crossing that gap for every one of them. The
+ * statements beside it are already held this way and narrower still, having
+ * fewer columns to hold.
+ */
+const WIDTH = "max-w-4xl"
+
 export default function Journal(): JSX.Element {
   const [query] = useQuery()
   const [offset, setOffset] = createSignal(0)
@@ -32,7 +43,7 @@ export default function Journal(): JSX.Element {
         Loading: () => <p class="text-sm text-muted-foreground">{t("journal.reading")}</p>,
         Err: (trouble) => <TroubleNote trouble={trouble} />,
         Ok: (found) => (
-          <div class="flex flex-col gap-4">
+          <div class={`flex flex-col gap-4 ${WIDTH}`}>
             <Table>
               <TableHeader>
                 <TableRow>
