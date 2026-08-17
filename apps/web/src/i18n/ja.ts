@@ -3,6 +3,7 @@ import type { Dictionary } from "./en"
 /** Japanese. Typed against the English dictionary, so a missing key will not compile. */
 export const ja: Dictionary = {
   app: {
+    renew: "新しい版が準備できています — 今すぐ更新",
     name: "choai",
   },
   nav: {

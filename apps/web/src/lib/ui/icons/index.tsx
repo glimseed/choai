@@ -14,6 +14,7 @@ import undo2Svg from './undo-2.svg?raw'
 import cloudSvg from './cloud.svg?raw'
 import sparklesSvg from './sparkles.svg?raw'
 import paperclipSvg from './paperclip.svg?raw'
+import refreshCwSvg from './refresh-cw.svg?raw'
 
 /**
  * Icons. The SVG bodies live beside this file as .svg files, drawn with
@@ -62,3 +63,5 @@ export const CloudIcon = icon(cloudSvg)
 export const SparklesIcon = icon(sparklesSvg)
 /** Something brought along with what is being said — a receipt, a statement. */
 export const PaperclipIcon = icon(paperclipSvg)
+
+export const RefreshIcon = icon(refreshCwSvg)

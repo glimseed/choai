@@ -208,6 +208,13 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
 - **Upstream must stay followable.** Fix a wasm build failure as far from
   hledger's source as possible: `cabal.project` → `shims/` → a `.cabal` patch →
   its source last, recorded in `RESULTS.md`. Currently zero lines changed.
+- **An update waits to be taken.** `registerType` is `prompt`, so a new service
+  worker installs and stands by: the browser hands over when the last window on
+  the old one closes, which makes shutting the app and opening it again an
+  update. `lib/renewal.ts` is the only thing that reloads, and only when asked —
+  a reload takes a half-typed entry, a conversation and every undecided proposal
+  with it. It also does the asking, because a phone app is resumed rather than
+  navigated to and a resume is not when a browser looks for a new worker.
 - **The module is ~7 MB** against a 25 MiB Cloudflare limit, which is why
   `maximumFileSizeToCacheInBytes` is raised in `vite.config.ts`.
 - **Money is never a float** — rendered from mantissa and scale in

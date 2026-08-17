@@ -25,11 +25,18 @@ export default defineConfig({
     solid(),
     tailwindcss(),
     VitePWA({
-      // A service worker that precaches ~7 MB and updates itself is the right
-      // thing for someone keeping books on a phone, and the wrong thing under a
-      // test, where it can reload the page from under a run in progress.
+      // A service worker that precaches ~7 MB is the right thing for someone
+      // keeping books on a phone, and the wrong thing under a test, where it can
+      // reload the page from under a run in progress.
       disable: process.env.CHOAI_TEST === "1",
-      registerType: "autoUpdate",
+      // What arrives waits rather than taking over: a reload takes a half-typed
+      // entry, a conversation and every undecided proposal with it, and none of
+      // those is written down anywhere else. The browser hands over when the
+      // last window closes, so shutting the app and opening it again is an
+      // update — and `lib/renewal.ts` is the other way, for asking outright.
+      registerType: "prompt",
+      // Registered there too, since that is where the asking happens.
+      injectRegister: null,
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
         name: "choai",

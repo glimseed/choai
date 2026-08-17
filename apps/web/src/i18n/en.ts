@@ -10,6 +10,7 @@
  */
 export const en = {
   app: {
+    renew: "A newer version is ready — take it now",
     name: "choai",
   },
   nav: {

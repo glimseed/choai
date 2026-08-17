@@ -8,7 +8,7 @@ import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem }
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
-import { DownloadIcon, FileCodeIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SparklesIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
+import { DownloadIcon, FileCodeIcon, RefreshIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SparklesIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
@@ -20,6 +20,7 @@ import { useQuery } from "~/journal/query"
 import { AiChat } from "~/components/ai-chat"
 import { ProposalReview } from "~/components/proposal-review"
 import { chatting, sending, startChatting, stopChatting, toggleChatting } from "~/ai/store"
+import { createRenewal } from "~/lib/renewal"
 import { underReview } from "~/journal/proposals"
 import { showed, wantedQuery } from "~/journal/showing"
 import { ComposePanel } from "~/compose/ComposePanel"
@@ -182,6 +183,12 @@ export function Layout(props: ParentProps) {
    * proposing without a conversation in flight — a script, a test — is not
    * waiting on anything, so it opens at once.
    */
+  /**
+   * Asked for once an hour and whenever the app comes back to the front, which
+   * on a phone is the nearest thing there is to being started.
+   */
+  const renewal = createRenewal(60 * 60 * 1000)
+
   const reviewing = (): boolean => {
     const proposal = underReview()
     return proposal !== undefined && proposal.id !== asideFrom() && !sending()
@@ -350,6 +357,19 @@ export function Layout(props: ParentProps) {
             }
             right={
               <>
+                {/* Ahead of everything else, and only ever there when there is
+                    something to take: a newer version standing by. */}
+                <Show when={renewal.waiting()}>
+                  <button
+                    type="button"
+                    onClick={renewal.take}
+                    aria-label={t("app.renew")}
+                    title={t("app.renew")}
+                    class="inline-flex size-6 items-center justify-center rounded text-primary transition-colors hover:bg-accent"
+                  >
+                    <RefreshIcon class="h-4 w-4" />
+                  </button>
+                </Show>
                 <Show when={getOrUndefined(journal())}>
                   {(open) => (
                     <button
