@@ -88,7 +88,7 @@ export const en = {
     moved: "The journal has changed since these were written. They were left alone.",
   },
   ai: {
-    title: "Asking in words",
+    title: "AI",
     lead: "Ask about these books in a sentence, and have hledger answer. The key is kept in this browser and the browser talks to {{ host }} directly; nothing passes through a server of ours.",
     provider: "Who to ask",
     freeIsRead: "Gemini's free tier is free because Google uses what you send to improve its products, and its reviewers may read it. That would be this journal. Their paid tier does not.",
@@ -194,15 +194,15 @@ export const en = {
     notTaken: "Nothing came back from there. Check the owner, the repository and the path.",
   },
   library: {
-    title: "This journal",
+    title: "The current journal",
     nameLives: "Kept as the first line of the journal, so it travels with the file.",
     kept: "Kept on this device, so it is here again next time. Nothing leaves the browser.",
     notKept: "This browser may clear it if the app goes unused. Installing the app, or syncing to GitHub, makes it certain.",
     close: "Close and clear from this device",
   },
   github: {
-    title: "GitHub",
-    lead: "Keep the journal in a private repository. The browser talks to api.github.com directly; nothing passes through a server of ours.",
+    title: "Cloud storage",
+    lead: "Keep the journal in a private GitHub repository. The browser talks to api.github.com directly; nothing passes through a server of ours.",
     owner: "Owner",
     repo: "Repository",
     branch: "Branch",
