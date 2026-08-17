@@ -15,27 +15,15 @@ import {
   type Tag,
 } from "./draft"
 
-/** The entry being written, and whether the panel for writing it is open. */
+/** The entry being written. Whether it is on screen belongs to `~/dock`. */
 
-const [open, setOpen] = createSignal(false)
 const [draft, setDraft] = createSignal<Draft>(emptyDraft(todayISO()))
 const [trouble, setTrouble] = createSignal<Option<Trouble>>(None)
 const [saving, setSaving] = createSignal(false)
 
 export { draft, saving }
 
-export const composing: Accessor<boolean> = open
 export const savingTrouble: Accessor<Option<Trouble>> = trouble
-
-export const startComposing = (): void => {
-  setOpen(true)
-}
-export const stopComposing = (): void => {
-  setOpen(false)
-}
-export const toggleComposing = (): void => {
-  setOpen((was) => !was)
-}
 
 export const editDraft = (change: Partial<Draft>): void => {
   setDraft((was) => ({ ...was, ...change }))

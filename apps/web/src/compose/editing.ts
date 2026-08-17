@@ -5,7 +5,7 @@ import { journal } from "~/journal/store"
 import { spanOf, textAt, type Span } from "~/journal/lines"
 import { None, Some, getOrUndefined, type Option } from "~/lib/monad"
 import { commitEntry } from "./commit"
-import { stopComposing } from "./store"
+import { dock } from "~/dock"
 
 /**
  * Editing an entry that is already written.
@@ -40,7 +40,7 @@ export const startEditingEntry = (transaction: Transaction): void => {
   const span = spanOf(transaction.tsourcepos)
   const file = open.source.files[span.path]
   if (file === undefined) return
-  stopComposing()
+  dock.show("editing")
   setWhere(span)
   setText(textAt(file, span))
   setTrouble(None)

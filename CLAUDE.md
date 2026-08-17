@@ -198,6 +198,12 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
 - **`github/sync.ts`** appends local entries after remote ones when both texts
   still begin with what was last agreed, and otherwise reports `diverged`
   untouched. Straight to api.github.com; there is no backend anywhere.
+- **The dock holds one thing at a time**, and `dock.ts` is that one piece of
+  state — the name of whoever the panel is lent to. Not a flag per occupant with
+  a rule about who wins: under that, opening the second does not close the first,
+  it hides it, and pressing the loser does nothing. `lib/solid-workbench-ui`'s
+  `createSlot` is the vessel; closing is never clearing, so a draft, a
+  conversation and a proposal all survive it.
 - **`app.tsx`** wires `lib/solid-workbench-ui` (MIT, kept app-agnostic); its
   `NAV`/`FOOT`/`INNER` tables pair each route with its explorer, and one query in
   the URL is shared by every view.

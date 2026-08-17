@@ -109,3 +109,31 @@ test("the journal's name is cut at six full-width characters", async ({ page }) 
 
   expect(room.cap / room.em).toBeCloseTo(6, 1)
 })
+
+/**
+ * The panel beside the journal holds one thing at a time.
+ *
+ * It used to be a flag per occupant and a rule about who wins, which reads the
+ * same from outside and is not: opening the second did not close the first, it
+ * hid it, and the rule drew whichever it preferred. Everything worked until two
+ * were open, and then pressing the loser did nothing at all.
+ */
+test("asking for one panel puts down whoever had it", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await openTheDemo(page)
+
+  const chat = page.getByRole("button", { name: "Ask", exact: true }).first()
+  const write = page.getByRole("button", { name: "New entry" })
+
+  await chat.click()
+  await expect(page.getByPlaceholder("Ask about these books")).toBeVisible()
+
+  await write.click()
+  await expect(page.getByPlaceholder("Ask about these books")).toBeHidden()
+  await expect(page.getByPlaceholder("who it was with")).toBeVisible()
+
+  // And back the other way, which is the direction that used to work.
+  await chat.click()
+  await expect(page.getByPlaceholder("who it was with")).toBeHidden()
+  await expect(page.getByPlaceholder("Ask about these books")).toBeVisible()
+})

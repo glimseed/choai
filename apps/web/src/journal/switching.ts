@@ -1,8 +1,9 @@
 import type { Trouble } from "~/hledger/wire"
 import type { Result } from "~/lib/monad"
-import { forgetChat, stopChatting } from "~/ai/store"
-import { clearDraft, stopComposing } from "~/compose/store"
+import { forgetChat } from "~/ai/store"
+import { clearDraft } from "~/compose/store"
 import { stopEditingEntry } from "~/compose/editing"
+import { dock } from "~/dock"
 import { forgetAll } from "./proposals"
 import { openBook, type OpenJournal } from "./store"
 
@@ -23,10 +24,9 @@ import { openBook, type OpenJournal } from "./store"
  * what was open first, and it does it before anything of the new book arrives.
  */
 export const switchTo = async (id: string): Promise<Result<OpenJournal, Trouble>> => {
+  dock.close()
   stopEditingEntry()
-  stopComposing()
   clearDraft()
-  stopChatting()
   forgetChat()
   forgetAll()
   return openBook(id)

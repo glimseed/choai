@@ -19,7 +19,6 @@ import { talkerFor } from "./talkers"
  * that have to travel unedited but are not conversation.
  */
 
-const [shown, setShown] = createSignal(false)
 const [beats, setBeats] = createSignal<readonly Beat[]>([])
 const [turns, setTurns] = createSignal<readonly Turn[]>([])
 const [sending, setSending] = createSignal(false)
@@ -30,23 +29,12 @@ const [spent, setSpent] = createSignal<Spent>(NOTHING_SPENT)
 
 export { beats, sending }
 
-export const chatting: Accessor<boolean> = shown
 export const askingTrouble: Accessor<Option<Failure>> = failure
 export const howItEnded: Accessor<Option<Ending>> = ending
 
 /** What this conversation has cost so far, counting every exchange in it. */
 export const spentSoFar: Accessor<Spent> = spent
 export const anythingSaid = (): boolean => beats().length > 0
-
-export const startChatting = (): void => {
-  setShown(true)
-}
-export const stopChatting = (): void => {
-  setShown(false)
-}
-export const toggleChatting = (): void => {
-  setShown((was) => !was)
-}
 
 /**
  * Put the conversation away.

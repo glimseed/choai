@@ -18,7 +18,7 @@ import { handOver } from "~/journal/handover"
 import { useQuery } from "~/journal/query"
 import { AiChat } from "~/components/ai-chat"
 import { ProposalReview } from "~/components/proposal-review"
-import { chatting, sending, startChatting, stopChatting, toggleChatting } from "~/ai/store"
+import { sending } from "~/ai/store"
 import { createRenewal } from "~/lib/renewal"
 import { Searching } from "~/lib/ui/searching"
 import { underReview } from "~/journal/proposals"
@@ -26,7 +26,7 @@ import { showed, wantedQuery } from "~/journal/showing"
 import { ComposePanel } from "~/compose/ComposePanel"
 import { EntryEditor } from "~/compose/EntryEditor"
 import { editing, stopEditingEntry } from "~/compose/editing"
-import { composing, startComposing, stopComposing, toggleComposing } from "~/compose/store"
+import { dock, type InTheDock } from "~/dock"
 import { narrow, viewportWidth } from "~/lib/narrow"
 import { actionFor } from "~/lib/shortcuts"
 import { ShortcutsHelp } from "~/components/shortcuts-help"
@@ -34,9 +34,7 @@ import { BookSwitcher } from "~/components/book-switcher"
 import { t } from "~/i18n"
 
 /** What the dock is called, by what is in it. */
-const dockTitle = (
-  showing: "editing" | "reviewing" | "chatting" | "composing" | undefined,
-): string => {
+const dockTitle = (showing: InTheDock | undefined): string => {
   switch (showing) {
     case "editing":
       return t("edit.title")
@@ -163,58 +161,50 @@ export function Layout(props: ParentProps) {
   }
 
   /**
-   * Which proposal has been set aside, so that closing the dock closes it.
-   *
-   * A proposal opens the dock by existing rather than by being opened, so there
-   * is nothing to stop; putting it down is remembering which one, and a
-   * different one — including what is left after applying part of this — opens
-   * it again.
-   */
-  const [asideFrom, setAsideFrom] = createSignal<string | undefined>(undefined)
-
-  /**
-   * A proposal opens the dock — but not while the thing that made it is still
-   * working.
-   *
-   * Something writing up a statement offers, reads back what it wrote, thinks
-   * better of it and offers again; every one of those is a proposal, and a panel
-   * that opened on each would flap through a dozen states nobody was asked to
-   * decide about. The one worth showing is the one it stopped on. Anything
-   * proposing without a conversation in flight — a script, a test — is not
-   * waiting on anything, so it opens at once.
-   */
-  /**
    * Asked for once an hour and whenever the app comes back to the front, which
    * on a phone is the nearest thing there is to being started.
    */
   const renewal = createRenewal(60 * 60 * 1000)
 
-  const reviewing = (): boolean => {
-    const proposal = underReview()
-    return proposal !== undefined && proposal.id !== asideFrom() && !sending()
-  }
-
-  /** Whichever of the four is open in the dock, closed. Not cleared — closed. */
-  const putDown = (): void => {
-    stopComposing()
-    stopEditingEntry()
-    stopChatting()
-    setAsideFrom(underReview()?.id)
-  }
+  /**
+   * A proposal takes the dock when whatever wrote it has stopped writing.
+   *
+   * Something writing up a statement offers, reads back what it wrote, thinks
+   * better of it and offers again; opening on each of those would flap through a
+   * run of states nobody was asked to decide about. The one worth showing is the
+   * one it stopped on — and anything proposing without a conversation in flight,
+   * a script or a test, is not waiting on anything.
+   *
+   * Nothing here puts it back once it has been closed: this runs when a proposal
+   * arrives and when the writing stops, and closing is neither.
+   */
+  createEffect(
+    on([underReview, sending], ([proposal, writing]) => {
+      if (proposal === undefined) {
+        if (dock.is("reviewing")) dock.close()
+        return
+      }
+      if (!writing) dock.show("reviewing")
+    }),
+  )
 
   /**
-   * What the dock is showing, if anything.
+   * The entry being corrected is let go of when the dock stops showing it.
    *
-   * Editing wins because it is started from a row in the journal and is about
-   * that row. A proposal comes next because it is waiting on a decision and
-   * arriving unbidden — it should not sit behind a panel somebody left open.
+   * It is held as a file and a range of lines, which is the most dangerous thing
+   * to keep past the moment it is on screen: those lines go on meaning something
+   * while nobody is looking at them. None of the others is a claim about where
+   * in a file something sits, so none of them needs this.
    */
-  const inTheDock = (): "editing" | "reviewing" | "chatting" | "composing" | undefined => {
-    if (editing() !== undefined) return "editing"
-    if (reviewing()) return "reviewing"
-    if (chatting()) return "chatting"
-    if (composing()) return "composing"
-    return undefined
+  createEffect(
+    on(dock.showing, (showing) => {
+      if (showing !== "editing" && editing() !== undefined) stopEditingEntry()
+    }),
+  )
+
+  /** Whoever has the dock gives it back. Not cleared — closed. */
+  const putDown = (): void => {
+    dock.close()
   }
 
   /**
@@ -227,7 +217,7 @@ export function Layout(props: ParentProps) {
       setRailVisible(false)
       setPanelOpen(false)
     }
-    startComposing()
+    dock.show("composing")
   }
 
   /** The dock needs the same room whichever of the three is in it. */
@@ -236,7 +226,7 @@ export function Layout(props: ParentProps) {
       setRailVisible(false)
       setPanelOpen(false)
     }
-    startChatting()
+    dock.show("chatting")
   }
 
   /**
@@ -287,8 +277,8 @@ export function Layout(props: ParentProps) {
       const action = actionFor(event)
       if (action === undefined) return
       event.preventDefault()
-      if (action === "compose") composing() ? toggleComposing() : compose()
-      if (action === "chat") chatting() ? toggleChatting() : chat()
+      if (action === "compose") dock.is("composing") ? dock.close() : compose()
+      if (action === "chat") dock.is("chatting") ? dock.close() : chat()
       if (action === "togglePanels") toggleChrome()
       if (action === "close") putDown()
     }
@@ -478,23 +468,23 @@ export function Layout(props: ParentProps) {
             initialWidth={420}
             minWidth={320}
             maxWidth={withinWindow}
-            open={inTheDock() !== undefined}
-            header={<span>{dockTitle(inTheDock())}</span>}
+            open={dock.showing() !== undefined}
+            header={<span>{dockTitle(dock.showing())}</span>}
             onClose={putDown}
             closeLabel={t("compose.close")}
           >
             {/* One dock, three things beside the books: a new entry, the lines an
                 existing one is written on, or a question about the lot. */}
-            <Show when={inTheDock() === "editing"}>
+            <Show when={dock.showing() === "editing"}>
               <EntryEditor />
             </Show>
-            <Show when={inTheDock() === "reviewing"}>
+            <Show when={dock.showing() === "reviewing"}>
               <ProposalReview />
             </Show>
-            <Show when={inTheDock() === "chatting"}>
+            <Show when={dock.showing() === "chatting"}>
               <AiChat />
             </Show>
-            <Show when={inTheDock() === "composing"}>
+            <Show when={dock.showing() === "composing"}>
               <ComposePanel />
             </Show>
           </AuxPanel>
