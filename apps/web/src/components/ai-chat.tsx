@@ -1,4 +1,4 @@
-import { For, Show, createResource, createSignal, type JSX } from "solid-js"
+import { For, Show, createEffect, createResource, createSignal, type JSX } from "solid-js"
 
 import { key, which } from "~/ai/kept"
 import { talkerFor } from "~/ai/talkers"
@@ -20,7 +20,7 @@ import type { Shown, Spent } from "~/ai/talker"
 import { wording } from "~/components/ai-key-panel"
 import { Button } from "~/components/ui/button"
 import { Ellipsis } from "~/lib/ui/ellipsis"
-import { PaperclipIcon, XIcon } from "~/lib/ui/icons"
+import { PaperclipIcon, SendIcon, XIcon } from "~/lib/ui/icons"
 import { getOrUndefined } from "~/lib/monad"
 import { t } from "~/i18n"
 
@@ -65,6 +65,23 @@ export function AiChat(): JSX.Element {
     setCarrying((was) => was.filter((_, each) => each !== at))
   }
 
+  /**
+   * The box grows with what is in it, to the height its class stops it at.
+   *
+   * Measured rather than declared: `field-sizing` does this in CSS and is not
+   * everywhere yet, and this app is opened on a phone. Cleared to `auto` first
+   * because `scrollHeight` on a box already tall enough is that box's height,
+   * so a box that grew would never shrink again — which is what happens when a
+   * long question is sent and the empty one is left standing five lines tall.
+   */
+  let box: HTMLTextAreaElement | undefined
+  createEffect(() => {
+    written()
+    if (box === undefined) return
+    box.style.height = "auto"
+    box.style.height = `${box.scrollHeight}px`
+  })
+
   return (
     <div class="flex h-full flex-col">
       <div class="flex-1 overflow-y-auto p-3">
@@ -90,6 +107,9 @@ export function AiChat(): JSX.Element {
       </div>
 
       <div class="flex flex-col gap-2 border-t p-3">
+        <Show when={spentSoFar().sent > 0}>
+          <Counted spent={spentSoFar()} />
+        </Show>
         <Show when={carrying().length > 0}>
           <div class="flex flex-wrap gap-2">
             <For each={carrying()}>
@@ -130,7 +150,9 @@ export function AiChat(): JSX.Element {
         </Show>
 
         <textarea
-          class="min-h-16 w-full resize-none rounded-md border border-border bg-transparent p-2 text-sm"
+          ref={box}
+          rows={1}
+          class="max-h-[7.5rem] min-h-16 w-full resize-none overflow-y-auto rounded-md border border-border bg-transparent p-2 text-sm"
           placeholder={t("ai.placeholder")}
           value={written()}
           onInput={(event) => setWritten(event.currentTarget.value)}
@@ -140,9 +162,6 @@ export function AiChat(): JSX.Element {
             void send()
           }}
         />
-        <Show when={spentSoFar().sent > 0}>
-          <Counted spent={spentSoFar()} />
-        </Show>
         <div class="flex items-center gap-2">
           {/* `capture` is what puts a phone straight into its camera rather than
               into a folder of photographs it has already taken. */}
@@ -165,20 +184,23 @@ export function AiChat(): JSX.Element {
               }}
             />
           </label>
-          <Button
-            size="sm"
-            disabled={
-              !ready() || (written().trim() === "" && carrying().length === 0) || sending()
-            }
-            onClick={() => void send()}
-          >
-            {t("ai.send")}
-          </Button>
           <Show when={anythingSaid()}>
             <Button size="sm" variant="ghost" disabled={sending()} onClick={forgetChat}>
               {t("ai.forget")}
             </Button>
           </Show>
+          <Button
+            size="icon"
+            class="ml-auto size-8"
+            aria-label={t("ai.send")}
+            title={t("ai.send")}
+            disabled={
+              !ready() || (written().trim() === "" && carrying().length === 0) || sending()
+            }
+            onClick={() => void send()}
+          >
+            <SendIcon />
+          </Button>
         </div>
       </div>
     </div>

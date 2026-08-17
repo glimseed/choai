@@ -116,3 +116,56 @@ test("a proposal taking the panel keeps it, rather than being closed by the entr
   await expect(theEditor(page)).toBeHidden()
   await expect(page.getByText("a shop").first()).toBeVisible()
 })
+
+/**
+ * The journal's own text is still the journal, and asking is offered wherever a
+ * journal is open at all — so the one that comes and goes is the one that moves,
+ * and the other keeps the same place on every screen.
+ */
+test("the header offers the same things on the journal and on its text", async ({ page }) => {
+  await openTheDemo(page)
+  const icons = () =>
+    page
+      .locator("aside")
+      .first()
+      .locator("button[aria-label]")
+      .evaluateAll((all) => all.map((one) => one.getAttribute("aria-label")))
+
+  await expect.poll(icons).toEqual(["Edit the text", "New entry", "Ask"])
+
+  await page.getByRole("button", { name: "Edit the text" }).click()
+  await expect(page).toHaveURL(/\/source/)
+  await expect.poll(icons).toEqual(["Edit the text", "New entry", "Ask"])
+
+  // Asking stays at the far end where writing an entry is not offered at all.
+  await page.getByRole("button", { name: "Trial balance", exact: true }).first().click()
+  await expect.poll(icons).toEqual(["Ask"])
+})
+
+/**
+ * The box for a question grows with the question, and stops.
+ *
+ * Measured rather than declared in CSS, so it is worth measuring back: what
+ * would go unnoticed is a box that grew and never shrank, leaving an empty one
+ * standing five lines tall after a long question was sent.
+ */
+test("the question box grows to a few lines, stops, and comes back down", async ({ page }) => {
+  await openTheDemo(page)
+  await page.getByRole("button", { name: "Ask", exact: true }).first().click()
+
+  const box = page.locator("textarea")
+  const tall = async (): Promise<number> => (await box.boundingBox())!.height
+  const lines = (n: number): string => Array.from({ length: n }, (_, at) => `line ${at}`).join("\n")
+
+  const atRest = await tall()
+  await box.fill(lines(5))
+  const grown = await tall()
+  expect(grown).toBeGreaterThan(atRest)
+
+  // Past what it holds it scrolls rather than going on growing.
+  await box.fill(lines(40))
+  expect(await tall()).toBeLessThan(grown + 24)
+
+  await box.fill("")
+  expect(await tall()).toBe(atRest)
+})

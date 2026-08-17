@@ -90,7 +90,7 @@ const INNER = [
     key: "source.title",
     Icon: ReceiptIcon,
     Explorer: JournalExplorer,
-    writes: false,
+    writes: true,
     under: "/",
   },
 ] as const
@@ -524,18 +524,6 @@ export function Layout(props: ParentProps) {
                       <FileCodeIcon class="h-[18px] w-[18px]" />
                     </button>
                   </Show>
-                  <Show when={getOrUndefined(journal()) !== undefined}>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={chat}
-                      aria-label={t("ai.dock")}
-                      title={t("ai.dock")}
-                      class="size-6 text-muted-foreground"
-                    >
-                      <SparklesIcon />
-                    </Button>
-                  </Show>
                   <Show when={current().writes && getOrUndefined(journal()) !== undefined}>
                     <Button
                       variant="outline"
@@ -548,6 +536,18 @@ export function Layout(props: ParentProps) {
                       {/* Left unsized: Button sets any icon inside it to 16px, and a
                           smaller box here would be overflowed rather than obeyed. */}
                       <PlusIcon />
+                    </Button>
+                  </Show>
+                  <Show when={getOrUndefined(journal()) !== undefined}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={chat}
+                      aria-label={t("ai.dock")}
+                      title={t("ai.dock")}
+                      class="size-6 text-muted-foreground"
+                    >
+                      <SparklesIcon />
                     </Button>
                   </Show>
                 </div>

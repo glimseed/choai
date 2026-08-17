@@ -13,6 +13,7 @@ import fileCodeSvg from './file-code.svg?raw'
 import cloudSvg from './cloud.svg?raw'
 import sparklesSvg from './sparkles.svg?raw'
 import paperclipSvg from './paperclip.svg?raw'
+import sendSvg from './send.svg?raw'
 import refreshCwSvg from './refresh-cw.svg?raw'
 import searchSvg from './search.svg?raw'
 import chevronLeftSvg from './chevron-left.svg?raw'
@@ -71,6 +72,8 @@ export const CloudIcon = icon(cloudSvg)
 export const SparklesIcon = icon(sparklesSvg)
 /** Something brought along with what is being said — a receipt, a statement. */
 export const PaperclipIcon = icon(paperclipSvg)
+/** Send what has been written. */
+export const SendIcon = icon(sendSvg)
 
 export const RefreshIcon = icon(refreshCwSvg)
 
