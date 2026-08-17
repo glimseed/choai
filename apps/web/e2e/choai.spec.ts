@@ -170,13 +170,21 @@ test("something arriving at the app is told there is a way in that is not the sc
   // An agent driving a browser sees the screens, and nothing in them says there
   // is another door. The console is the one surface it reads by habit.
   const said: string[] = []
+  const everything: string[] = []
   page.on("console", (message) => {
+    everything.push(`${message.type()}: ${message.text()}`)
     if (message.type() === "info") said.push(message.text())
   })
 
   await page.goto("/")
   await page.evaluate(() => window.choai.ready)
   expect(said.join("\n")).toContain("window.choai.describe()")
+
+  // And it is the only thing this app says there, which is what makes it worth
+  // reading. A console with a running commentary in it has nowhere to put a line
+  // that matters. (Vite's own dev-server chatter is not ours and is let be.)
+  const ours = everything.filter((one) => !one.includes("[vite]"))
+  expect(ours).toHaveLength(1)
 
   // And one arriving by fetching the host is told the same, and told that
   // fetching is not how this one is called.

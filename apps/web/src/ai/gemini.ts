@@ -154,38 +154,20 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
   }>(reached.value)
   if (!body.ok) return body
 
-  const answering = (body.value.models ?? [])
-    .filter((one) => (one.supportedGenerationMethods ?? []).includes("generateContent"))
-    .flatMap((one) => {
-      const id = (one.name ?? "").replace(/^models\//, "")
-      return id === "" ? [] : [{ id, label: one.displayName ?? id, ceiling: one.outputTokenLimit }]
-    })
-
-  const kept = answering.filter((one) => talkable(one.id))
-
-  /**
-   * What was left out, where anyone would think to look for it.
-   *
-   * The rule here is read off Google's naming rather than off an answer they
-   * give, so it is the sort of rule that can be wrong — and wrong quietly, as a
-   * picker that is shorter than somebody expected with nothing to say why. One
-   * line in the console is what turns that into a question with an answer.
-   */
-  if (kept.length < answering.length) {
-    console.info(
-      `choai — set aside ${answering.length - kept.length} of Google's models as not for talking to: ${answering
-        .filter((one) => !talkable(one.id))
-        .map((one) => one.id)
-        .join(", ")}`,
-    )
-  }
-
   return Ok(
-    kept.map((one) => ({
-      id: one.id,
-      label: one.label,
-      ...(one.ceiling === undefined ? {} : { takes: { ceiling: one.ceiling } }),
-    })),
+    (body.value.models ?? []).flatMap((one) => {
+      const id = (one.name ?? "").replace(/^models\//, "")
+      if (id === "" || !talkable(id)) return []
+      if (!(one.supportedGenerationMethods ?? []).includes("generateContent")) return []
+      const ceiling = one.outputTokenLimit
+      return [
+        {
+          id,
+          label: one.displayName ?? id,
+          ...(ceiling === undefined ? {} : { takes: { ceiling } }),
+        },
+      ]
+    }),
   )
 }
 

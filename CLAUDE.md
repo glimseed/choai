@@ -163,8 +163,7 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   missing adaptive thinking is sent a budget instead, and one missing effort is
   sent none — and a field the listing does not answer is left unwritten rather
   than recorded as a no. Google and OpenAI answer nothing, so `gemini.ts` and
-  `openai.ts` decide on the names, name what they set aside in the console, and
-  err towards leaving a model out — which is safe because the settings panel
+  `openai.ts` decide on the names and err towards leaving a model out — which is safe because the settings panel
   offers what they find as suggestions in a box you type in
   (`lib/ui/suggesting.tsx`), not as the whole of what can be said. A name missing
   from the list is an inconvenience, never a wall, and each talker carries a
@@ -188,6 +187,12 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
 - **The text is what is true.** `journal/store.ts` alone owns the open journal,
   and every write is offered to hledger first and kept only if it reads.
   `openBringingMissing` fetches `include`d files as hledger asks for them.
+- **One line in the console, and no others.** `api/install.ts` says `window.choai`
+  is there, because an agent driving a browser reads the console and sees
+  nothing in the screens about it. Nothing else writes there — not hledger's own
+  stdout, not what a model listing set aside — since a console with a running
+  commentary in it has nowhere to put the one line meant to be read. An e2e test
+  holds that count at one.
 - **`lib/idb.ts` is the whole database** — name, version, stores, migrations —
   because IndexedDB versions all of it at once.
 - **`github/sync.ts`** appends local entries after remote ones when both texts

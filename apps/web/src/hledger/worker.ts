@@ -53,8 +53,12 @@ const start = async (): Promise<Exports> => {
     [],
     [
       new OpenFile(new File([])),
-      ConsoleStdout.lineBuffered((line) => console.log("[hledger]", line)),
-      ConsoleStdout.lineBuffered((line) => console.warn("[hledger]", line)),
+      // hledger's own stdout and stderr are wired to nothing. Everything it has
+      // to say that anybody acts on comes back through `Trouble`, in the answer
+      // to the question that provoked it; the same words a second time in a
+      // console only crowd out the one line there that is meant to be read.
+      ConsoleStdout.lineBuffered(() => {}),
+      ConsoleStdout.lineBuffered(() => {}),
       new PreopenDirectory("/", directory),
     ],
   )

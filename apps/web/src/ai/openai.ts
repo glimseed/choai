@@ -116,19 +116,13 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
   const body = await readJson<{ data?: readonly { id?: string }[] }>(reached.value)
   if (!body.ok) return body
 
-  const answering = (body.value.data ?? []).flatMap((one) => (one.id === undefined ? [] : [one.id]))
-  const kept = answering.filter(talkable)
-
-  if (kept.length < answering.length) {
-    console.info(
-      `choai — set aside ${answering.length - kept.length} of OpenAI's models as not for talking to: ${answering
-        .filter((one) => !talkable(one))
-        .join(", ")}`,
-    )
-  }
-
   // Newest first, which is the order the other listings already come in.
-  return Ok([...kept].sort((a, b) => b.localeCompare(a)).map((id) => ({ id, label: id })))
+  return Ok(
+    (body.value.data ?? [])
+      .flatMap((one) => (one.id === undefined || !talkable(one.id) ? [] : [one.id]))
+      .sort((a, b) => b.localeCompare(a))
+      .map((id) => ({ id, label: id })),
+  )
 }
 
 /**
