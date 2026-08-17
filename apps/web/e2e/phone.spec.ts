@@ -163,6 +163,35 @@ test("on a wide window the text is opened beside the list, not instead of it", a
 })
 
 /**
+ * The list is also the way out of the text.
+ *
+ * The text borrows the journal's account list and has no use for what the list
+ * sets, so choosing there changed a query behind a page that does not read it:
+ * nothing moved, and the only way out was the switch that led in.
+ */
+test("choosing an account leaves the journal's text, carrying the choice with it", async ({
+  page,
+}) => {
+  await page.setViewportSize(DESK)
+  await openTheDemo(page)
+  await theText(page).click()
+  await expect(page).toHaveURL(/\/source/)
+
+  await anAccount(page).click()
+
+  // The page and the query change together. Set one after the other they are two
+  // navigations in a tick, and the router keeps the last of them, which is how a
+  // query set first comes to be dropped by the page that follows it.
+  await expect(page).toHaveURL(/\/\?q=/)
+  await expect(page.getByRole("searchbox")).toHaveValue("acct:expenses:food")
+  await expect(theText(page)).toHaveAttribute("aria-pressed", "false")
+
+  // Leaving a page is going somewhere, so the text is still behind you.
+  await page.goBack()
+  await expect(page).toHaveURL(/\/source/)
+})
+
+/**
  * The list beside the settings is a table of contents, not a list of accounts.
  *
  * Every other explorer is accounts, because the views they belong to are all one

@@ -216,6 +216,12 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
 - **`app.tsx`** wires `lib/solid-workbench-ui` (MIT, kept app-agnostic); its
   `NAV`/`FOOT`/`INNER` tables pair each route with its explorer, and one query in
   the URL is shared by every view.
+- **Choosing in the explorer lands on the view the explorer belongs to**, which
+  is not always the page on screen: an `INNER` page borrows its rail's list and
+  has no use for what it sets, so choosing there is how it is left. The explorer
+  hands the query up rather than setting it, because the page and the query are
+  one navigation — the router keeps only the last of two in a tick, so a query
+  set first is dropped by the page that follows it.
 - **`i18n/en.ts` is the type** every other dictionary is checked against, and
   `docs/src/words.ts` does the same for the landing page — which speaks to
   someone who has not opened the app, so it does not share the app's wording.

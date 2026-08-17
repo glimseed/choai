@@ -15,7 +15,7 @@ import { AccountsExplorer } from "~/explorer/AccountsExplorer"
 import { SettingsExplorer } from "~/explorer/SettingsExplorer"
 import { journal, reopenKept } from "~/journal/store"
 import { handOver } from "~/journal/handover"
-import { useQuery } from "~/journal/query"
+import { searchFor, useQuery } from "~/journal/query"
 import { AiChat } from "~/components/ai-chat"
 import { ProposalReview } from "~/components/proposal-review"
 import { sending } from "~/ai/store"
@@ -179,6 +179,35 @@ export function Layout(props: ParentProps) {
     if (!snapped()) return
     setRailVisible(false)
     setPanelOpen(false)
+  }
+
+  /**
+   * Choosing in the explorer is one change of address, not two.
+   *
+   * The query and the page it applies to are set together. Set one after the
+   * other they are two navigations in a tick, and the router keeps only the last
+   * of them, so the query would be dropped by the page that followed it.
+   *
+   * The page is the view the explorer belongs to, which is not always the one on
+   * screen. An inner page borrows its rail's explorer — the journal's own text
+   * sits under the account list and has no use for what the list sets — and
+   * there, choosing did nothing at all: the query changed behind a page that
+   * does not read it, and the only way out was the one small switch that led in.
+   * So choosing is the way out as well.
+   *
+   * Leaving a page is going back to another one, so it is pushed; narrowing the
+   * page already open is not going anywhere, and pushing there would make every
+   * account tried a step to be pressed back through.
+   *
+   * The settings explorer chooses a section rather than a query and takes its own
+   * address there, so it hands up nothing and nothing here moves.
+   */
+  const chose = (chosen?: string): void => {
+    if (chosen !== undefined) {
+      const view = railOf(current())
+      navigate(view + searchFor(chosen), { replace: view === location.pathname })
+    }
+    showTheWork()
   }
 
   /**
@@ -523,7 +552,7 @@ export function Layout(props: ParentProps) {
               </>
             }
           >
-            <Dynamic component={current().Explorer} onChosen={showTheWork} />
+            <Dynamic component={current().Explorer} onChosen={chose} />
           </SidePanel>
         }
         aux={

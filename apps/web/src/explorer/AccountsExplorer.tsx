@@ -13,27 +13,24 @@ import { t } from "~/i18n"
  * period picker beside the income statement, say — without the others having to
  * agree.
  *
- * Choosing an account sets the query rather than going somewhere new, so the
- * account stays chosen while moving between views. Where the list and the work
- * cannot both be on screen, choosing is also how somebody gets to the work, so
- * whoever laid this out is told — see `onChosen`.
+ * Choosing an account comes to a query rather than to somewhere new, so the
+ * account stays chosen while moving between views. What is chosen is handed up
+ * rather than set here: the query and the page it applies to change together,
+ * and where it lands is not this list's to decide. Where the list and the work
+ * cannot both be on screen, choosing is also how somebody gets to the work —
+ * see `onChosen` for both.
  */
 export function AccountsExplorer(props: {
-  /** Called once something has been chosen here, whatever it was. */
-  readonly onChosen?: () => void
+  /** Called with the query a choice here comes to, whatever was chosen. */
+  readonly onChosen?: (query: string) => void
 }): JSX.Element {
-  const [query, setQuery] = useQuery()
-
-  const pick = (to: string): void => {
-    setQuery(to)
-    props.onChosen?.()
-  }
+  const [query] = useQuery()
 
   const chosen = (account: string): boolean => query() === accountQuery(account)
 
   /** Choosing the same account again clears the filter, so the panel is a toggle
    * rather than something to escape from the query box. */
-  const choose = (account: string): void => pick(chosen(account) ? "" : accountQuery(account))
+  const choose = (account: string): void => props.onChosen?.(chosen(account) ? "" : accountQuery(account))
 
   return (
     <Show
@@ -44,7 +41,7 @@ export function AccountsExplorer(props: {
         <div class="py-1">
           <button
             type="button"
-            onClick={() => pick("")}
+            onClick={() => props.onChosen?.("")}
             class="w-full px-3 py-1 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             classList={{ "bg-accent text-accent-foreground": query() === "" }}
           >
