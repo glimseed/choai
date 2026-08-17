@@ -20,3 +20,18 @@ const viewport = createRoot(() => {
 export const viewportWidth: Accessor<number> = viewport
 
 export const narrow = (): boolean => viewportWidth() <= NARROW
+
+/**
+ * Whether something this wide would take more than half the window.
+ *
+ * The question the layout asks of a phone, in place of asking what a phone is.
+ * Nothing here reads a user agent or names a device: a window is narrow when
+ * what wants to sit in it does not leave room for anything else, which is the
+ * same question at any size and stays true when somebody drags a desktop window
+ * thin.
+ *
+ * Asked about a settled width rather than a live one. Asked about a width that
+ * can itself be dragged, crossing the line would pin that width in place and
+ * there would be no dragging back out of it.
+ */
+export const overHalf = (width: number): boolean => width * 2 > viewportWidth()

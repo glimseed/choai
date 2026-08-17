@@ -14,6 +14,7 @@ export const ja: Dictionary = {
     settings: "設定",
     showPanels: "サイドバーを表示",
     hidePanels: "サイドバーを隠す",
+    back: "一覧に戻る",
   },
   journal: {
     queryPlaceholder: "hledger クエリ 例: acct:食費 date:2026-02",

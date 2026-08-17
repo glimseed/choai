@@ -7,7 +7,7 @@ import { getOrUndefined } from "~/lib/monad"
 import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem } from "~/lib/solid-workbench-ui"
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
-import { DownloadIcon, FileCodeIcon, RefreshIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SparklesIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
+import { ChevronLeftIcon, DownloadIcon, FileCodeIcon, RefreshIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SparklesIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
@@ -27,7 +27,7 @@ import { ComposePanel } from "~/compose/ComposePanel"
 import { EntryEditor } from "~/compose/EntryEditor"
 import { editing, stopEditingEntry } from "~/compose/editing"
 import { dock, type InTheDock } from "~/dock"
-import { narrow, viewportWidth } from "~/lib/narrow"
+import { narrow, overHalf, viewportWidth } from "~/lib/narrow"
 import { actionFor } from "~/lib/shortcuts"
 import { ShortcutsHelp } from "~/components/shortcuts-help"
 import { BookSwitcher } from "~/components/book-switcher"
@@ -122,15 +122,62 @@ const SLIDE = "transition-[width] duration-150 ease-out motion-reduce:transition
  */
 const withinWindow = (): number => Math.max(1, viewportWidth() - 1)
 
+/**
+ * The rail and the explorer at rest, and the line they must not both cross.
+ *
+ * Written as what the two of them settle at rather than what they currently
+ * measure, so that dragging the explorer past half a desktop window does not
+ * snap it to the whole of one and pin it there with no way back. See `overHalf`.
+ */
+const RAIL = 48
+const EXPLORER = 260
+
+/** The rail's own edge, and the explorer's splitter: a line each. */
+const EDGES = 2
+
 export function Layout(props: ParentProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [query, setQuery] = useQuery()
   const [railExpanded, setRailExpanded] = createSignal(false)
-  const [railVisible, setRailVisible] = createSignal(true)
-  const [panelOpen, setPanelOpen] = createSignal(true)
+  /**
+   * Where the list and the work cannot share the window, the work is what this
+   * opens on.
+   *
+   * Otherwise there is no first screen: the list has the window, and whatever
+   * the work was going to say — including the offer of a journal to somebody who
+   * has none yet — is behind it with no way through, since the way through is
+   * choosing something from a list that has nothing in it.
+   */
+  const [railVisible, setRailVisible] = createSignal(!overHalf(RAIL + EXPLORER))
+  const [panelOpen, setPanelOpen] = createSignal(!overHalf(RAIL + EXPLORER))
 
   const chromeShowing = (): boolean => railVisible() || panelOpen()
+
+  /**
+   * Whether the left of the window is a screen of its own.
+   *
+   * Where the rail and the explorer together would take more than half of what
+   * there is, they take all of it instead and the work goes behind them —
+   * because a window that narrow was never going to show both, and pretending
+   * otherwise leaves the work in a column too thin to read. Nothing here asks
+   * what kind of device this is.
+   */
+  const snapped = (): boolean => overHalf(RAIL + EXPLORER)
+
+  /** What the explorer is pinned to when it has the window to itself. */
+  const wholeWindow = (): number => Math.max(1, viewportWidth() - RAIL - EDGES)
+
+  /**
+   * Choosing in the explorer is also how the work is reached, once the two
+   * cannot share the window. Only then: with room for both, a choice is a
+   * filter and nothing moves.
+   */
+  const chosenInExplorer = (): void => {
+    if (!snapped()) return
+    setRailVisible(false)
+    setPanelOpen(false)
+  }
 
   /**
    * The title bar's button works on the chrome as a whole, both rails at once,
@@ -402,7 +449,11 @@ export function Layout(props: ParentProps) {
         panel={
           <SidePanel
             class={SLIDE}
-            maxWidth={withinWindow}
+            // Pinned rather than merely allowed: a width whose floor and ceiling
+            // are the same cannot be dragged off it, which is what makes the
+            // explorer take the window whole and stay there.
+            minWidth={() => (snapped() ? wholeWindow() : 168)}
+            maxWidth={() => (snapped() ? wholeWindow() : withinWindow())}
             open={panelOpen()}
             header={
               <>
@@ -459,7 +510,7 @@ export function Layout(props: ParentProps) {
               </>
             }
           >
-            <Dynamic component={current().Explorer} />
+            <Dynamic component={current().Explorer} onChosen={chosenInExplorer} />
           </SidePanel>
         }
         aux={
@@ -490,6 +541,22 @@ export function Layout(props: ParentProps) {
           </AuxPanel>
         }
       >
+        {/* Above the work rather than in it, and only where the work is a
+            screen of its own: with the rail and the explorer put away there is
+            nothing else on this screen that leads back to them. Sticky, because
+            the work below it scrolls. */}
+        <Show when={snapped() && !chromeShowing()}>
+          <button
+            type="button"
+            onClick={toggleChrome}
+            aria-label={t("nav.back")}
+            title={t("nav.back")}
+            class="sticky top-0 z-10 flex h-9 w-full items-center gap-1 border-b border-border bg-background px-2 text-sm font-medium text-muted-foreground"
+          >
+            <ChevronLeftIcon class="h-4 w-4" />
+            <span class="truncate">{t(current().key)}</span>
+          </button>
+        </Show>
         <div class="p-4">{props.children}</div>
       </Shell>
     </>

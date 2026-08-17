@@ -16,6 +16,7 @@ import sparklesSvg from './sparkles.svg?raw'
 import paperclipSvg from './paperclip.svg?raw'
 import refreshCwSvg from './refresh-cw.svg?raw'
 import searchSvg from './search.svg?raw'
+import chevronLeftSvg from './chevron-left.svg?raw'
 
 /**
  * Icons. The SVG bodies live beside this file as .svg files, drawn with
@@ -68,3 +69,5 @@ export const PaperclipIcon = icon(paperclipSvg)
 export const RefreshIcon = icon(refreshCwSvg)
 
 export const SearchIcon = icon(searchSvg)
+
+export const ChevronLeftIcon = icon(chevronLeftSvg)

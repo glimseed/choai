@@ -14,17 +14,26 @@ import { t } from "~/i18n"
  * agree.
  *
  * Choosing an account sets the query rather than going somewhere new, so the
- * account stays chosen while moving between views.
+ * account stays chosen while moving between views. Where the list and the work
+ * cannot both be on screen, choosing is also how somebody gets to the work, so
+ * whoever laid this out is told — see `onChosen`.
  */
-export function JournalExplorer(): JSX.Element {
+export function JournalExplorer(props: {
+  /** Called once something has been chosen here, whatever it was. */
+  readonly onChosen?: () => void
+}): JSX.Element {
   const [query, setQuery] = useQuery()
+
+  const pick = (to: string): void => {
+    setQuery(to)
+    props.onChosen?.()
+  }
 
   const chosen = (account: string): boolean => query() === accountQuery(account)
 
   /** Choosing the same account again clears the filter, so the panel is a toggle
    * rather than something to escape from the query box. */
-  const choose = (account: string): void =>
-    setQuery(chosen(account) ? "" : accountQuery(account))
+  const choose = (account: string): void => pick(chosen(account) ? "" : accountQuery(account))
 
   return (
     <Show
@@ -35,7 +44,7 @@ export function JournalExplorer(): JSX.Element {
         <div class="py-1">
           <button
             type="button"
-            onClick={() => setQuery("")}
+            onClick={() => pick("")}
             class="w-full px-3 py-1 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             classList={{ "bg-accent text-accent-foreground": query() === "" }}
           >

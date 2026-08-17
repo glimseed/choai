@@ -198,6 +198,15 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
 - **`github/sync.ts`** appends local entries after remote ones when both texts
   still begin with what was last agreed, and otherwise reports `diverged`
   untouched. Straight to api.github.com; there is no backend anywhere.
+- **A window too narrow for both gives the left one screen.** Where the rail and
+  the explorer would together take more than half the window (`overHalf` in
+  `lib/narrow.ts`), they take all of it, the work goes behind them, and choosing
+  in the explorer is how it is reached again — with a way back at the top of it.
+  Nothing asks what kind of device it is, and the rule holds for a desktop window
+  dragged thin. It is asked of the widths those two settle at, never of the width
+  the explorer currently has: pinning a draggable width is a thing there is no
+  dragging back out of. The pinning itself is `minWidth === maxWidth`, which
+  `resize.ts` already clamps to.
 - **The dock holds one thing at a time**, and `dock.ts` is that one piece of
   state — the name of whoever the panel is lent to. Not a flag per occupant with
   a rule about who wins: under that, opening the second does not close the first,

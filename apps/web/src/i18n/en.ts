@@ -21,6 +21,7 @@ export const en = {
     settings: "Settings",
     showPanels: "Show sidebars",
     hidePanels: "Hide sidebars",
+    back: "Back to the list",
   },
   journal: {
     queryPlaceholder: "hledger query, eg  acct:food date:2026-02",
