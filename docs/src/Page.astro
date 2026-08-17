@@ -1,8 +1,14 @@
 ---
 /**
  * The front page: what the app is, to somebody who has not opened it.
+ *
+ * Short on purpose. Four cards, each the top of a page rather than the whole of
+ * a subject, and then the way to those pages. Anything that takes more than a
+ * paragraph to say is somewhere else, which is what keeps the button near the
+ * top of the screen where somebody deciding can reach it.
  */
 import Shell from "./Shell.astro"
+import { GUIDES } from "./paths"
 import type { Words } from "./words"
 
 const { words } = Astro.props as { words: Words }
@@ -15,6 +21,10 @@ const HLEDGER = "https://hledger.org"
 const APP =
   import.meta.env.PUBLIC_APP ??
   (import.meta.env.DEV ? "http://localhost:8396" : "https://choai.dev")
+
+const ja = words.lang === "ja"
+const at = (path: string): string =>
+  path.startsWith("/") && ja ? `/ja${path}` : path
 ---
 
 <Shell words={words}>
@@ -32,8 +42,27 @@ const APP =
         <li>
           <h2>{point.heading}</h2>
           <p>{point.body}</p>
+          {/* The link finishes the card's sentence rather than saying "read
+              more" four times over. */}
+          <a href={at(point.at)} rel={point.at.startsWith("/") ? null : "noreferrer"}>
+            {point.more} →
+          </a>
         </li>
       ))
     }
   </ul>
+
+  <section class="readings">
+    <h2>{words.readingsHeading}</h2>
+    <ul>
+      {
+        GUIDES.map((reading) => (
+          <li>
+            <a href={at(reading.path)}>{(ja ? reading.ja : reading.en).title}</a>
+            <p>{ja ? reading.blurb.ja : reading.blurb.en}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
 </Shell>

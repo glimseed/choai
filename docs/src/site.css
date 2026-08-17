@@ -38,7 +38,8 @@ header { display: flex; align-items: center; gap: 0.75rem; }
 header img { width: 3.5rem; height: 3.5rem; }
 header a.home { color: inherit; text-decoration: none; }
 h1 { font-size: 1.9rem; line-height: 1.25; margin: 1.75rem 0 0; letter-spacing: -0.01em; }
-.lead { color: var(--quiet); font-size: 1.05rem; margin: 0.75rem 0 0; }
+h1, h2 { text-wrap: balance; }
+.lead { color: var(--quiet); font-size: 1.05rem; margin: 0.75rem 0 0; max-width: 33rem; }
 .ways { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 2rem 0 0; }
 a.button {
   display: inline-block; padding: 0.6rem 1.1rem; border-radius: 0.5rem;
@@ -49,19 +50,61 @@ a.quiet { display: inline-block; padding: 0.6rem 0.4rem; color: var(--quiet); }
 a { color: inherit; text-underline-offset: 3px; }
 ul.points { list-style: none; padding: 0; margin: 3rem 0 0; display: grid; gap: 1.5rem; }
 @media (min-width: 42rem) { ul.points { grid-template-columns: 1fr 1fr; gap: 1.75rem 2rem; } }
-h2 { font-size: 1rem; margin: 0 0 0.35rem; }
+/* A heading has to be seen rather than found. It was 1rem against a 1rem body. */
+h2 { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.35rem; }
+ul.points h2 { font-size: 1rem; }
 ul.points h2::before { content: ""; display: inline-block; width: 0.6rem; height: 0.6rem;
   margin-right: 0.5rem; border-radius: 2px;
   background: linear-gradient(135deg, var(--bright), var(--deep)); }
 ul.points p { margin: 0; color: var(--quiet); font-size: 0.925rem; }
-article { margin-top: 2.5rem; }
-article h1 { margin-top: 0; font-size: 1.6rem; }
-article h2 { font-size: 1.05rem; margin: 2.25rem 0 0.5rem; }
-article p { color: var(--quiet); margin: 0 0 0.75rem; }
-article .updated { font-size: 0.85rem; margin-top: 0.5rem; }
-article .intro { color: var(--ink); }
+/*
+ * A column to read down.
+ *
+ * 33rem is about 62 Latin characters and about 33 Japanese ones — inside what
+ * each wants, from one number, because a full-width glyph is one em. The page
+ * around it stays 46rem so the cards on the front keep their two columns; the
+ * text simply does not use all of it.
+ */
+article { margin-top: 2.5rem; max-width: 33rem; }
+article h1 { margin-top: 0; font-size: 1.75rem; }
+article h2 { margin: 2.5rem 0 0.5rem; }
+/* Body text at full ink, and the date the grey one. It was the other way
+   round, which puts the page's least important line in its strongest colour. */
+article p { margin: 0 0 1rem; line-height: 1.8; text-wrap: pretty; }
+article .updated { color: var(--quiet); font-size: 0.85rem; margin-top: 0.5rem; }
+article .intro { font-size: 1.05rem; }
+article .links { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.925rem;
+  color: var(--quiet); margin: 0.25rem 0 1rem; }
 footer { margin: 3.5rem 0 0; padding-top: 1.5rem; border-top: 1px solid var(--line);
   color: var(--quiet); font-size: 0.85rem; }
 footer p { margin: 0 0 0.5rem; }
 footer nav { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
 .switch { margin-left: auto; font-size: 0.85rem; color: var(--quiet); }
+
+/*
+ * Focus, which there was none of.
+ *
+ * --deep rather than --bright: #2fc3c5 on white is about 1.9:1, under what an
+ * indicator needs to be seen. --deep is near-black on paper and pale in the
+ * dark, so one line is strong in both.
+ */
+:focus-visible { outline: 2px solid var(--deep); outline-offset: 3px; border-radius: 2px; }
+
+/*
+ * Japanese, set as Japanese.
+ *
+ * The tracking closes glyphs that are already flush against each other, and the
+ * leading is tuned for Latin ascenders that kana do not have. `line-break`
+ * keeps small kana and closing brackets off the front of a line.
+ */
+html[lang="ja"] h1 { letter-spacing: normal; }
+html[lang="ja"] body { line-height: 1.85; }
+html[lang="ja"] article p { line-height: 1.9; line-break: strict; }
+
+ul.points a { display: inline-block; margin-top: 0.5rem; font-size: 0.9rem; color: var(--quiet); }
+.readings { margin: 3.5rem 0 0; }
+.readings ul { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 1.25rem; }
+.readings p { margin: 0.15rem 0 0; color: var(--quiet); font-size: 0.925rem; max-width: 33rem; }
+/* Every other page, at the foot of each one. Quiet: it is a way on, not the point. */
+.more { margin: 3rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.925rem; color: var(--quiet); }

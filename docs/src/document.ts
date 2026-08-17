@@ -76,11 +76,13 @@ type TranslatedSection<S> = S extends { readonly body: infer Lines extends reado
     }
   : never
 
-export type Translated<D extends Document> = {
-  readonly title: string
-  readonly updated?: string
-  readonly intro: string
-  readonly sections: {
-    readonly [At in keyof D["sections"]]: TranslatedSection<D["sections"][At]>
-  }
+export type Translated<D extends Document> = D extends {
+  readonly sections: infer Sections extends readonly Section[]
 }
+  ? {
+      readonly title: string
+      readonly updated?: string
+      readonly intro: string
+      readonly sections: { readonly [At in keyof Sections]: TranslatedSection<Sections[At]> }
+    }
+  : never
