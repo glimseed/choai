@@ -17,8 +17,11 @@ declare global {
  * of them moving, since it is laid over the row rather than in it. That is not
  * something to check by eye at one window size.
  *
- * The worst case is the journal's name at its cap, not at whatever this journal
- * happens to be called, so the cap is what is measured against.
+ * The name beside it is capped at six full-width characters, so there is no
+ * worst case to reason about separately — every journal's name takes the same
+ * room once it is long enough to be cut. That the demo's name is being cut is
+ * checked here too, since without it these measurements would be about one
+ * short name rather than about the cap.
  */
 const openTheDemo = async (page: Page): Promise<void> => {
   await page.goto("/")
@@ -48,9 +51,13 @@ for (const { what, width } of WINDOWS) {
 
     const box = (await search.boundingBox())!
     const named = (await name.boundingBox())!
-    const cap = await name.evaluate((one) => parseFloat(getComputedStyle(one).maxWidth))
 
-    expect(box.x).toBeGreaterThan(named.x + cap)
+    // The name is long enough to be at its cap, so this box is the widest the
+    // left slot gets rather than the width of one particular journal.
+    const cut = await name.locator("span").first().evaluate((one) => one.scrollWidth > one.clientWidth)
+    expect(cut).toBe(true)
+
+    expect(box.x).toBeGreaterThan(named.x + named.width)
     // And it is still something somebody could type into.
     expect(box.width).toBeGreaterThanOrEqual(88)
   })
@@ -79,4 +86,26 @@ test("it widens for what is being typed, and stays wide while that is still ther
   await search.fill("")
   await page.locator("body").click({ position: { x: 5, y: 400 } })
   await expect.poll(async () => (await search.boundingBox())!.width).toBe(idle)
+})
+
+/**
+ * Six full-width characters, counted in the width of the writing rather than in
+ * pixels.
+ *
+ * An em is what a full-width character is wide, so the cap holds the same six
+ * whatever size the bar happens to be set in — and six of them is a different
+ * number of pixels from six of anything else, which is the whole reason not to
+ * write a pixel figure here.
+ */
+test("the journal's name is cut at six full-width characters", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await openTheDemo(page)
+
+  const named = page.locator("button", { hasText: "▾" }).first().locator("span").first()
+  const room = await named.evaluate((one) => ({
+    cap: one.getBoundingClientRect().width,
+    em: parseFloat(getComputedStyle(one).fontSize),
+  }))
+
+  expect(room.cap / room.em).toBeCloseTo(6, 1)
 })
