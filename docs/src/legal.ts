@@ -10,12 +10,10 @@
  * else here. When behaviour changes, this changes with it in the same commit.
  */
 
-export interface Document {
-  readonly title: string
-  readonly updated: string
-  readonly intro: string
-  readonly sections: readonly { readonly heading: string; readonly body: readonly string[] }[]
-}
+import type { Document } from "./document"
+
+/** Re-exported so the pages that already ask this file for it still can. */
+export type { Document }
 
 /** Both documents say the same date, because they were written together. */
 const UPDATED = "2026-08-13"

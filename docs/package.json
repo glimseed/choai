@@ -7,10 +7,13 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --port 45720",
+    "check": "astro check",
     "build": "astro build",
     "preview": "astro preview --port 45720"
   },
   "devDependencies": {
-    "astro": "^7.2.1"
+    "@astrojs/check": "^0.9.4",
+    "astro": "^7.2.1",
+    "typescript": "^6.0.3"
   }
 }

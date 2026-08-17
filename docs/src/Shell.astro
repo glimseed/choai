@@ -24,8 +24,21 @@ const { words, heading } = Astro.props
  * or run their own. */
 const SOURCE = "https://github.com/mrksye/choai"
 const ja = words.lang === "ja"
+
+/**
+ * The same page without its language on the front.
+ *
+ * Matched as a whole segment rather than as the letters at the start: a page
+ * called `/japan-and-tax` begins with the same two letters as the Japanese of
+ * everything, and stripping them by spelling would send a reader to
+ * `/pan-and-tax`. Nothing here is called that today, which is exactly the sort
+ * of thing that stays true until it does not.
+ */
 const here = Astro.url.pathname
-const inEnglish = here.replace(/^\/ja/, "") || "/"
+const inEnglish = here.replace(/^\/ja(?=\/|$)/, "") || "/"
+
+/** Said as a whole address, which is what anything cataloguing a page expects. */
+const absolute = (path: string): string => new URL(path, Astro.site).href
 const title = heading === undefined ? words.title : `${heading} — choai`
 const at = (path: string): string => (ja ? `/ja${path}` : path)
 
@@ -48,8 +61,13 @@ const other = ja ? inEnglish : `/ja${inEnglish}`
     <meta property="og:title" content={title} />
     <meta property="og:description" content={words.description} />
     <meta property="og:type" content="website" />
-    <link rel="alternate" hreflang="en" href={inEnglish} />
-    <link rel="alternate" hreflang="ja" href={`/ja${inEnglish}`.replace(/\/$/, "/")} />
+    {/* One address for a page that answers to two: the host serves both
+        spellings of a path, which is two addresses for one page as far as
+        anything cataloguing it is concerned. */}
+    <link rel="canonical" href={absolute(here)} />
+    <link rel="alternate" hreflang="en" href={absolute(inEnglish)} />
+    <link rel="alternate" hreflang="ja" href={absolute(`/ja${inEnglish}`)} />
+    <link rel="alternate" hreflang="x-default" href={absolute(inEnglish)} />
   </head>
   <body>
     <main>
