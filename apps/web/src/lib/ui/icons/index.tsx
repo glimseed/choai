@@ -10,7 +10,6 @@ import xSvg from './x.svg?raw'
 import helpSvg from './help.svg?raw'
 import downloadSvg from './download.svg?raw'
 import fileCodeSvg from './file-code.svg?raw'
-import undo2Svg from './undo-2.svg?raw'
 import cloudSvg from './cloud.svg?raw'
 import sparklesSvg from './sparkles.svg?raw'
 import paperclipSvg from './paperclip.svg?raw'
@@ -58,7 +57,6 @@ export const DownloadIcon = icon(downloadSvg)
 /** The file behind what is on screen, opened as the text it is. */
 export const FileCodeIcon = icon(fileCodeSvg)
 /** Back the way you came. */
-export const Undo2Icon = icon(undo2Svg)
 /** Somewhere else the books are kept. */
 export const CloudIcon = icon(cloudSvg)
 /** Asking rather than looking: the same books, answered in words. */

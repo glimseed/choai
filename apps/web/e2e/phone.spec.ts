@@ -109,3 +109,46 @@ test("a window with room for both is left as it was", async ({ page }) => {
   await expect(back(page)).toBeHidden()
   await expect(page.getByRole("searchbox")).toHaveValue("acct:expenses:food")
 })
+
+/**
+ * Going to the text behind the journal is going to the work, not staying in the
+ * list — so it puts the list away like choosing an account does.
+ *
+ * And it is a way in only. It used to turn into its own way out once you were
+ * there, which meant two ways back that differ by which screen you are on; the
+ * one at the top of the work is the way back from anything reached from this
+ * list, and one of those is enough to learn.
+ */
+test("going to the journal's text opens it as the work", async ({ page }) => {
+  await page.setViewportSize(PHONE)
+  await openTheDemo(page)
+  await back(page).click()
+
+  await page.getByRole("button", { name: "Edit the text" }).click()
+
+  await expect(explorer(page)).toBeHidden()
+  await expect(back(page)).toBeVisible()
+  await expect(page).toHaveURL(/\/source/)
+
+  // Back to the list, and the way in is not offered again from where it leads.
+  await back(page).click()
+  await expect(explorer(page)).toBeVisible()
+  await expect(page.getByRole("button", { name: "Edit the text" })).toBeHidden()
+
+  // And the journal itself is a rail press away from there.
+  await page.getByRole("button", { name: "Journal", exact: true }).first().click()
+  await expect(page).toHaveURL(/^[^?]*\/(\?|$)/)
+  await expect(page.getByRole("button", { name: "Edit the text" })).toBeVisible()
+})
+
+/** With room for both, it is a filter's neighbour and moves nothing. */
+test("on a wide window the text is opened beside the list, not instead of it", async ({ page }) => {
+  await page.setViewportSize(DESK)
+  await openTheDemo(page)
+
+  await page.getByRole("button", { name: "Edit the text" }).click()
+
+  await expect(explorer(page)).toBeVisible()
+  await expect(back(page)).toBeHidden()
+  await expect(page).toHaveURL(/\/source/)
+})

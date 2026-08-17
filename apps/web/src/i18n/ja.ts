@@ -149,7 +149,6 @@ export const ja: Dictionary = {
   },
   source: {
     title: "テキストを編集",
-    back: "仕訳帳に戻る",
     save: "保存",
     saved: "保存済み。hledger が読めています。",
     unsaved: "まだ保存していません。",

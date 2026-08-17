@@ -7,7 +7,7 @@ import { getOrUndefined } from "~/lib/monad"
 import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem } from "~/lib/solid-workbench-ui"
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
-import { ChevronLeftIcon, DownloadIcon, FileCodeIcon, RefreshIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SparklesIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
+import { ChevronLeftIcon, DownloadIcon, FileCodeIcon, RefreshIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SparklesIcon, TrendingUpIcon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
 import { IncomeStatementExplorer } from "~/explorer/IncomeStatementExplorer"
@@ -169,11 +169,13 @@ export function Layout(props: ParentProps) {
   const wholeWindow = (): number => Math.max(1, viewportWidth() - RAIL - EDGES)
 
   /**
-   * Choosing in the explorer is also how the work is reached, once the two
-   * cannot share the window. Only then: with room for both, a choice is a
-   * filter and nothing moves.
+   * The list has done its job, so the work is what to look at.
+   *
+   * Everything in the list that leads somewhere calls this: choosing an account,
+   * and going to the text behind the journal. Only where the two cannot share
+   * the window — with room for both, a choice is a filter and nothing moves.
    */
-  const chosenInExplorer = (): void => {
+  const showTheWork = (): void => {
     if (!snapped()) return
     setRailVisible(false)
     setPanelOpen(false)
@@ -461,23 +463,34 @@ export function Layout(props: ParentProps) {
                 {/* One group at the far end, so the two ways of writing sit
                     together rather than being spread across the heading. */}
                 <div class="flex items-center gap-1">
-                  <Show when={railOf(current()) === "/" && getOrUndefined(journal()) !== undefined}>
+                  <Show
+                    when={
+                      railOf(current()) === "/" &&
+                      !onSource() &&
+                      getOrUndefined(journal()) !== undefined
+                    }
+                  >
                     {/* The text behind the view being looked at, which is the
-                        journal's own business rather than a view of its own.
-                        The same button goes back, and says so by becoming a
-                        return arrow — a way out is worth more than a lit-up
-                        way in. */}
+                        journal's own business rather than a view of its own. It
+                        is a way in and nothing else: it does not turn into its
+                        own way out, because the way out of anything reached from
+                        this list is the same one, and having two of them differ
+                        by which screen you are on is a thing to learn rather
+                        than a thing to use. */}
                     {/* A plain button rather than the one beside it: that one
                         sets every icon inside it to 16px, and a page with code
                         on it needs the extra two to be read as one. */}
                     <button
                       type="button"
-                      onClick={() => navigate(onSource() ? "/" : "/source")}
-                      aria-label={onSource() ? t("source.back") : t("source.title")}
-                      title={onSource() ? t("source.back") : t("source.title")}
+                      onClick={() => {
+                        navigate("/source" + location.search)
+                        showTheWork()
+                      }}
+                      aria-label={t("source.title")}
+                      title={t("source.title")}
                       class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
-                      {onSource() ? <Undo2Icon class="h-4 w-4" /> : <FileCodeIcon class="h-[18px] w-[18px]" />}
+                      <FileCodeIcon class="h-[18px] w-[18px]" />
                     </button>
                   </Show>
                   <Show when={getOrUndefined(journal()) !== undefined}>
@@ -510,7 +523,7 @@ export function Layout(props: ParentProps) {
               </>
             }
           >
-            <Dynamic component={current().Explorer} onChosen={chosenInExplorer} />
+            <Dynamic component={current().Explorer} onChosen={showTheWork} />
           </SidePanel>
         }
         aux={
