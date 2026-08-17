@@ -2,17 +2,18 @@ import { For, Show, type JSX } from "solid-js"
 
 import { journal } from "~/journal/store"
 import { accountQuery, useQuery } from "~/journal/query"
-import { inChartOrderNow } from "~/journal/chart"
+import { ofKindsNow } from "~/journal/chart"
+import { CAME_AND_WENT } from "~/journal/declarations"
 import { getOrUndefined } from "~/lib/monad"
 import { t } from "~/i18n"
 
 /**
  * The explorer beside the income statement.
  *
- * Every view has its own, and they all start as the same account list. They are
- * separate files so that each can grow into what its view actually needs — a
- * period picker beside the income statement, say — without the others having to
- * agree.
+ * Every view has its own, in a file of its own so that each can grow into what
+ * its view actually needs. This one holds the kinds a income statement is
+ * built from and no others: what is listed beside a statement is what can be
+ * chosen in it, and an account the statement leaves out would empty the screen.
  *
  * Choosing an account comes to a query rather than to somewhere new, so the
  * account stays chosen while moving between views. What is chosen is handed up
@@ -48,7 +49,7 @@ export function IncomeStatementExplorer(props: {
           >
             {t("accounts.all")}
           </button>
-          <For each={inChartOrderNow(open().summary.accounts)}>
+          <For each={ofKindsNow(open().summary.accounts, CAME_AND_WENT)}>
             {(account) => (
               <button
                 type="button"

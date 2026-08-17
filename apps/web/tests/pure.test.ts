@@ -9,7 +9,7 @@ import { allOf, anchorAfter, noneOf, tickedBy } from "~/journal/ticking"
 import { saidIn } from "~/ai/talker"
 import { narrowed } from "~/reports/ask"
 import { PERIODS, TERMS, periodByTerm } from "~/reports/periods"
-import { inChartOrder } from "~/journal/declarations"
+import { CAME_AND_WENT, OWNED_AND_OWED, inChartOrder, ofKinds } from "~/journal/declarations"
 
 /**
  * The parts that are only functions, checked as functions.
@@ -329,5 +329,34 @@ describe("a chart of accounts", () => {
 
   test("nothing known about anything leaves the order it arrived in", () => {
     expect(inChartOrder(ARRIVED, {})).toEqual(ARRIVED)
+  })
+})
+
+describe("the list beside a statement", () => {
+  const ACCOUNTS = ["収益", "収益:給与", "負債", "費用", "費用:食費", "資本", "資産", "資産:現金", "謎"]
+  const DECLARED = {
+    収益: "Revenue", 負債: "Liability", 費用: "Expense", 資本: "Equity", 資産: "Asset",
+  } as const
+
+  /** Offering an expense beside a balance sheet is offering a choice that empties it. */
+  test("a balance sheet is offered what a balance sheet is built from", () => {
+    expect(ofKinds(ACCOUNTS, DECLARED, OWNED_AND_OWED)).toEqual([
+      "資産", "資産:現金", "負債", "資本",
+    ])
+  })
+
+  test("an income statement is offered what came in and what went out", () => {
+    expect(ofKinds(ACCOUNTS, DECLARED, CAME_AND_WENT)).toEqual(["収益", "収益:給与", "費用", "費用:食費"])
+  })
+
+  /** It is left out of the statement too, so leaving it in the list beside one
+   * would be offering the only choice that cannot be shown. */
+  test("a branch hledger cannot place is left out rather than put last", () => {
+    expect(ofKinds(ACCOUNTS, DECLARED, OWNED_AND_OWED)).not.toContain("謎")
+    expect(inChartOrder(ACCOUNTS, DECLARED)).toContain("謎")
+  })
+
+  test("knowing nothing yet is an empty list, not the whole journal", () => {
+    expect(ofKinds(ACCOUNTS, {}, OWNED_AND_OWED)).toEqual([])
   })
 })

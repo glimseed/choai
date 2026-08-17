@@ -2,7 +2,7 @@ import { createResource, createRoot } from "solid-js"
 
 import { ask } from "~/hledger/client"
 import { getOrUndefined } from "~/lib/monad"
-import { inChartOrder } from "./declarations"
+import { inChartOrder, ofKinds, type Kind } from "./declarations"
 import { journal } from "./store"
 
 /**
@@ -36,3 +36,16 @@ const placings = createRoot(() =>
  */
 export const inChartOrderNow = (accounts: readonly string[]): readonly string[] =>
   inChartOrder(accounts, placings[0]() ?? {})
+
+/**
+ * The open journal's accounts of these kinds, in the order its chart is read.
+ *
+ * Empty until hledger has answered, which is right for what it is beside: a
+ * statement of the same kinds has nothing on it yet either, and a list that
+ * offered everything for the moment before it knew would narrow itself while
+ * being read.
+ */
+export const ofKindsNow = (
+  accounts: readonly string[],
+  kinds: readonly Kind[],
+): readonly string[] => ofKinds(accounts, placings[0]() ?? {}, kinds)

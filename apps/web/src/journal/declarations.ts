@@ -110,9 +110,39 @@ export const inChartOrder = (
   accounts: readonly string[],
   types: Readonly<Record<string, AccountType>>,
 ): readonly string[] => {
-  const rank = ranks(accounts, types)
+  const rank = ranks(accounts, types, KINDS)
   return [...accounts].sort((a, b) => (rank.get(topOf(a)) ?? LAST) - (rank.get(topOf(b)) ?? LAST))
 }
+
+/**
+ * The same, narrowed to the branches a statement of these kinds is built from.
+ *
+ * Beside a statement, the list is what can be chosen *in* it. Offering an
+ * expense beside a balance sheet is offering a choice that empties the screen,
+ * which is a worse answer than not offering it — and hledger is already asked
+ * for these two statements under exactly this narrowing, `type:ALE` and
+ * `type:RX`, so the list and what it filters are narrowed by the same fact.
+ *
+ * A branch hledger cannot place is left out here rather than kept at the end,
+ * because it is left out of the statement too. Somewhere for it to be said is
+ * what `unplaced` and the declaring screen are for.
+ */
+export const ofKinds = (
+  accounts: readonly string[],
+  types: Readonly<Record<string, AccountType>>,
+  kinds: readonly Kind[],
+): readonly string[] => {
+  const rank = ranks(accounts, types, kinds)
+  return [...accounts]
+    .filter((account) => rank.has(topOf(account)))
+    .sort((a, b) => (rank.get(topOf(a)) ?? LAST) - (rank.get(topOf(b)) ?? LAST))
+}
+
+/** What a balance sheet is built from: hledger's own `type:ALE`. */
+export const OWNED_AND_OWED: readonly Kind[] = ["Asset", "Liability", "Equity"]
+
+/** And an income statement: `type:RX`. */
+export const CAME_AND_WENT: readonly Kind[] = ["Revenue", "Expense"]
 
 /**
  * A branch hledger cannot place keeps its place at the end.
@@ -126,11 +156,13 @@ const LAST = KINDS.length
 const ranks = (
   accounts: readonly string[],
   types: Readonly<Record<string, AccountType>>,
+  kinds: readonly Kind[],
 ): ReadonlyMap<string, number> =>
   new Map(
     [...new Set(accounts.map(topOf))].flatMap((top) => {
       const kind = kindOfBranch(top, accounts, types)
-      return kind === undefined ? [] : [[top, KINDS.indexOf(kind)] as const]
+      const at = kind === undefined ? -1 : kinds.indexOf(kind)
+      return at === -1 ? [] : [[top, at] as const]
     }),
   )
 
