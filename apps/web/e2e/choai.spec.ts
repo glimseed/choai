@@ -176,9 +176,14 @@ test("something arriving at the app is told there is a way in that is not the sc
     if (message.type() === "info") said.push(message.text())
   })
 
-  await page.goto("/")
-  await page.evaluate(() => window.choai.ready)
+  await openTheDemo(page)
   expect(said.join("\n")).toContain("window.choai.describe()")
+
+  // Asked something, so that hledger has actually been run: the counting is
+  // worth nothing if nothing has happened yet, and what was drowning this line
+  // was the WASI shim naming every path it touched, several per question.
+  const answer = await page.evaluate(() => window.choai.report.balanceSheet({}))
+  expect(answer.ok).toBe(true)
 
   // And it is the only thing this app says there, which is what makes it worth
   // reading. A console with a running commentary in it has nowhere to put a line

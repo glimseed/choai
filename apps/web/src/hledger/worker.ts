@@ -61,6 +61,10 @@ const start = async (): Promise<Exports> => {
       ConsoleStdout.lineBuffered(() => {}),
       new PreopenDirectory("/", directory),
     ],
+    // Said outright because the default is the other way round: the shim reads
+    // an absent option as "yes", so leaving this off puts a line in the console
+    // for every path it touches — which is several per question asked.
+    { debug: false },
   )
 
   const module = await WebAssembly.compileStreaming(fetch(`${import.meta.env.BASE_URL}hledger.wasm`))
