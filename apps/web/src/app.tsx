@@ -7,7 +7,6 @@ import { getOrUndefined } from "~/lib/monad"
 import { ActivityBar, AuxPanel, Shell, SidePanel, TitlesBar, type ActivityItem } from "~/lib/solid-workbench-ui"
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { Button } from "~/components/ui/button"
-import { TextField, TextFieldInput } from "~/components/ui/text-field"
 import { DownloadIcon, FileCodeIcon, RefreshIcon, PanelLeftIcon, PlusIcon, ReceiptIcon, ScaleIcon, SettingsIcon, SparklesIcon, TrendingUpIcon, Undo2Icon, WalletIcon } from "~/lib/ui/icons"
 import { JournalExplorer } from "~/explorer/JournalExplorer"
 import { BalanceSheetExplorer } from "~/explorer/BalanceSheetExplorer"
@@ -21,6 +20,7 @@ import { AiChat } from "~/components/ai-chat"
 import { ProposalReview } from "~/components/proposal-review"
 import { chatting, sending, startChatting, stopChatting, toggleChatting } from "~/ai/store"
 import { createRenewal } from "~/lib/renewal"
+import { Searching } from "~/lib/ui/searching"
 import { underReview } from "~/journal/proposals"
 import { showed, wantedQuery } from "~/journal/showing"
 import { ComposePanel } from "~/compose/ComposePanel"
@@ -344,15 +344,12 @@ export function Layout(props: ParentProps) {
               // One query for whichever report is open, the way the hledger
               // command line takes one.
               <Show when={getOrUndefined(journal())}>
-                <TextField class="w-full">
-                  <TextFieldInput
-                    type="search"
-                    placeholder={t("journal.queryPlaceholder")}
-                    class="h-6 rounded border-input bg-background px-2 text-[13px] shadow-none focus-visible:ring-1 focus-visible:ring-offset-0"
-                    value={query()}
-                    onInput={(e) => setQuery(e.currentTarget.value)}
-                  />
-                </TextField>
+                <Searching
+                  value={query()}
+                  onInput={setQuery}
+                  placeholder={t("journal.queryPlaceholder")}
+                  label={t("journal.search")}
+                />
               </Show>
             }
             right={

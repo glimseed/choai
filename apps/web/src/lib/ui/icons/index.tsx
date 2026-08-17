@@ -15,6 +15,7 @@ import cloudSvg from './cloud.svg?raw'
 import sparklesSvg from './sparkles.svg?raw'
 import paperclipSvg from './paperclip.svg?raw'
 import refreshCwSvg from './refresh-cw.svg?raw'
+import searchSvg from './search.svg?raw'
 
 /**
  * Icons. The SVG bodies live beside this file as .svg files, drawn with
@@ -65,3 +66,5 @@ export const SparklesIcon = icon(sparklesSvg)
 export const PaperclipIcon = icon(paperclipSvg)
 
 export const RefreshIcon = icon(refreshCwSvg)
+
+export const SearchIcon = icon(searchSvg)

@@ -10,6 +10,12 @@ import { Show, type JSX } from 'solid-js'
  * Laying it out in the row cannot do that — it would sit halfway between the two
  * side slots, which is off centre by half their difference — so it is laid over
  * the row. It stays narrower than the bar so the sides remain reachable.
+ *
+ * It is as wide as whatever is put in it and no wider. A slot given a width of
+ * its own would decide how much of the bar the middle takes without knowing what
+ * is in it — which is how something small ends up sitting on top of the left
+ * slot on a phone, and how something invisible ends up swallowing presses meant
+ * for what is under it.
  */
 export function TitlesBar(props: {
   left?: JSX.Element
@@ -27,10 +33,12 @@ export function TitlesBar(props: {
         <div class="flex shrink-0 items-center gap-0.5">{props.right}</div>
       </Show>
       <Show when={props.center}>
-        {/* Only the box takes the pointer; the strip it hangs in has to let
-            presses through to whatever is under it. */}
+        {/* Only what hangs here takes the pointer; the strip it hangs in has to
+            let presses through to whatever is under it. It is as wide as its
+            occupant and no wider, since a wide invisible strip across the middle
+            of the bar would swallow presses meant for what is under it. */}
         <div class="pointer-events-none absolute inset-x-0 flex justify-center">
-          <div class="pointer-events-auto w-[min(36rem,60vw)]">{props.center}</div>
+          <div class="pointer-events-auto">{props.center}</div>
         </div>
       </Show>
     </div>

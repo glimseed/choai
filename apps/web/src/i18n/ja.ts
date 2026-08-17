@@ -17,6 +17,7 @@ export const ja: Dictionary = {
   },
   journal: {
     queryPlaceholder: "hledger クエリ 例: acct:食費 date:2026-02",
+    search: "検索で帳簿を絞り込む",
     transactionCount: "{{ count }} 件",
     date: "日付",
     description: "摘要",

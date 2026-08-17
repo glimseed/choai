@@ -24,6 +24,7 @@ export const en = {
   },
   journal: {
     queryPlaceholder: "hledger query, eg  acct:food date:2026-02",
+    search: "Narrow the journal to a query",
     transactionCount: "{{ count }} txns",
     date: "Date",
     description: "Description",

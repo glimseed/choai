@@ -37,7 +37,7 @@ export function BookSwitcher(props: { onAdd: () => void; onSwitched: () => void 
         aria-label={t("books.switch")}
         title={t("books.switch")}
         aria-expanded={open()}
-        class="inline-flex max-w-32 items-center gap-1 truncate rounded px-1 font-semibold tracking-tight transition-colors hover:bg-accent sm:max-w-48"
+        class="inline-flex max-w-20 items-center gap-1 truncate rounded px-1 font-semibold tracking-tight transition-colors hover:bg-accent sm:max-w-32 md:max-w-48"
       >
         <span class="truncate">{current() ?? t("books.none")}</span>
         <span aria-hidden="true" class="text-[10px] text-muted-foreground">
