@@ -114,31 +114,33 @@ test("a window with room for both is left as it was", async ({ page }) => {
  * Going to the text behind the journal is going to the work, not staying in the
  * list — so it puts the list away like choosing an account does.
  *
- * And it is a way in only. It used to turn into its own way out once you were
- * there, which meant two ways back that differ by which screen you are on; the
- * one at the top of the work is the way back from anything reached from this
- * list, and one of those is enough to learn.
+ * The way in is a switch rather than a button that turns into an arrow. The rail
+ * cannot say you are on the text, because the text sits under the journal and
+ * lights the same lamp; this is the only thing on screen that can, and something
+ * already lit is not something anybody presses to leave.
  */
+const theText = (page: Page) => page.getByRole("button", { name: "Edit the text" })
+
 test("going to the journal's text opens it as the work", async ({ page }) => {
   await page.setViewportSize(PHONE)
   await openTheDemo(page)
   await back(page).click()
 
-  await page.getByRole("button", { name: "Edit the text" }).click()
+  await theText(page).click()
 
   await expect(explorer(page)).toBeHidden()
   await expect(back(page)).toBeVisible()
   await expect(page).toHaveURL(/\/source/)
 
-  // Back to the list, and the way in is not offered again from where it leads.
+  // Back to the list, where the switch says where you are.
   await back(page).click()
   await expect(explorer(page)).toBeVisible()
-  await expect(page.getByRole("button", { name: "Edit the text" })).toBeHidden()
+  await expect(theText(page)).toHaveAttribute("aria-pressed", "true")
 
-  // And the journal itself is a rail press away from there.
-  await page.getByRole("button", { name: "Journal", exact: true }).first().click()
+  // And the same switch is how it is left.
+  await theText(page).click()
   await expect(page).toHaveURL(/^[^?]*\/(\?|$)/)
-  await expect(page.getByRole("button", { name: "Edit the text" })).toBeVisible()
+  await expect(explorer(page)).toBeHidden()
 })
 
 /** With room for both, it is a filter's neighbour and moves nothing. */
@@ -146,9 +148,16 @@ test("on a wide window the text is opened beside the list, not instead of it", a
   await page.setViewportSize(DESK)
   await openTheDemo(page)
 
-  await page.getByRole("button", { name: "Edit the text" }).click()
+  await theText(page).click()
 
   await expect(explorer(page)).toBeVisible()
   await expect(back(page)).toBeHidden()
   await expect(page).toHaveURL(/\/source/)
+
+  // The switch is lit, and pressing it is the way back — the rail cannot be,
+  // since the journal's lamp is already on while the text is showing.
+  await expect(theText(page)).toHaveAttribute("aria-pressed", "true")
+  await theText(page).click()
+  await expect(page).toHaveURL(/^[^?]*\/(\?|$)/)
+  await expect(theText(page)).toHaveAttribute("aria-pressed", "false")
 })

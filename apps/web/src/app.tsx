@@ -463,32 +463,32 @@ export function Layout(props: ParentProps) {
                 {/* One group at the far end, so the two ways of writing sit
                     together rather than being spread across the heading. */}
                 <div class="flex items-center gap-1">
-                  <Show
-                    when={
-                      railOf(current()) === "/" &&
-                      !onSource() &&
-                      getOrUndefined(journal()) !== undefined
-                    }
-                  >
+                  <Show when={railOf(current()) === "/" && getOrUndefined(journal()) !== undefined}>
                     {/* The text behind the view being looked at, which is the
-                        journal's own business rather than a view of its own. It
-                        is a way in and nothing else: it does not turn into its
-                        own way out, because the way out of anything reached from
-                        this list is the same one, and having two of them differ
-                        by which screen you are on is a thing to learn rather
-                        than a thing to use. */}
+                        journal's own business rather than a view of its own.
+                        A switch that shows it is on, rather than a button that
+                        turns into an arrow: the rail cannot say you are here —
+                        the text sits under the journal and lights the same lamp
+                        — so this is the only thing on screen that can, and
+                        something already lit is not something anybody presses to
+                        leave. */}
                     {/* A plain button rather than the one beside it: that one
                         sets every icon inside it to 16px, and a page with code
                         on it needs the extra two to be read as one. */}
                     <button
                       type="button"
+                      aria-pressed={onSource()}
                       onClick={() => {
-                        navigate("/source" + location.search)
+                        navigate((onSource() ? "/" : "/source") + location.search)
                         showTheWork()
                       }}
                       aria-label={t("source.title")}
                       title={t("source.title")}
-                      class="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      class="inline-flex size-6 items-center justify-center rounded transition-colors hover:bg-accent hover:text-foreground"
+                      classList={{
+                        "bg-accent text-accent-foreground": onSource(),
+                        "text-muted-foreground": !onSource(),
+                      }}
                     >
                       <FileCodeIcon class="h-[18px] w-[18px]" />
                     </button>
