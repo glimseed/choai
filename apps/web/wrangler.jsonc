@@ -6,8 +6,9 @@
   "compatibility_date": "2026-08-15",
   // The app answers on choai.dev, so the workers.dev address it was reached at
   // before that is turned off rather than left as a second name for the same
-  // thing. The site next door still has only the one it was given, and keeps
-  // it until a name of its own is pointed at it.
+  // thing. The name is attached where the deployment is rather than declared
+  // here, and README says why: a copy of this that somebody else runs answers
+  // on their name, and asking for ours would only stop it deploying at all.
   "workers_dev": false,
   "assets": {
     "directory": "./dist",

@@ -141,11 +141,19 @@ where each of the two is configured the same way but for its own directory:
 | Build command | `bun install && bun run build` | `bun install && bun run build` |
 | Deploy command | `bunx wrangler deploy` | `bunx wrangler deploy` |
 | `BUN_VERSION` | `1.3.14` | `1.3.14` |
+| Custom domain | `choai.dev` | `docs.choai.dev` |
 
 No output directory is set in either, because `assets.directory` already says
 it. Nothing else is needed: the engine is committed, so the build wants no
 Haskell toolchain, and `docs` needs no `PUBLIC_APP` because a build that is not
 a development one already points at the published app.
+
+Both names are attached in the dashboard, on the worker's own Domains & Routes,
+and each name's record is written by attaching it. They are deliberately not in
+the `wrangler.jsonc` files, though a `routes` entry would put them there: a name
+is not part of what this software is, only of where this one copy of it happens
+to live. Anyone is free to run their own, and a `wrangler deploy` that opened by
+demanding a domain somebody else owns would refuse to do anything at all.
 
 ## License
 
