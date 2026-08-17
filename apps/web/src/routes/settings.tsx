@@ -1,5 +1,5 @@
-import { For, Show, createResource, type JSX } from "solid-js"
-import { A } from "@solidjs/router"
+import { For, Show, createEffect, createResource, on, type JSX } from "solid-js"
+import { A, useLocation } from "@solidjs/router"
 
 import { LOCALES, LOCALE_NAMES, locale, setLocale, t } from "~/i18n"
 import { Button } from "~/components/ui/button"
@@ -12,6 +12,38 @@ import { keptForGood } from "~/journal/kept"
 import { getOrUndefined } from "~/lib/monad"
 import { SCHEMES, scheme, setScheme } from "~/lib/theme"
 
+/** Whether there is a journal in hand for the library section to be about. */
+const inHand = (): boolean => getOrUndefined(journal()) !== undefined
+
+/**
+ * What this page is made of, in the order it is made of it.
+ *
+ * One table, read twice: the page hangs an anchor on each section, and the list
+ * beside it offers the same names in the same order. Written down once so the
+ * two cannot come to disagree about what is on this page — a settings list
+ * offering something that is not there is worse than no list.
+ *
+ * `when` is here rather than inside the section it belongs to for the same
+ * reason: the list must not offer what the page will not draw.
+ */
+export interface Section {
+  /** What the page calls this section, and what the address says when it is the one being read. */
+  readonly id: string
+  /** Read at the moment it is shown, so it comes out in the reader's language. */
+  readonly name: () => string
+  /** Whether the page will draw it at all. Always, where it is left out. */
+  readonly when?: () => boolean
+}
+
+export const SECTIONS: readonly Section[] = [
+  { id: "language", name: () => t("settings.language") },
+  { id: "appearance", name: () => t("settings.appearance") },
+  { id: "library", name: () => t("library.title"), when: inHand },
+  { id: "ai", name: () => t("ai.title") },
+  { id: "github", name: () => t("github.title") },
+  { id: "licenses", name: () => t("licenses.title") },
+]
+
 /**
  * Everything set once and then left alone, one section at a time.
  *
@@ -20,9 +52,31 @@ import { SCHEMES, scheme, setScheme } from "~/lib/theme"
  * are actually there, and one that hides itself takes its line with it.
  */
 export default function Settings(): JSX.Element {
+  const location = useLocation()
+
+  /**
+   * Bringing the named section into view.
+   *
+   * The sections are all one page, so choosing one in the list beside it is a
+   * scroll rather than a journey — but the address still says which, because the
+   * address is what somebody keeps, sends, or comes back to. Asking again for
+   * the one already named scrolls to it again, which is what pressing the same
+   * name twice ought to do.
+   */
+  createEffect(
+    on(
+      () => location.hash,
+      (hash) => {
+        const named = hash.replace(/^#/, "")
+        if (named === "") return
+        document.getElementById(named)?.scrollIntoView({ block: "start" })
+      },
+    ),
+  )
+
   return (
     <div class="flex max-w-md flex-col gap-6 [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-6">
-      <section class="flex flex-col gap-2">
+      <section id="language" class="flex flex-col gap-2">
         <h2 class="text-sm font-medium">{t("settings.language")}</h2>
         <div class="flex flex-wrap gap-2">
           <For each={LOCALES}>
@@ -39,7 +93,7 @@ export default function Settings(): JSX.Element {
         </div>
         <p class="text-xs text-muted-foreground">{t("settings.languageHint")}</p>
       </section>
-      <section class="flex flex-col gap-2">
+      <section id="appearance" class="flex flex-col gap-2">
         <h2 class="text-sm font-medium">{t("settings.appearance")}</h2>
         <div class="flex flex-wrap gap-2">
           <For each={SCHEMES}>
@@ -57,9 +111,9 @@ export default function Settings(): JSX.Element {
         <p class="text-xs text-muted-foreground">{t("settings.appearanceHint")}</p>
       </section>
       <Library />
-      <AiKeyPanel />
-      <GitHubPanel />
-      <section class="flex flex-col gap-2">
+      <AiKeyPanel id="ai" />
+      <GitHubPanel id="github" />
+      <section id="licenses" class="flex flex-col gap-2">
         <h2 class="text-sm font-medium">{t("licenses.title")}</h2>
         <p class="text-xs text-muted-foreground">{t("licenses.app")}</p>
         <p class="text-xs text-muted-foreground">{t("licenses.copyright")}</p>
@@ -84,9 +138,9 @@ export default function Settings(): JSX.Element {
 function Library(): JSX.Element {
   const [promised] = createResource(keptForGood)
   return (
-    <Show when={getOrUndefined(journal())}>
+    <Show when={inHand() && getOrUndefined(journal())}>
       {(open) => (
-        <section class="flex flex-col gap-2">
+        <section id="library" class="flex flex-col gap-2">
           <h2 class="text-sm font-medium">{t("library.title")}</h2>
           {/* The name is the book's own, not the file's: two books can be kept
               in files called the same thing. */}

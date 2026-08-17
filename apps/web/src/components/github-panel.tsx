@@ -20,7 +20,10 @@ const NOWHERE: Remote = { owner: "", repo: "", branch: "", path: "" }
  * api.github.com, nowhere else — which is said on the page, since a box asking
  * for a token deserves to say where it goes.
  */
-export function GitHubPanel(): JSX.Element {
+export function GitHubPanel(props: {
+  /** The name the list beside this page uses to jump here. */
+  readonly id?: string
+}): JSX.Element {
   const [saved, { refetch }] = createResource(token)
   const [typed, setTyped] = createSignal<string | undefined>(undefined)
   const [edited, setEdited] = createSignal<Remote | undefined>(undefined)
@@ -96,7 +99,7 @@ export function GitHubPanel(): JSX.Element {
     place().owner !== "" && place().repo !== "" && place().path !== "" && key() !== ""
 
   return (
-    <section class="flex flex-col gap-2">
+    <section id={props.id} class="flex flex-col gap-2">
       <h2 class="text-sm font-medium">{t("github.title")}</h2>
       <p class="text-xs text-muted-foreground">{t("github.lead")}</p>
       {/* The token comes first because nothing below it can be checked without

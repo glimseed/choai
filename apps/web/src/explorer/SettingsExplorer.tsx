@@ -1,75 +1,52 @@
-import { For, Show, type JSX } from "solid-js"
+import { For, type JSX } from "solid-js"
+import { useLocation, useNavigate } from "@solidjs/router"
 
-import { journal } from "~/journal/store"
-import { accountQuery, useQuery } from "~/journal/query"
-import { getOrUndefined } from "~/lib/monad"
-import { t } from "~/i18n"
+import { SECTIONS } from "~/routes/settings"
 
 /**
- * The explorer beside the settings.
+ * The explorer beside the settings: what this page is made of.
  *
- * Every view has its own, and they all start as the same account list. They are
- * separate files so that each can grow into what its view actually needs — a
- * period picker beside the income statement, say — without the others having to
- * agree.
+ * The others are lists of accounts, because the views they belong to are all
+ * about one journal narrowed different ways. This one is not — nothing on the
+ * settings page is about a journal — so it is a table of contents instead, which
+ * is what a list beside a long page of unrelated sections should be.
  *
- * Choosing an account sets the query rather than going somewhere new, so the
- * account stays chosen while moving between views. Where the list and the work
- * cannot both be on screen, choosing is also how somebody gets to the work, so
- * whoever laid this out is told — see `onChosen`.
+ * It offers the same names in the same order as the page, out of the page's own
+ * table, so it cannot come to offer something that is not there.
+ *
+ * Choosing scrolls rather than going somewhere new, which is why it lands as a
+ * fragment: the sections all live on one page, and the address should say which
+ * of them is being looked at. Arriving from the licences page — which is under
+ * settings but is not it — the address takes it there first.
  */
 export function SettingsExplorer(props: {
   /** Called once something has been chosen here, whatever it was. */
   readonly onChosen?: () => void
 }): JSX.Element {
-  const [query, setQuery] = useQuery()
+  const location = useLocation()
+  const navigate = useNavigate()
 
-  const pick = (to: string): void => {
-    setQuery(to)
+  const here = (id: string): boolean => location.hash === `#${id}`
+
+  const choose = (id: string): void => {
+    navigate(`/settings#${id}`)
     props.onChosen?.()
   }
 
-  const chosen = (account: string): boolean => query() === accountQuery(account)
-
-  /** Choosing the same account again clears the filter, so the panel is a toggle
-   * rather than something to escape from the query box. */
-  const choose = (account: string): void => pick(chosen(account) ? "" : accountQuery(account))
-
   return (
-    <Show
-      when={getOrUndefined(journal())}
-      fallback={<p class="px-3 py-2 text-xs text-muted-foreground">{t("accounts.noJournal")}</p>}
-    >
-      {(open) => (
-        <div class="py-1">
+    <div class="py-1">
+      <For each={SECTIONS.filter((section) => section.when?.() ?? true)}>
+        {(section) => (
           <button
             type="button"
-            onClick={() => pick("")}
-            class="w-full px-3 py-1 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            classList={{ "bg-accent text-accent-foreground": query() === "" }}
+            onClick={() => choose(section.id)}
+            class="w-full px-3 py-1 text-left text-xs hover:bg-accent hover:text-accent-foreground"
+            classList={{ "bg-accent text-accent-foreground": here(section.id) }}
           >
-            {t("accounts.all")}
+            {section.name()}
           </button>
-          <For each={open().summary.accounts}>
-            {(account) => (
-              <button
-                type="button"
-                onClick={() => choose(account)}
-                title={account}
-                class="w-full truncate px-3 py-1 text-left text-xs hover:bg-accent hover:text-accent-foreground"
-                classList={{ "bg-accent text-accent-foreground": chosen(account) }}
-                style={{ "padding-left": `${0.75 + depthOf(account) * 0.75}rem` }}
-              >
-                {leafOf(account)}
-              </button>
-            )}
-          </For>
-        </div>
-      )}
-    </Show>
+        )}
+      </For>
+    </div>
   )
 }
-
-/** hledger names accounts with colons, so the colons are the tree. */
-const depthOf = (account: string): number => account.split(":").length - 1
-const leafOf = (account: string): string => account.slice(account.lastIndexOf(":") + 1)

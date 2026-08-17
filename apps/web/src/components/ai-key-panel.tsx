@@ -29,7 +29,10 @@ import { t } from "~/i18n"
  * end does with it, because "free" and "read by people" are the same sentence at
  * one of them, and these are somebody's books.
  */
-export function AiKeyPanel(): JSX.Element {
+export function AiKeyPanel(props: {
+  /** The name the list beside this page uses to jump here. */
+  readonly id?: string
+}): JSX.Element {
   const [chosen, { mutate: nowUsing }] = createResource(which)
   const talker = (): Talker => talkerFor(chosen())
 
@@ -290,7 +293,7 @@ export function AiKeyPanel(): JSX.Element {
     })
 
   return (
-    <section class="flex flex-col gap-2">
+    <section id={props.id} class="flex flex-col gap-2">
       <h2 class="text-sm font-medium">{t("ai.title")}</h2>
       <p class="text-xs text-muted-foreground">{t("ai.lead", { host: talker().host })}</p>
 
