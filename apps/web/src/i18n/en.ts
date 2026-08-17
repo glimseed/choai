@@ -98,7 +98,7 @@ export const en = {
     listing: "Asking which models this key reaches…",
     sounding: "Saying hello to {{ model }}…",
     saved: "Saved — {{ provider }}, {{ model }}.",
-    answered: "{{ model }} answered — {{ sent }} tokens sent, {{ back }} back.",
+    answered: "{{ model }} answered — {{ sent }} tokens sent, {{ back }} back. Saved.",
     disconnect: "Disconnect and forget the key",
     ready: "Ready — {{ count }} models available",
     noneUsable: "That key works, but none of the models it reaches take what this app sends. It needs one that supports adaptive thinking, effort, strict tool schemas and images.",

@@ -91,7 +91,7 @@ export const ja: Dictionary = {
     listing: "この鍵で使えるモデルを問い合わせています…",
     sounding: "{{ model }} に実際に話しかけています…",
     saved: "保存しました — {{ provider }} / {{ model }}",
-    answered: "{{ model }} が応答しました — 送信 {{ sent }} トークン、返答 {{ back }} トークン。",
+    answered: "{{ model }} が応答しました — 送信 {{ sent }} トークン、返答 {{ back }} トークン。保存しました。",
     disconnect: "接続を解除してキーを削除",
     ready: "準備できました — {{ count }} 個のモデルが使えます",
     noneUsable: "鍵は通りましたが、このアプリが送る形を受け取れるモデルが一つもありません。adaptive thinking・effort・strict なツール定義・画像入力に対応したモデルが必要です。",

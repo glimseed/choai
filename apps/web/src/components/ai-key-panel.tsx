@@ -96,26 +96,28 @@ export function AiKeyPanel(): JSX.Element {
   }
 
   /**
-   * What has actually been chosen — as opposed to what the box is showing for
-   * want of a choice.
+   * What is in the box.
    *
-   * The difference is the whole of it. A default is what to put on the screen
-   * before the answer arrives; acted on, it is a choice nobody made, quietly
-   * replacing the one it was standing in for.
+   * Exactly what was typed, once anybody has typed — including nothing. A box
+   * that puts something back the moment it is emptied cannot be edited from the
+   * middle, and reads as though it is arguing. Until then it shows what was
+   * saved, or something this account actually has, since the provider's default
+   * is no use to somebody whose account does not carry it.
    */
-  const settledOn = (): string | undefined => {
-    const typed = picked()
-    if (typed !== undefined) return typed.trim() === "" ? undefined : typed
-    return named()?.id
-  }
+  const inTheBox = (): string =>
+    picked() ?? named()?.id ?? choices()[0]?.id ?? talker().defaultModel
 
   /**
-   * What is in the box: what was chosen, or something that exists to start
-   * from. The provider's default is the last resort rather than the first,
-   * because an account that does not have it would open on a name that cannot
-   * be used and no sign of which ones can.
+   * What an action would use.
+   *
+   * Emptying the box is a step on the way to typing something else, not a
+   * request to talk to no model at all, so the falling back happens here — at
+   * the press, where it is a decision — rather than under the cursor.
    */
-  const picking = (): string => settledOn() ?? choices()[0]?.id ?? talker().defaultModel
+  const chosenNow = (): string => {
+    const said = inTheBox().trim()
+    return said === "" ? (choices()[0]?.id ?? talker().defaultModel) : said
+  }
 
 
   /**
@@ -177,33 +179,47 @@ export function AiKeyPanel(): JSX.Element {
   }
 
   /**
-   * All of it at once, because it is one setting. Nothing is sent.
+   * The whole setting written down: which provider, its key, and which model.
    *
-   * Which provider is written here too, not only where it is picked. Picking
-   * cannot wait for a write — it is a click handler, and the panel has to move
-   * under the finger — so it starts one and lets go; this is where that is made
-   * certain. Without it a key saved quickly enough belongs to whichever
-   * provider the last committed write happened to name.
+   * One act because it is one decision — a key that reaches a model this app
+   * cannot talk to is not half-working. Which provider is written here too, not
+   * only where it is picked: picking cannot wait for a write, being a click
+   * handler, so it starts one and lets go, and this is where that is made
+   * certain.
    */
+  const keep = async (one: Model): Promise<void> => {
+    await keepWhich(talker().id)
+    await keepKey(talker().id, typing())
+    await keepModel(talker().id, one)
+    setTyped(undefined)
+    setPicked(undefined)
+    await refetch()
+    await refetchModel()
+  }
+
+  /**
+   * A name the suggestions do not carry is kept all the same, as itself.
+   *
+   * The list is a guess about somebody else's account, and the box exists so
+   * that being missing from it means nothing. What the listing did say of a
+   * model is worth keeping where there is any — its ceiling, and what it takes
+   * — so the record is preferred where one exists.
+   */
+  const asKept = (among: readonly Model[]): Model => {
+    const chosen = chosenNow()
+    return among.find((each) => each.id === chosen) ?? { id: chosen, label: chosen }
+  }
+
+  /** Saving sends nothing but the one free question that fills the picker. */
   const save = (): Promise<void> =>
     run(async () => {
-      // Listed first, so what is kept about the chosen model is what the
-      // provider says of it — its ceiling, and what it will take — rather than
-      // a bare id standing in for one.
       const fresh = await fill(typing())
-      const among = fresh.length > 0 ? fresh : choices()
-      const one = among.find((each) => each.id === picking())
-      await keepWhich(talker().id)
-      await keepKey(talker().id, typing())
-      if (one !== undefined) await keepModel(talker().id, one)
-      setTyped(undefined)
-      setPicked(undefined)
-      await refetch()
-      await refetchModel()
-      // Saving worked whatever the listing did, but a listing that did not is
-      // the more useful thing to be told, so it is left standing where it spoke.
+      const one = asKept(fresh.length > 0 ? fresh : choices())
+      await keep(one)
+      // A listing that could not be had is the more useful thing to be told, so
+      // it is left standing where it spoke.
       if (failure() === undefined && said() === undefined) {
-        setSaid(t("ai.saved", { provider: talker().label, model: one?.label ?? picking() }))
+        setSaid(t("ai.saved", { provider: talker().label, model: one.label }))
       }
     })
 
@@ -240,7 +256,7 @@ export function AiKeyPanel(): JSX.Element {
        * typed in and not among the suggestions is a name the reader knows and
        * this app does not, and the way to find out which is to try it.
        */
-      const want = picking()
+      const want = chosenNow()
       const one = reachable.value.find((each) => each.id === want) ?? { id: want, label: want }
       setPicked(one.id)
       setSaid(t("ai.sounding", { model: one.label }))
@@ -250,6 +266,9 @@ export function AiKeyPanel(): JSX.Element {
         setFailure(sounded.error)
         return
       }
+
+      // It answered, so there is nothing left to decide about it.
+      await keep(one)
       setSaid(
         t("ai.answered", {
           model: one.label,
@@ -318,7 +337,7 @@ export function AiKeyPanel(): JSX.Element {
         <span class="text-xs text-muted-foreground">{t("ai.model")}</span>
         <Suggesting
           id="ai-model"
-          value={picking()}
+          value={inTheBox()}
           onInput={setPicked}
           options={choices().map((one) => ({ value: one.id, label: one.label }))}
           disabled={busy()}

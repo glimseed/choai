@@ -930,6 +930,92 @@ test("ChatGPT: a key reaching nothing usable says which way it failed", async ({
   await expect(page.getByText("none of the models it reaches")).toBeVisible()
 })
 
+/**
+ * The box can be emptied.
+ *
+ * Which sounds like nothing until it is not so: clearing it to type another
+ * name put the old one straight back, so the field could only ever be edited
+ * from the end and read as though it were arguing. Showing what was typed and
+ * deciding what to do about an empty one are different jobs, and only the second
+ * belongs to the press.
+ */
+test("ChatGPT: clearing the model box leaves it cleared", async ({ page }) => {
+  await page.route(OPENAI.host, (route) =>
+    route.request().method() === "GET" ? asJson(route, OPENAI_LISTS) : asJson(route, OPENAI.answers),
+  )
+
+  await connect(page, OPENAI)
+  const box = page.getByLabel("Model")
+  await expect(box).not.toHaveValue("")
+
+  await box.fill("")
+  await expect(box).toHaveValue("")
+
+  await box.fill("gpt-4.1")
+  await expect(box).toHaveValue("gpt-4.1")
+
+  // And a press with the box empty falls back to something real rather than
+  // asking about nothing at all.
+  await box.fill("")
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+  await expect(box).not.toHaveValue("")
+})
+
+/**
+ * A name typed in survives a reload, suggested or not.
+ *
+ * Kept only when the listing recognised it, a model typed in was saved by the
+ * press and gone by the reload — with the provider's default back in its place
+ * and nothing anywhere to say what had happened. The suggestions are a guess
+ * about somebody else's account; the box exists so that being missing from them
+ * costs nothing.
+ */
+test("ChatGPT: a model typed in is still there after a reload", async ({ page }) => {
+  await page.route(OPENAI.host, (route) =>
+    route.request().method() === "GET" ? asJson(route, OPENAI_LISTS) : asJson(route, OPENAI.answers),
+  )
+
+  await connect(page, OPENAI)
+
+  // One the suggestions do not carry, and one they do.
+  for (const named of ["gpt-6-turbo-2027", "gpt-4.1"]) {
+    await page.getByLabel("Model").fill(named)
+    await page.getByRole("button", { name: "Save", exact: true }).click()
+    await expect(page.getByText(named).last()).toBeVisible()
+
+    await page.reload()
+    await expect(page.getByLabel("Model")).toHaveValue(named)
+  }
+})
+
+/**
+ * A check that works keeps what worked.
+ *
+ * The two presses were split because they cost different things to do, not
+ * because they are two decisions — and by the time a model has answered there
+ * is nothing left to decide about it. Leaving it unsaved meant proving a setting
+ * and then losing it to a reload for want of a second press.
+ */
+test("ChatGPT: a check that answers keeps the setting", async ({ page }) => {
+  await page.route(OPENAI.host, (route) =>
+    route.request().method() === "GET" ? asJson(route, OPENAI_LISTS) : asJson(route, OPENAI.answers),
+  )
+
+  await page.goto("/settings")
+  await page.getByRole("button", { name: "ChatGPT", exact: true }).click()
+  await page.getByLabel("API key").fill(NOT_A_KEY)
+  await page.getByLabel("Model").fill("gpt-4.1")
+
+  // Checked, and never saved.
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByLabel("Model")).toHaveValue("gpt-4.1")
+  await expect(page.getByRole("button", { name: "Disconnect and forget the key" })).toBeVisible()
+})
+
 for (const wire of [CLAUDE, GEMINI, OPENAI]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,
