@@ -83,7 +83,10 @@ function Choices(props: { adding: boolean }): JSX.Element {
           it is somebody else's, to look around in — and standing it beside the
           two that are yours only made all three harder to tell apart. */}
       <section class="flex w-full flex-col items-start gap-2 border-t border-border pt-4">
-        <Button variant="ghost" onClick={() => void then(openDemo())} disabled={opening()}>
+        {/* Outlined rather than ghosted: a ghost draws nothing until it is
+            hovered, which is readable in a row of buttons and is just a line of
+            text when it stands on its own down here. */}
+        <Button variant="outline" onClick={() => void then(openDemo())} disabled={opening()}>
           {t("welcome.tryDemo")}
         </Button>
         <p class="text-xs text-muted-foreground">{t("welcome.demoBody")}</p>
