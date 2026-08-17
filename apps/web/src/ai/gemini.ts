@@ -113,6 +113,30 @@ const spentOn = (usage: {
   }
 }
 
+/**
+ * Which of Google's models are for talking to.
+ *
+ * The listing says what a model may be called with and nothing about what it
+ * does with what it is sent — no modalities, no word about tools — so a video
+ * generator and a bookkeeper's model are the same row under different names.
+ * Several of them answer `generateContent` and would take this app's whole
+ * request without complaint, then reply with a picture or a voice.
+ *
+ * The names are what there is to go on, and they carry it reliably, because
+ * what a model is for is written into what it is called: a purpose in the name
+ * means a purpose that is not this one. Anything not recognisably a numbered
+ * Gemini is left out rather than tried, which is the conservative way round —
+ * a model wrongly absent is a question; a model wrongly present is a charge for
+ * an answer nobody can use.
+ *
+ * The other provider is asked instead of guessed at, because it answers. See
+ * `takenBy` in `anthropic.ts`.
+ */
+const FOR_TALKING = /^gemini-\d/
+const FOR_SOMETHING_ELSE = /-(tts|image|live|audio|embedding|computer-use|robotics|translate)(-|$)/
+
+const talkable = (id: string): boolean => FOR_TALKING.test(id) && !FOR_SOMETHING_ELSE.test(id)
+
 const models = async (key: string): Promise<Result<readonly Model[], Failure>> => {
   const reached = await reach(`${ROOT}/models?pageSize=200`, { method: "GET", headers: headers(key) }, LISTING)
   if (!reached.ok) return reached
@@ -122,6 +146,7 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
     models?: readonly {
       name?: string
       displayName?: string
+      outputTokenLimit?: number
       supportedGenerationMethods?: readonly string[]
     }[]
   }>(reached.value)
@@ -132,9 +157,23 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
       .filter((one) => (one.supportedGenerationMethods ?? []).includes("generateContent"))
       .flatMap((one) => {
         const id = (one.name ?? "").replace(/^models\//, "")
-        return id === "" ? [] : [{ id, label: one.displayName ?? id }]
+        if (id === "" || !talkable(id)) return []
+        const ceiling = one.outputTokenLimit
+        return [
+          {
+            id,
+            label: one.displayName ?? id,
+            ...(ceiling === undefined ? {} : { takes: { ceiling } }),
+          },
+        ]
       }),
   )
+}
+
+/** What this model will actually take, where the listing said. */
+const within = (ask: Ask): number => {
+  const ceiling = ask.model.takes?.["ceiling"]
+  return typeof ceiling === "number" && ceiling > 0 ? Math.min(ask.maxTokens, ceiling) : ask.maxTokens
 }
 
 const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
@@ -159,7 +198,11 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
                 }),
               },
             ],
-      generationConfig: { maxOutputTokens: ask.maxTokens },
+      // Asked for what a turn wants, or what this model will give, whichever is
+      // less. A ceiling above the model's own is refused outright, and the
+      // number a turn asks for is set by the longest thing anyone writes here
+      // rather than by any one model.
+      generationConfig: { maxOutputTokens: within(ask) },
     }),
   }, ask.within)
   if (!reached.ok) return reached

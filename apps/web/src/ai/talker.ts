@@ -71,7 +71,7 @@ export interface Model {
    * Absent where a provider does not say, or where the model was chosen before
    * this app thought to ask. The provider decides what to assume then.
    */
-  readonly takes?: Readonly<Record<string, boolean>>
+  readonly takes?: Readonly<Record<string, boolean | number>>
 }
 
 export interface Ask {

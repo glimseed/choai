@@ -115,8 +115,12 @@ interface Capabilities {
  * Each key is here because the request builder below sends the thing it names.
  * Neither can be changed alone without the other going obviously wrong.
  */
-const takenBy = (can: Capabilities | undefined): Readonly<Record<string, boolean>> | undefined => {
+const takenBy = (
+  can: Capabilities | undefined,
+  ceiling: number | undefined,
+): Readonly<Record<string, boolean | number>> | undefined => {
   const told = {
+    ...(ceiling === undefined || ceiling <= 0 ? {} : { ceiling }),
     ...(can?.thinking?.types?.adaptive?.supported === undefined
       ? {}
       : { adaptive: can.thinking.types.adaptive.supported }),
@@ -144,6 +148,12 @@ const takenBy = (can: Capabilities | undefined): Readonly<Record<string, boolean
 const drives = (can: Capabilities | undefined): boolean =>
   can?.thinking?.supported !== false && can?.image_input?.supported !== false
 
+/** What this model will actually take, where the listing said. */
+const roomIn = (ask: Ask): number => {
+  const ceiling = ask.model.takes?.["ceiling"]
+  return typeof ceiling === "number" && ceiling > 0 ? Math.min(ask.maxTokens, ceiling) : ask.maxTokens
+}
+
 /**
  * How much a model without the adaptive kind is told to think.
  *
@@ -152,6 +162,16 @@ const drives = (can: Capabilities | undefined): boolean =>
  * statement of a couple of hundred entries needs to be written out after it.
  */
 const BUDGET = 8000
+
+/**
+ * The budget, brought under the ceiling it has to fit beneath.
+ *
+ * A budget at or above `max_tokens` is refused outright, so a model whose own
+ * ceiling is smaller than the budget cannot simply be sent it — and those are
+ * exactly the older models this branch exists for. A thousand is the API's
+ * floor, and a thousand is left over the top for the answer.
+ */
+const budgetWithin = (room: number): number => Math.max(1024, Math.min(BUDGET, room - 1024))
 
 const models = async (key: string): Promise<Result<readonly Model[], Failure>> => {
   const reached = await reach(`${ROOT}/v1/models?limit=1000`, { method: "GET", headers: headers(key) }, LISTING)
@@ -162,6 +182,7 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
     data?: readonly {
       id: string
       display_name?: string
+      max_tokens?: number | null
       capabilities?: Capabilities | null
     }[]
   }>(reached.value)
@@ -178,7 +199,7 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
             // would send every model the shape meant for the ones that cannot
             // take the newest, which is exactly backwards.
             ...(() => {
-              const takes = takenBy(one.capabilities ?? undefined)
+              const takes = takenBy(one.capabilities ?? undefined, one.max_tokens ?? undefined)
               return takes === undefined ? {} : { takes }
             })(),
           })),
@@ -212,6 +233,13 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
     adaptive: ask.model.takes?.["adaptive"] ?? true,
     effort: ask.model.takes?.["effort"] ?? true,
     strict: ask.model.takes?.["strict"] ?? true,
+    /**
+     * What a turn wants, or what this model will give, whichever is less. Asked
+     * for more than a model's own ceiling, the request is refused outright —
+     * and the number a turn asks for is set by the longest thing written here,
+     * not by any one model.
+     */
+    room: roomIn(ask),
   }
 
   const reached = await reach(`${ROOT}/v1/messages`, {
@@ -219,7 +247,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
     headers: headers(key),
     body: JSON.stringify({
       model: ask.model.id,
-      max_tokens: ask.maxTokens,
+      max_tokens: takes.room,
       system: [{ type: "text", text: ask.system, cache_control: { type: "ephemeral" } }],
       messages: ask.turns.map((turn) => ({
         role: turn.role === "model" ? "assistant" : "user",
@@ -231,7 +259,9 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
         input_schema: tool.schema,
         ...(takes.strict ? { strict: true } : {}),
       })),
-      thinking: takes.adaptive ? { type: "adaptive" } : { type: "enabled", budget_tokens: BUDGET },
+      thinking: takes.adaptive
+        ? { type: "adaptive" }
+        : { type: "enabled", budget_tokens: budgetWithin(takes.room) },
       ...(takes.effort ? { output_config: { effort: "medium" } } : {}),
     }),
   }, ask.within)

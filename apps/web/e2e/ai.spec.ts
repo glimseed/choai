@@ -553,6 +553,145 @@ test("a chosen model the key no longer reaches is not swapped for another", asyn
   await expect(page.getByLabel("Model")).toHaveValue("claude-sonnet-4-5")
 })
 
+/**
+ * Google's listing, as it actually comes: everything the account can call,
+ * with nothing said about what any of it does.
+ *
+ * Several of these answer `generateContent` and would take this whole request
+ * without complaint, then reply with a picture, a voice, or a video. The
+ * listing gives no modality and no word about tools, so what is left in is
+ * decided on the names — and this is the fixture that says which names.
+ */
+const GOOGLE_LISTS = {
+  models: [
+    // Kept: numbered Gemini models for talking to.
+    { name: "models/gemini-3.7-flash", displayName: "Gemini 3.7 Flash", outputTokenLimit: 65536, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemini-3.1-pro-preview", displayName: "Gemini 3.1 Pro", outputTokenLimit: 65536, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash", outputTokenLimit: 8192, supportedGenerationMethods: ["generateContent"] },
+    // Left out: answers generateContent, replies with something else.
+    { name: "models/gemini-2.5-flash-image", displayName: "Nano Banana", outputTokenLimit: 32768, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemini-3.1-flash-lite-image", displayName: "Nano Banana 2 Lite", outputTokenLimit: 32768, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemini-2.5-flash-preview-tts", displayName: "Gemini 2.5 Flash TTS", outputTokenLimit: 8192, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemini-2.5-flash-native-audio-preview-12-2025", displayName: "Gemini 2.5 Flash Live", outputTokenLimit: 8192, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemini-3.5-live-translate-preview", displayName: "Live Translate", outputTokenLimit: 8192, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemini-2.5-computer-use-preview-10-2025", displayName: "Computer Use", outputTokenLimit: 8192, supportedGenerationMethods: ["generateContent"] },
+    // Left out: not a numbered Gemini at all.
+    { name: "models/gemini-embedding-001", displayName: "Gemini Embedding", supportedGenerationMethods: ["embedContent"] },
+    { name: "models/gemini-robotics-er-2-preview", displayName: "Robotics ER 2", outputTokenLimit: 8192, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemini-omni-flash", displayName: "Gemini Omni Flash", outputTokenLimit: 8192, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemma-3-27b-it", displayName: "Gemma 3 27B", outputTokenLimit: 8192, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/veo-3.1-generate-preview", displayName: "Veo 3.1", supportedGenerationMethods: ["predictLongRunning"] },
+    { name: "models/lyria-3-pro-preview", displayName: "Lyria 3 Pro", supportedGenerationMethods: ["predict"] },
+    { name: "models/deep-research-preview-04-2026", displayName: "Deep Research", outputTokenLimit: 65536, supportedGenerationMethods: ["generateContent"] },
+  ],
+}
+
+test("Gemini: only the models for talking to are offered", async ({ page }) => {
+  await page.route(GEMINI.host, (route) =>
+    route.request().method() === "GET"
+      ? asJson(route, GOOGLE_LISTS)
+      : asJson(route, GEMINI.answers),
+  )
+
+  await connect(page, GEMINI)
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+
+  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+    "Gemini 3.7 Flash",
+    "Gemini 3.1 Pro",
+    "Gemini 2.5 Flash",
+  ])
+})
+
+/**
+ * Asked for no more than a model will give.
+ *
+ * A turn asks for room enough for the longest thing anyone writes here, which
+ * is more than some models have. Asked for more than its own ceiling, a request
+ * is refused outright — so the number that goes out is the smaller of the two,
+ * and the model that has to be clamped is the one where it matters.
+ */
+test("Gemini: a model is never asked for more room than it has", async ({ page }) => {
+  const asked: unknown[] = []
+  await page.route(GEMINI.host, (route) => {
+    if (route.request().method() === "GET") return asJson(route, GOOGLE_LISTS)
+    asked.push(route.request().postDataJSON())
+    return asJson(route, GEMINI.answers)
+  })
+
+  await connect(page, GEMINI)
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+
+  // The default is 2.5 Flash, which stops at 8192, so that is what it is asked
+  // for rather than the 32000 a turn would like.
+  const tight = asked.at(-1) as { generationConfig: { maxOutputTokens: number } }
+  expect(tight.generationConfig.maxOutputTokens).toBe(8192)
+
+  await page.getByLabel("Model").selectOption("gemini-3.7-flash")
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+
+  // And one with room to spare is asked for what a turn actually wants.
+  const roomy = asked.at(-1) as { generationConfig: { maxOutputTokens: number } }
+  expect(roomy.generationConfig.maxOutputTokens).toBe(32000)
+})
+
+/**
+ * A small ceiling brings the thinking budget down with it.
+ *
+ * `budget_tokens` is refused at or above `max_tokens`, and the models sent a
+ * budget at all are the older ones — which are also the ones whose ceilings are
+ * small. Clamping one without the other turns a request that used to work into
+ * a 400, on exactly the models the budget was added for.
+ */
+test("a model with little room is asked for little, and thinks less", async ({ page }) => {
+  const asked: unknown[] = []
+  await page.route(CLAUDE.host, (route) => {
+    if (route.request().method() === "GET") {
+      return asJson(route, {
+        data: [
+          {
+            id: "claude-tiny",
+            display_name: "Claude Tiny",
+            max_tokens: 4096,
+            capabilities: {
+              thinking: { supported: true, types: { adaptive: { supported: false }, enabled: { supported: true } } },
+              effort: { supported: false, medium: { supported: false } },
+              structured_outputs: { supported: true },
+              image_input: { supported: true },
+            },
+          },
+        ],
+      })
+    }
+    asked.push(route.request().postDataJSON())
+    return asJson(route, CLAUDE.answers)
+  })
+
+  await connect(page, CLAUDE)
+
+  // The default this key was saved with is not one this account has, which is
+  // said rather than worked around; the small one is chosen instead.
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("no longer reaches")).toBeVisible()
+  await page.getByLabel("Model").selectOption("claude-tiny")
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+
+  const sent = asked.at(-1) as {
+    max_tokens: number
+    thinking: { type: string; budget_tokens: number }
+  }
+  expect(sent.max_tokens).toBe(4096)
+  expect(sent.thinking.type).toBe("enabled")
+  expect(sent.thinking.budget_tokens).toBeLessThan(sent.max_tokens)
+  expect(sent.thinking.budget_tokens).toBeGreaterThanOrEqual(1024)
+})
+
 for (const wire of [CLAUDE, GEMINI]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,
