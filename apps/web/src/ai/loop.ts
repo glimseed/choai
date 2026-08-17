@@ -19,8 +19,17 @@ import { NOTHING_SPENT, alsoSpent, type Failure, type Shown, type Spent, type Ta
  * something that is about to try again than any sentence we could write for it.
  */
 
-/** Room for thinking and an answer together, where a provider counts them as one. */
-const ROOM = 16000
+/**
+ * Room for thinking and an answer together, where a provider counts them as one.
+ *
+ * Set by the largest thing anyone offers in one go, which is a month or two of a
+ * bank statement written up as entries. Two hundred of them measure ~32 KB of
+ * JSON — call it eleven thousand tokens — and the thinking that chose the
+ * accounts for them is on top of that. Sixteen thousand sat close enough to the
+ * sum that a long statement came back cut off, which costs the whole call: a
+ * proposal arrives whole or not at all.
+ */
+const ROOM = 32000
 
 /**
  * How many times round before we stop, whatever the model still wants.

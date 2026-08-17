@@ -95,7 +95,9 @@ export const similar = (args: {
 }): Promise<Result<readonly Resembling[], Hitch>> =>
   withJournal(async () => {
     const found: Resembling[] = []
-    for (const to of args.descriptions) {
+    // A statement names the same shop a dozen times; the answer is the same every
+    // time, and asking again is the whole cost of asking.
+    for (const to of [...new Set(args.descriptions)]) {
       const reply = await ask({ kind: "similar", description: to, limit: args.limit ?? 5 })
       if (!reply.ok) return Err(fromHledger(reply.error))
       found.push({ to, entries: reply.value.map(entryOf) })

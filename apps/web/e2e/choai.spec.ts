@@ -204,3 +204,54 @@ test("with no journal open, a question about one says so rather than answering",
   const answer = await page.evaluate(() => window.choai.report.balance({}))
   expect(answer).toEqual({ ok: false, error: { at: "no-journal" } })
 })
+
+/**
+ * A statement is a page at a time, not a row at a time.
+ *
+ * Two hundred entries are one proposal, because they are one decision — and
+ * because hledger re-reads the whole journal per open, so two hundred proposals
+ * would be four hundred parses and most of a minute during which nothing else
+ * could be answered. What is checked here is that the size is carried at all,
+ * and the timings are left to say whether it is carried well.
+ */
+test("a page of bank statement is one proposal, and it is not slow", async ({ page }) => {
+  await openTheDemo(page)
+
+  const measured = await page.evaluate(async () => {
+    const transactions = Array.from({ length: 200 }, (_, at) => ({
+      date: `2026-${String(1 + (at % 12)).padStart(2, "0")}-${String(1 + (at % 28)).padStart(2, "0")}`,
+      payee: ["ｾﾌﾞﾝ-ｲﾚﾌﾞﾝ ｼﾝｼﾞﾕｸ", "ｱﾏｿﾞﾝ ｼﾞﾔﾊﾟﾝ", "ﾄｳｷﾖｳﾃﾞﾝﾘﾖｸ"][at % 3]!,
+      confidence: at % 7 === 0 ? 0.6 : 1,
+      postings: [
+        { account: "expenses:food", amount: `$${(at % 90) + 10}.00` },
+        { account: "assets:bank:checking" },
+      ],
+    }))
+
+    const made = await window.choai.transaction.propose({ transactions })
+    if (!made.ok) return { failed: JSON.stringify(made.error) }
+
+    const kept = await window.choai.proposal.apply({ id: made.value.id })
+    const after = await window.choai.journal.summary({})
+    return {
+      reads: made.value.reads,
+      items: made.value.items.length,
+      kept: kept.ok,
+      now: after.ok ? after.value.transactions : -1,
+    }
+  })
+
+  expect(measured).toEqual({ reads: true, items: 200, kept: true, now: 209 })
+})
+
+/** The same shop named a dozen times is looked up once. */
+test("a payee asked about twice is asked about once", async ({ page }) => {
+  await openTheDemo(page)
+
+  const answered = await page.evaluate(() =>
+    window.choai.journal.similar({ descriptions: ["Grocer", "Cafe", "Grocer", "Grocer"] }),
+  )
+
+  expect(answered.ok).toBe(true)
+  if (answered.ok) expect(answered.value.map((one) => one.to)).toEqual(["Grocer", "Cafe"])
+})
