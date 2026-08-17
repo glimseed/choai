@@ -83,15 +83,15 @@ const runs = [
     <link rel="alternate" hreflang="x-default" href={absolute(inEnglish)} />
   </head>
   <body>
-    <div class="page">
-      {/* Outside main, so that the banner is a banner and the reading is the
-          reading — a screen reader is told which is which by where they are. */}
-      <header>
-        <img src="/favicon.svg" alt="" width="56" height="56" />
-        <a class="home" href={at("/")}><strong>choai</strong></a>
-        <a class="switch" href={other}>{words.other.label}</a>
-      </header>
+    {/* Outside main, so that the banner is a banner and the reading is the
+        reading — a screen reader is told which is which by where they are. */}
+    <header>
+      <img src="/favicon.svg" alt="" width="28" height="28" />
+      <a class="home" href={at("/")}><strong>choai</strong></a>
+      <a class="switch" href={other}>{words.other.label}</a>
+    </header>
 
+    <div class="body">
       <nav class="pages" aria-label={words.readingsHeading}>
         <a href={at("/")} aria-current={same(inEnglish, "/") ? "page" : undefined}>
           {words.homeTitle}
@@ -113,16 +113,18 @@ const runs = [
         }
       </nav>
 
-      <main><slot /></main>
+      <div class="column">
+        <main><slot /></main>
 
-      <footer>
-        <p><strong>{words.licenceHeading}</strong></p>
-        <p>{words.licence}</p>
-        <p>{words.builtWith}</p>
-        <nav>
-          <a href={SOURCE} rel="noreferrer">{words.sourceTitle}</a>
-        </nav>
-      </footer>
+        <footer>
+          <p><strong>{words.licenceHeading}</strong></p>
+          <p>{words.licence}</p>
+          <p>{words.builtWith}</p>
+          <nav>
+            <a href={SOURCE} rel="noreferrer">{words.sourceTitle}</a>
+          </nav>
+        </footer>
+      </div>
     </div>
   </body>
 </html>
