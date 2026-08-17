@@ -568,6 +568,9 @@ const GOOGLE_LISTS = {
     { name: "models/gemini-3.7-flash", displayName: "Gemini 3.7 Flash", outputTokenLimit: 65536, supportedGenerationMethods: ["generateContent"] },
     { name: "models/gemini-3.1-pro-preview", displayName: "Gemini 3.1 Pro", outputTokenLimit: 65536, supportedGenerationMethods: ["generateContent"] },
     { name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash", outputTokenLimit: 8192, supportedGenerationMethods: ["generateContent"] },
+    // The moving aliases, which carry no version number of their own.
+    { name: "models/gemini-flash-latest", displayName: "Gemini Flash Latest", outputTokenLimit: 65536, supportedGenerationMethods: ["generateContent"] },
+    { name: "models/gemini-pro-latest", displayName: "Gemini Pro Latest", outputTokenLimit: 65536, supportedGenerationMethods: ["generateContent"] },
     // Left out: answers generateContent, replies with something else.
     { name: "models/gemini-2.5-flash-image", displayName: "Nano Banana", outputTokenLimit: 32768, supportedGenerationMethods: ["generateContent"] },
     { name: "models/gemini-3.1-flash-lite-image", displayName: "Nano Banana 2 Lite", outputTokenLimit: 32768, supportedGenerationMethods: ["generateContent"] },
@@ -601,6 +604,8 @@ test("Gemini: only the models for talking to are offered", async ({ page }) => {
     "Gemini 3.7 Flash",
     "Gemini 3.1 Pro",
     "Gemini 2.5 Flash",
+    "Gemini Flash Latest",
+    "Gemini Pro Latest",
   ])
 })
 
