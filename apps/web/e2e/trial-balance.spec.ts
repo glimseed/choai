@@ -108,6 +108,70 @@ test("an account that nets to nothing is still on it", async ({ page }) => {
   expect(answer.value.debits.rendered).toBe(answer.value.credits.rendered)
 })
 
+/**
+ * One table, three faces. A capability that answers when it is named in code
+ * but not when it is looked up in the manifest — or that says it takes one thing
+ * and takes another — is the drift the single table exists to make impossible,
+ * and a report added to the engine is exactly when that drift would happen.
+ */
+test("the trial balance answers at every door, and the manifest says what it is", async ({
+  page,
+}) => {
+  await openTheDemo(page)
+
+  const told = await page.evaluate(
+    () => window.choai.describe().capabilities["report.trialBalance"],
+  )
+  expect(told).toBeDefined()
+  expect(told?.offered).toBe(true)
+  expect(told?.writes).toBe(false)
+  expect(told?.leaves).toBe(false)
+  expect(told?.needsJournal).toBe(true)
+  expect(told?.arguments.required).toEqual([])
+  expect(told?.arguments.additionalProperties).toBe(false)
+
+  // The name known when the code is written, and the name read off describe():
+  // the same answer, or the two doors have come apart.
+  const typed = await page.evaluate(() => window.choai.report.trialBalance({ query: "type:A" }))
+  const byName = await page.evaluate(() =>
+    window.choai.call("report.trialBalance", { query: "type:A" }),
+  )
+  expect(typed.ok).toBe(true)
+  expect(byName).toEqual(typed)
+
+  // Nothing throws: an argument of the wrong sort is a case with the rule
+  // attached, not an exception the caller has to be able to catch.
+  const mistyped = await page.evaluate(() =>
+    window.choai.call("report.trialBalance", { query: 5 } as never),
+  )
+  expect(mistyped.ok).toBe(false)
+  if (mistyped.ok) return
+  expect(mistyped.error).toMatchObject({ at: "bad-arguments", capability: "report.trialBalance" })
+})
+
+/** A report added to the engine reaches a model the same way every other one does. */
+test("nothing else on the manifest moved when the trial balance joined it", async ({ page }) => {
+  await page.goto("/")
+  const manifest = await page.evaluate(() => window.choai.describe())
+
+  // Adding a capability is the change the version explicitly does not move for.
+  expect(manifest.version).toBe("2")
+
+  // The four reports are one family, and the new one is offered on the same
+  // terms as the three it joined.
+  const reports = Object.entries(manifest.capabilities)
+    .filter(([name]) => name.startsWith("report."))
+    .map(([name]) => name)
+    .sort()
+  expect(reports).toEqual([
+    "report.balance",
+    "report.balanceSheet",
+    "report.entries",
+    "report.incomeStatement",
+    "report.trialBalance",
+  ])
+})
+
 test("the trial balance is what the fourth view is, in name and on screen", async ({ page }) => {
   await openTheDemo(page)
 

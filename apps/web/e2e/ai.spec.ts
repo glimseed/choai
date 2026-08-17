@@ -1310,6 +1310,9 @@ for (const wire of [CLAUDE, GEMINI, OPENAI, COMPATIBLE]) {
     const names = wire.toolNamesIn(out)
     expect(names.every((name) => !name.includes("."))).toBe(true)
     expect(names).toContain("report__incomeStatement")
+    // A report added to the table reaches every provider without any of them
+    // being told about it separately.
+    expect(names).toContain("report__trialBalance")
 
     // Nothing goes out that this provider will refuse to read.
     if (wire.label === "Gemini") expect(JSON.stringify(out)).not.toContain("additionalProperties")
