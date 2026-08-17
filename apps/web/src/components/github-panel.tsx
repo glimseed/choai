@@ -33,7 +33,15 @@ export function GitHubPanel(props: {
 
   /** What is in the boxes: what is being typed, or what the book already says. */
   const place = (): Remote => edited() ?? getOrUndefined(journal())?.remote ?? NOWHERE
-  const key = (): string => typed() ?? saved() ?? ""
+  /**
+   * The token as it will be sent: what is being typed, or what was saved.
+   *
+   * Trimmed, because a token is pasted rather than typed and what it is copied
+   * from often hands over a newline with it. GitHub answers that with the same
+   * 401 as a token that is genuinely wrong, so the one thing left on screen
+   * reads as "this token is no good" when there is nothing wrong with it.
+   */
+  const key = (): string => (typed() ?? saved() ?? "").trim()
   const change = (part: Partial<Remote>): void => {
     setEdited({ ...place(), ...part })
   }
