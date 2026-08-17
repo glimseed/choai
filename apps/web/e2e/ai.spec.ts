@@ -201,12 +201,15 @@ const answerWith = async (
   return asked
 }
 
+/** Saving sends nothing, so every request a test counts is one it asked for. */
 const connect = async (page: Page, wire: Wire): Promise<void> => {
   await page.goto("/settings")
   await page.getByRole("button", { name: wire.label, exact: true }).click()
   await page.getByLabel("API key").fill(NOT_A_KEY)
-  await page.getByRole("button", { name: "Save and check the key" }).click()
-  await expect(page.getByText("models available")).toBeVisible()
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+  // Waited for structurally: this button appears only once the key has been
+  // written and read back, where a message appears as soon as one is set.
+  await expect(page.getByRole("button", { name: "Disconnect and forget the key" })).toBeVisible()
 }
 
 const openTheDemo = async (page: Page): Promise<void> => {
@@ -226,15 +229,22 @@ const askThat = async (page: Page, question: string): Promise<void> => {
   await page.getByRole("button", { name: "Ask", exact: true }).last().click()
 }
 
-test("a key is checked before it is kept, and a refused one is not kept", async ({ page }) => {
+/**
+ * Checking is a press of its own, and it is the press that can fail.
+ *
+ * Saving keeps what was typed without asking anybody, which is the point: the
+ * key and the model are one setting and go in together. Whether that setting
+ * works is the other button's question, and it is the only one with an answer
+ * worth waiting for.
+ */
+test("a key that is not accepted is said so when it is checked", async ({ page }) => {
   await page.route(CLAUDE.host, (route) => asJson(route, {}, 401))
 
   await page.goto("/settings")
   await page.getByLabel("API key").fill(NOT_A_KEY)
-  await page.getByRole("button", { name: "Save and check the key" }).click()
+  await page.getByRole("button", { name: "Check the connection" }).click()
 
   await expect(page.getByText("That key was not accepted")).toBeVisible()
-  await expect(page.getByRole("button", { name: "Disconnect and forget the key" })).toBeHidden()
 })
 
 /**
@@ -341,16 +351,68 @@ test("proposals made along the way do not open the dock; the one it stops on doe
  * narrowed to what works rather than left to be discovered one failed question
  * at a time.
  */
-test("only models that take what is sent are offered", async ({ page }) => {
-  await answerWith(page, CLAUDE, (route) => asJson(route, CLAUDE.answers))
+/**
+ * The request is cut to the model rather than the model to the request.
+ *
+ * Sonnet 4.5, Opus 4.5 and Haiku 4.5 answer 400 to the adaptive thinking the
+ * newest models take, and all three are otherwise perfectly good — the cheap
+ * ones especially, on a statement of a couple of hundred rows. So what the
+ * listing says of a model decides what is sent to it, and both are offered.
+ *
+ * Checked down to the bytes on the wire, because this is the sort of thing that
+ * reads as correct and is not: the shape only matters where the provider sees
+ * it.
+ */
+test("what a model takes is what it is sent, and both are offered", async ({ page }) => {
+  const asked = await answerWith(page, CLAUDE, (route) => asJson(route, CLAUDE.answers))
 
+  await connect(page, CLAUDE)
+
+  // The picker is filled by the press that proves the key, not by saving.
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+    "Claude Opus 5",
+    "Claude Sonnet 4.5",
+  ])
+
+  await openTheDemo(page)
+  await askThat(page, "what did I spend")
+  await expect(page.getByText(SAID)).toBeVisible()
+
+  const newest = asked.at(-1) as {
+    thinking: { type: string; budget_tokens?: number }
+    output_config?: unknown
+    tools: readonly { strict?: boolean }[]
+  }
+  expect(newest.thinking).toEqual({ type: "adaptive" })
+  expect(newest.output_config).toEqual({ effort: "medium" })
+  expect(newest.tools.every((one) => one.strict === true)).toBe(true)
+
+  // The same conversation, to a model that would refuse every one of those. The
+  // picker still holds them on the way back, without another request for it.
   await page.goto("/settings")
-  await page.getByRole("button", { name: "Claude", exact: true }).click()
-  await page.getByLabel("API key").fill(NOT_A_KEY)
-  await page.getByRole("button", { name: "Save and check the key" }).click()
+  await page.getByLabel("Model").selectOption("claude-sonnet-4-5")
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+  await expect(page.getByText("Claude Sonnet 4.5").last()).toBeVisible()
 
-  await expect(page.getByText("models available")).toBeVisible()
-  await expect(page.getByLabel("Model").locator("option")).toHaveText(["Claude Opus 5"])
+  // The journal is still open; it was never closed.
+  await page.goto("/")
+  await askThat(page, "and the month before")
+  await expect(page.getByText(SAID)).toBeVisible()
+
+  const older = asked.at(-1) as {
+    thinking: { type: string; budget_tokens?: number }
+    output_config?: unknown
+    tools: readonly { strict?: boolean }[]
+  }
+  expect(older.thinking.type).toBe("enabled")
+  expect(older.thinking.budget_tokens).toBeGreaterThan(1024)
+  expect(older.output_config).toBeUndefined()
+  // And strict schemas stay, because this model takes them and says so. What is
+  // sent follows the listing field by field; it is not a generation being
+  // guessed at and turned down as a whole.
+  expect(older.tools.every((one) => one.strict === true)).toBe(true)
 })
 
 for (const wire of [CLAUDE, GEMINI]) {

@@ -1,6 +1,7 @@
 import { For, Show, createResource, createSignal, type JSX } from "solid-js"
 
-import { forgetKey, keepKey, keepModel, keepWhich, key, model, which } from "~/ai/kept"
+import { soundOut } from "~/ai/check"
+import { forgetKey, keepKey, keepListed, keepModel, keepWhich, key, listed, model, which } from "~/ai/kept"
 import { forgetChat } from "~/ai/store"
 import type { Failure, Model, Talker } from "~/ai/talker"
 import { EVERYONE, talkerFor } from "~/ai/talkers"
@@ -12,8 +13,16 @@ import { t } from "~/i18n"
  * Who to ask, and the key for asking them.
  *
  * One key per provider, kept apart, so trying another does not cost the first
- * one's. Each is checked before it is kept, by asking which models it can reach:
- * the cheapest question there is, and its answer is the list to choose from.
+ * one's. The key and which model to use are one setting saved by one press,
+ * because they are one decision: a key that reaches a model this app cannot
+ * talk to is not half-working, it is not working.
+ *
+ * Checking is its own press, beside it. It is the only honest way to know —
+ * listing the models a key can reach says nothing about whether a conversation
+ * with one of them is possible, and the difference between those two questions
+ * is exactly where Sonnet 4.5 lives. So the check says the real thing to the
+ * real model and reports what came back, and saving is left free to save
+ * whatever is typed.
  *
  * Where what is typed here goes is said on the page — and so is what the other
  * end does with it, because "free" and "read by people" are the same sentence at
@@ -25,13 +34,33 @@ export function AiKeyPanel(): JSX.Element {
 
   const [saved, { refetch }] = createResource(talker, (one) => key(one.id))
   const [named, { refetch: refetchModel }] = createResource(talker, (one) => model(one.id))
+  const [before] = createResource(talker, (one) => listed(one.id))
   const [typed, setTyped] = createSignal<string | undefined>(undefined)
   const [offered, setOffered] = createSignal<readonly Model[]>([])
+  const [picked, setPicked] = createSignal<string | undefined>(undefined)
   const [busy, setBusy] = createSignal(false)
   const [said, setSaid] = createSignal<string | undefined>(undefined)
   const [failure, setFailure] = createSignal<Failure | undefined>(undefined)
 
   const typing = (): string => typed() ?? saved() ?? ""
+
+  /**
+   * Something to choose from before anything has been asked.
+   *
+   * Until a check has listed them there is exactly one model worth naming — the
+   * one already in use, or this provider's default — and offering it is better
+   * than an empty box that looks broken.
+   */
+  const choices = (): readonly Model[] => {
+    const now = offered()
+    if (now.length > 0) return now
+    const last = before()
+    if (last !== undefined && last.length > 0) return last
+    const kept = named()
+    return [kept ?? { id: talker().defaultModel, label: talker().defaultModel }]
+  }
+
+  const picking = (): string => picked() ?? named()?.id ?? talker().defaultModel
 
   const run = async (work: () => Promise<void>): Promise<void> => {
     setBusy(true)
@@ -55,30 +84,76 @@ export function AiKeyPanel(): JSX.Element {
     nowUsing(one.id)
     setTyped(undefined)
     setOffered([])
+    setPicked(undefined)
     setSaid(undefined)
     setFailure(undefined)
     forgetChat()
     void keepWhich(one.id)
   }
 
+  /**
+   * All of it at once, because it is one setting. Nothing is sent.
+   *
+   * Which provider is written here too, not only where it is picked. Picking
+   * cannot wait for a write — it is a click handler, and the panel has to move
+   * under the finger — so it starts one and lets go; this is where that is made
+   * certain. Without it a key saved quickly enough belongs to whichever
+   * provider the last committed write happened to name.
+   */
   const save = (): Promise<void> =>
+    run(async () => {
+      const one = choices().find((each) => each.id === picking())
+      await keepWhich(talker().id)
+      await keepKey(talker().id, typing())
+      if (one !== undefined) await keepModel(talker().id, one)
+      setTyped(undefined)
+      setPicked(undefined)
+      await refetch()
+      await refetchModel()
+      setSaid(t("ai.saved", { provider: talker().label, model: one?.label ?? picking() }))
+    })
+
+  /**
+   * The two questions, in order: what can this key reach, and can the chosen one
+   * of those actually be talked to.
+   *
+   * The list is refreshed on the way through, so the picker is filled by the
+   * same press that proves the key — and a model that has gone from the account
+   * since it was chosen shows up here rather than in the middle of a question.
+   */
+  const check = (): Promise<void> =>
     run(async () => {
       const reachable = await talker().models(typing())
       if (!reachable.ok) {
         setFailure(reachable.error)
         return
       }
-      await keepKey(talker().id, typing())
+
       setOffered(reachable.value)
-      setTyped(undefined)
-      await refetch()
-      // A key that works and reaches nothing this app can drive is not an error
-      // — it is a fact about the account, and saying "0 available" would leave
-      // somebody looking for a fault in the key they just typed correctly.
+      await keepListed(talker().id, reachable.value)
+      if (reachable.value.length === 0) {
+        // A key that works and reaches nothing this app can drive is not an
+        // error — it is a fact about the account, and saying "0 available"
+        // would leave somebody hunting a fault in a key they typed correctly.
+        setSaid(t("ai.noneUsable"))
+        return
+      }
+
+      const one = reachable.value.find((each) => each.id === picking()) ?? reachable.value[0]
+      if (one === undefined) return
+      setPicked(one.id)
+
+      const sounded = await soundOut(talker(), typing(), one)
+      if (!sounded.ok) {
+        setFailure(sounded.error)
+        return
+      }
       setSaid(
-        reachable.value.length === 0
-          ? t("ai.noneUsable")
-          : t("ai.ready", { count: reachable.value.length }),
+        t("ai.answered", {
+          model: one.label,
+          sent: sounded.value.spent.sent,
+          back: sounded.value.spent.back,
+        }),
       )
     })
 
@@ -88,13 +163,8 @@ export function AiKeyPanel(): JSX.Element {
       forgetChat()
       setTyped("")
       setOffered([])
+      setPicked(undefined)
       await refetch()
-    })
-
-  const choose = (id: string): Promise<void> =>
-    run(async () => {
-      await keepModel(talker().id, id)
-      await refetchModel()
     })
 
   return (
@@ -142,9 +212,30 @@ export function AiKeyPanel(): JSX.Element {
         </a>
       </p>
 
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-muted-foreground">{t("ai.model")}</span>
+        <select
+          class="h-8 rounded-md border border-border bg-transparent px-2 text-sm"
+          disabled={busy()}
+          value={picking()}
+          onChange={(event) => setPicked(event.currentTarget.value)}
+        >
+          <For each={choices()}>{(one) => <option value={one.id}>{one.label}</option>}</For>
+        </select>
+      </label>
+      <p class="text-xs text-muted-foreground">{t("ai.modelHint")}</p>
+
       <div class="flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={typing() === "" || busy()}
+          onClick={() => void check()}
+        >
+          {t("ai.check")}
+        </Button>
         <Button size="sm" disabled={typing() === "" || busy()} onClick={() => void save()}>
-          {t("ai.connect")}
+          {t("ai.save")}
         </Button>
         <Show when={saved() !== undefined}>
           <Button size="sm" variant="ghost" disabled={busy()} onClick={() => void drop()}>
@@ -152,20 +243,6 @@ export function AiKeyPanel(): JSX.Element {
           </Button>
         </Show>
       </div>
-
-      <Show when={offered().length > 0}>
-        <label class="flex flex-col gap-1">
-          <span class="text-xs text-muted-foreground">{t("ai.model")}</span>
-          <select
-            class="h-8 rounded-md border border-border bg-transparent px-2 text-sm"
-            value={named() ?? talker().defaultModel}
-            onChange={(event) => void choose(event.currentTarget.value)}
-          >
-            <For each={offered()}>{(one) => <option value={one.id}>{one.label}</option>}</For>
-          </select>
-        </label>
-        <p class="text-xs text-muted-foreground">{t("ai.modelHint")}</p>
-      </Show>
 
       <Show when={said()}>{(word) => <p class="text-xs text-muted-foreground">{word()}</p>}</Show>
       <Show when={failure()}>

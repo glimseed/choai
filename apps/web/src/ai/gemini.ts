@@ -135,7 +135,7 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
 }
 
 const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
-  const reached = await reach(`${ROOT}/models/${encodeURIComponent(ask.model)}:generateContent`, {
+  const reached = await reach(`${ROOT}/models/${encodeURIComponent(ask.model.id)}:generateContent`, {
     method: "POST",
     headers: headers(key),
     body: JSON.stringify({
@@ -175,7 +175,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
   const blocked = body.value.promptFeedback?.blockReason
 
   return Ok({
-    model: body.value.modelVersion ?? ask.model,
+    model: body.value.modelVersion ?? ask.model.id,
     stopped:
       blocked === undefined ? stoppedBy(candidate?.finishReason ?? "STOP", calledIn(content).length) : "refused",
     ...(blocked === undefined ? {} : { why: blocked }),

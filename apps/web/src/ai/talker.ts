@@ -59,10 +59,23 @@ export interface Shown {
 export interface Model {
   readonly id: string
   readonly label: string
+  /**
+   * What this model will take, in its provider's own words.
+   *
+   * Opaque here for the same reason a turn's blocks are. A thinking mode, an
+   * effort, a strict schema — these are one provider's vocabulary, and a
+   * neutral one invented for them here would have to be translated into and out
+   * of, agreeing exactly with neither. Whoever listed the model is who reads it
+   * back.
+   *
+   * Absent where a provider does not say, or where the model was chosen before
+   * this app thought to ask. The provider decides what to assume then.
+   */
+  readonly takes?: Readonly<Record<string, boolean>>
 }
 
 export interface Ask {
-  readonly model: string
+  readonly model: Model
   readonly system: string
   readonly turns: readonly Turn[]
   readonly tools: readonly Tool[]

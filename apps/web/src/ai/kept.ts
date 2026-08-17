@@ -19,7 +19,7 @@
  */
 
 import { STORE, within } from "~/lib/idb"
-import type { Which } from "./talker"
+import type { Model, Which } from "./talker"
 
 const KEYS = STORE.keys
 const CHOSEN = "chosen"
@@ -27,7 +27,8 @@ const CHOSEN = "chosen"
 interface Row {
   readonly id: string
   readonly key?: string
-  readonly model?: string
+  readonly model?: Model | string
+  readonly listed?: readonly Model[]
   readonly which?: Which
 }
 
@@ -63,6 +64,30 @@ export const forgetKey = async (of: Which): Promise<void> => {
   })
 }
 
-export const model = async (of: Which): Promise<string | undefined> => (await row(of))?.model
+/**
+ * Which model, and what it takes.
+ *
+ * A row written before this app asked what a model takes holds the bare id, so
+ * that is read back as a model with nothing said about it — which is exactly
+ * what it is, and what the provider then assumes for.
+ */
+export const model = async (of: Which): Promise<Model | undefined> => {
+  const kept = (await row(of))?.model
+  return typeof kept === "string" ? { id: kept, label: kept } : kept
+}
 
-export const keepModel = (of: Which, value: string): Promise<void> => put({ id: of, model: value })
+export const keepModel = (of: Which, value: Model): Promise<void> => put({ id: of, model: value })
+
+/**
+ * The models this key was last found to reach.
+ *
+ * Kept because the picker is beside the key box and has to have something in it
+ * on the way back to this screen. Listing costs a request, and a request every
+ * time somebody opens the settings is a charge for looking. Checking refreshes
+ * it; until then it is what was true last time, which is the honest thing for a
+ * list of somebody else's models to be.
+ */
+export const listed = async (of: Which): Promise<readonly Model[] | undefined> => (await row(of))?.listed
+
+export const keepListed = (of: Which, value: readonly Model[]): Promise<void> =>
+  put({ id: of, listed: value })

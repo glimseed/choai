@@ -98,7 +98,7 @@ export const ask = async (text: string, shown: readonly Shown[] = []): Promise<v
   const asked =
     turns().length === 0 && open !== undefined ? `${groundingFor(open)}\n\n${written}` : written
 
-  const chosen = (await keptModel(talker.id)) ?? talker.defaultModel
+  const chosen = (await keptModel(talker.id)) ?? { id: talker.defaultModel, label: talker.defaultModel }
   const done = await converse(talker, saved, chosen, [...turns(), talker.said(asked, shown)], (beat) =>
     setBeats((was) => [...was, beat]),
   )

@@ -88,35 +88,60 @@ interface Takes {
   readonly supported?: boolean
 }
 
-/** What a model will take, in the parts every turn from here depends on. */
+/** What a model will take, in the parts a request from here varies over. */
 interface Capabilities {
-  readonly thinking?: { readonly types?: { readonly adaptive?: Takes } }
+  readonly thinking?: Takes & {
+    readonly types?: { readonly adaptive?: Takes; readonly enabled?: Takes }
+  }
   readonly effort?: { readonly medium?: Takes }
   readonly structured_outputs?: Takes
   readonly image_input?: Takes
 }
 
 /**
- * Whether a model takes what is sent to it here.
+ * What varies between one model and the next, read off the listing once.
  *
- * Not a judgement about the model. Every request carries adaptive thinking, an
- * effort, strict tool schemas, and — the moment somebody photographs a receipt
- * — an image; a model without one of those does not answer more plainly, it
- * answers 400. Sonnet 4.5, Opus 4.5 and Haiku 4.5 are the near miss: current,
- * capable, and without adaptive thinking, which they reject outright.
+ * Sonnet 4.5, Opus 4.5 and Haiku 4.5 are why this exists. They are current and
+ * capable and they reject `thinking: adaptive` outright, so a request written
+ * for the newest models does not come back plainer from them, it comes back
+ * 400. Only Opus 4.5 of the three takes an effort. The listing says all of this
+ * per model, which is better than any list of names kept here: a list of names
+ * is wrong the week after it is written, and this is the question actually
+ * worth asking — not whether a model is one we have heard of, but what it takes.
  *
- * Asked of the listing rather than kept here as a list of names. A list of
- * names is wrong the week after it is written, and this is the question
- * actually worth asking — not whether a model is one we have heard of, but
- * whether it takes what we send. Each line below is here because the request
- * builder above sends the thing it names, so the two cannot drift apart
- * without the model list going quiet, which is the loud way round.
+ * Each key is here because the request builder below sends the thing it names.
+ * Neither can be changed alone without the other going obviously wrong.
+ */
+const takenBy = (can: Capabilities | undefined): Readonly<Record<string, boolean>> => ({
+  adaptive: can?.thinking?.types?.adaptive?.supported === true,
+  effort: can?.effort?.medium?.supported === true,
+  strict: can?.structured_outputs?.supported === true,
+})
+
+/**
+ * Whether a model is offered at all.
+ *
+ * The shape of a request is adapted rather than demanded, so this is left to
+ * the two things no adapting can supply: something to think with, because
+ * without thinking a tool call is sometimes written out as ordinary text and
+ * silently runs nothing, and images, because a photographed receipt is a thing
+ * this app will ask of any model it lists.
+ *
+ * Only an outright no excludes. A listing that says nothing about a model is
+ * not evidence against it, and treating silence as a no would empty the picker
+ * on the day the field is renamed.
  */
 const drives = (can: Capabilities | undefined): boolean =>
-  can?.thinking?.types?.adaptive?.supported === true &&
-  can.effort?.medium?.supported === true &&
-  can.structured_outputs?.supported === true &&
-  can.image_input?.supported === true
+  can?.thinking?.supported !== false && can?.image_input?.supported !== false
+
+/**
+ * How much a model without the adaptive kind is told to think.
+ *
+ * Manual thinking wants a number where adaptive wants nothing, and the number
+ * comes out of the same budget as the answer. Eight thousand leaves the room a
+ * statement of a couple of hundred entries needs to be written out after it.
+ */
+const BUDGET = 8000
 
 const models = async (key: string): Promise<Result<readonly Model[], Failure>> => {
   const reached = await reach(`${ROOT}/v1/models?limit=1000`, { method: "GET", headers: headers(key) })
@@ -135,7 +160,11 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
     ? Ok(
         (body.value.data ?? [])
           .filter((one) => drives(one.capabilities ?? undefined))
-          .map((one) => ({ id: one.id, label: one.display_name ?? one.id })),
+          .map((one) => ({
+            id: one.id,
+            label: one.display_name ?? one.id,
+            takes: takenBy(one.capabilities ?? undefined),
+          })),
       )
     : body
 }
@@ -157,11 +186,22 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
  * opening another book does not throw the cache away.
  */
 const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
+  /**
+   * A model kept before this app asked what it takes, or reached without a
+   * listing, is sent the newest shape — which is what everything was sent until
+   * now, so nothing that worked stops working.
+   */
+  const takes = {
+    adaptive: ask.model.takes?.["adaptive"] ?? true,
+    effort: ask.model.takes?.["effort"] ?? true,
+    strict: ask.model.takes?.["strict"] ?? true,
+  }
+
   const reached = await reach(`${ROOT}/v1/messages`, {
     method: "POST",
     headers: headers(key),
     body: JSON.stringify({
-      model: ask.model,
+      model: ask.model.id,
       max_tokens: ask.maxTokens,
       system: [{ type: "text", text: ask.system, cache_control: { type: "ephemeral" } }],
       messages: ask.turns.map((turn) => ({
@@ -172,10 +212,10 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
         name: tool.name,
         description: tool.description,
         input_schema: tool.schema,
-        strict: true,
+        ...(takes.strict ? { strict: true } : {}),
       })),
-      thinking: { type: "adaptive" },
-      output_config: { effort: "medium" },
+      thinking: takes.adaptive ? { type: "adaptive" } : { type: "enabled", budget_tokens: BUDGET },
+      ...(takes.effort ? { output_config: { effort: "medium" } } : {}),
     }),
   })
   if (!reached.ok) return reached
@@ -192,7 +232,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
 
   const category = body.value.stop_details?.category
   return Ok({
-    model: body.value.model ?? ask.model,
+    model: body.value.model ?? ask.model.id,
     stopped: stoppedBy(body.value.stop_reason ?? "end_turn"),
     ...(typeof category === "string" ? { why: category } : {}),
     content: body.value.content ?? [],

@@ -3,7 +3,9 @@ import type { Hitch } from "~/api/hitch"
 import { Ok, type Result } from "~/lib/monad"
 import { capabilityOf } from "./naming"
 import { instructions, toolsOffered } from "./prompt"
-import { NOTHING_SPENT, alsoSpent, type Failure, type Shown, type Spent, type Talker, type Turn } from "./talker"
+import { NOTHING_SPENT, alsoSpent, type Failure, type Shown, type Spent, type Talker, type Turn,
+  type Model,
+} from "./talker"
 
 /**
  * One exchange: ask, run whatever was asked for, ask again with the answers.
@@ -29,7 +31,7 @@ import { NOTHING_SPENT, alsoSpent, type Failure, type Shown, type Spent, type Ta
  * sum that a long statement came back cut off, which costs the whole call: a
  * proposal arrives whole or not at all.
  */
-const ROOM = 32000
+export const ROOM = 32000
 
 /**
  * How many times round before we stop, whatever the model still wants.
@@ -72,7 +74,7 @@ export interface Conversed {
 export const converse = (
   talker: Talker,
   key: string,
-  model: string,
+  model: Model,
   turns: readonly Turn[],
   onBeat: (beat: Beat) => void,
 ): Promise<Result<Conversed, Failure>> =>
@@ -81,7 +83,7 @@ export const converse = (
 const step = async (
   talker: Talker,
   key: string,
-  model: string,
+  model: Model,
   turns: readonly Turn[],
   onBeat: (beat: Beat) => void,
   left: number,
