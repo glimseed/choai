@@ -245,7 +245,8 @@ export const en = {
     noJournal: "No journal is open.",
     unauthorised: "GitHub refused the token. Check it has Contents: read and write for this repository.",
     noSuchFile: "GitHub has no file at that path.",
-    offline: "GitHub could not be reached.",
+    offline:
+      "GitHub could not be reached. It may be having trouble of its own — githubstatus.com says whether it is. Otherwise, something in this browser may be answering for api.github.com instead: an extension or a proxy that rewrites requests.",
     refused: "GitHub refused: {{ status }}.",
     conflict: "GitHub refused the write.",
     diverged: "{{ path }} was changed both here and in the repository, in the same part of the file. Nothing was sent. Take a copy of this one, take theirs, and put them together by hand.",

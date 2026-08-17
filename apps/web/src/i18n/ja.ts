@@ -237,7 +237,8 @@ export const ja: Dictionary = {
     noJournal: "帳簿が開かれていません。",
     unauthorised: "トークンが拒否されました。このリポジトリに対する Contents の読み書き権限を確認してください。",
     noSuchFile: "そのパスにファイルがありません。",
-    offline: "GitHub に届きませんでした。",
+    offline:
+      "GitHub に届きませんでした。GitHub 側で障害が起きていることもあります。githubstatus.com で分かります。そうでなければ、api.github.com への通信をブラウザの中で横取りしているもの ── 拡張機能やプロキシ ── があるかもしれません。",
     refused: "GitHub に拒否されました: {{ status }}。",
     conflict: "書き込みが拒否されました。",
     diverged: "{{ path }} は、こちらとリポジトリの両方で、同じ部分が書き換えられています。何も送っていません。こちらを書き出し、向こうを取り込んで、手で突き合わせてください。",
