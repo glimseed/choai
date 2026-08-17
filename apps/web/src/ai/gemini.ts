@@ -171,7 +171,7 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
    * line in the console is what turns that into a question with an answer.
    */
   if (kept.length < answering.length) {
-    console.debug(
+    console.info(
       `choai — set aside ${answering.length - kept.length} of Google's models as not for talking to: ${answering
         .filter((one) => !talkable(one.id))
         .map((one) => one.id)
@@ -262,6 +262,7 @@ export const gemini: Talker = {
   id: "gemini",
   label: "Gemini",
   host: "generativelanguage.googleapis.com",
+  modelsFrom: "https://ai.google.dev/gemini-api/docs/models",
   keysFrom: "https://aistudio.google.com/apikey",
   defaultModel: "gemini-2.5-flash",
   models,

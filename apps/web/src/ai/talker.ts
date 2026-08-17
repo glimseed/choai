@@ -148,6 +148,13 @@ export interface Talker {
   /** Where the reader goes to get a key. Shown beside the box asking for one. */
   readonly keysFrom: string
   /**
+   * Where this provider publishes what it has. Shown beside the model box,
+   * because the suggestions there are what a listing offered filtered by rules
+   * read off somebody else's naming — a good guess, and not the last word on
+   * what can be typed.
+   */
+  readonly modelsFrom: string
+  /**
    * The one host a key typed here is ever sent to, said on the page beside the
    * box. Here rather than on the screen because a third provider added without
    * it would quietly claim to be sending somebody's key somewhere it is not.

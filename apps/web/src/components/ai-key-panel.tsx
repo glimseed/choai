@@ -6,6 +6,7 @@ import { forgetChat } from "~/ai/store"
 import type { Failure, Model, Talker } from "~/ai/talker"
 import { EVERYONE, talkerFor } from "~/ai/talkers"
 import { Button } from "~/components/ui/button"
+import { Suggesting } from "~/lib/ui/suggesting"
 import { TextField, TextFieldInput } from "~/components/ui/text-field"
 import { t } from "~/i18n"
 
@@ -46,12 +47,21 @@ export function AiKeyPanel(): JSX.Element {
    * picker with one thing in it is not a picker, and there is nothing on the
    * screen to say that the one thing is a placeholder.
    *
-   * A failure here is left unsaid on purpose. Nothing was asked for but a save,
-   * the save happened, and whether the key works is the other button's question.
+   * It says when it cannot. A picker that stayed at its one placeholder looks
+   * exactly the same whether the key was refused, the network was out, or every
+   * model the account has is one this app cannot drive — and none of those is
+   * something to work out from an unchanged screen.
    */
   const fill = async (key: string): Promise<readonly Model[]> => {
     const reachable = await talker().models(key)
-    if (!reachable.ok || reachable.value.length === 0) return []
+    if (!reachable.ok) {
+      setFailure(reachable.error)
+      return []
+    }
+    if (reachable.value.length === 0) {
+      setSaid(t("ai.noneUsable"))
+      return []
+    }
     setOffered(reachable.value)
     nowListed(reachable.value)
     await keepListed(talker().id, reachable.value)
@@ -64,7 +74,6 @@ export function AiKeyPanel(): JSX.Element {
   const [said, setSaid] = createSignal<string | undefined>(undefined)
   const [failure, setFailure] = createSignal<Failure | undefined>(undefined)
 
-  let box: HTMLSelectElement | undefined
 
   const typing = (): string => typed() ?? saved() ?? ""
 
@@ -83,14 +92,7 @@ export function AiKeyPanel(): JSX.Element {
         ? listed
         : [kept ?? { id: talker().defaultModel, label: talker().defaultModel }]
 
-    // Whatever is chosen stays in the list even when a fresh listing has
-    // dropped it. A box cannot show what it does not hold, so without this the
-    // one thing that must not happen silently — the choice changing — is what
-    // the browser does on its own the moment the options are replaced.
-    const want = settledOn()
-    return want === undefined || shown.some((one) => one.id === want)
-      ? shown
-      : [...shown, kept?.id === want ? kept : { id: want, label: want }]
+    return shown
   }
 
   /**
@@ -101,25 +103,20 @@ export function AiKeyPanel(): JSX.Element {
    * before the answer arrives; acted on, it is a choice nobody made, quietly
    * replacing the one it was standing in for.
    */
-  const settledOn = (): string | undefined => picked() ?? named()?.id
-
-  const picking = (): string => settledOn() ?? talker().defaultModel
+  const settledOn = (): string | undefined => {
+    const typed = picked()
+    if (typed !== undefined) return typed.trim() === "" ? undefined : typed
+    return named()?.id
+  }
 
   /**
-   * The chosen one, said to the box after its options exist.
-   *
-   * What fills the picker and what selects within it are read from the database
-   * separately and do not arrive together. Bound as a `value` prop, the choice
-   * is applied whenever it changes — including while the list is still the one
-   * option it started with, where the browser has nothing to select and falls
-   * back to the first. Depending on the list as well as the choice, and writing
-   * it after the render that added them, is what makes the two agree.
+   * What is in the box: what was chosen, or something that exists to start
+   * from. The provider's default is the last resort rather than the first,
+   * because an account that does not have it would open on a name that cannot
+   * be used and no sign of which ones can.
    */
-  createEffect(() => {
-    const want = picking()
-    const listed = choices()
-    if (box !== undefined && listed.some((one) => one.id === want)) box.value = want
-  })
+  const picking = (): string => settledOn() ?? choices()[0]?.id ?? talker().defaultModel
+
 
   /**
    * Whatever happens, the panel comes back.
@@ -203,7 +200,11 @@ export function AiKeyPanel(): JSX.Element {
       setPicked(undefined)
       await refetch()
       await refetchModel()
-      setSaid(t("ai.saved", { provider: talker().label, model: one?.label ?? picking() }))
+      // Saving worked whatever the listing did, but a listing that did not is
+      // the more useful thing to be told, so it is left standing where it spoke.
+      if (failure() === undefined && said() === undefined) {
+        setSaid(t("ai.saved", { provider: talker().label, model: one?.label ?? picking() }))
+      }
     })
 
   /**
@@ -235,21 +236,12 @@ export function AiKeyPanel(): JSX.Element {
       }
 
       /**
-       * Checking asks about the model that is chosen. It does not choose.
-       *
-       * Finding out that some other model is reachable is no reason to move to
-       * it, and a chosen one that has gone from the account is worth saying
-       * rather than papering over. The one case where this does choose is the
-       * first: nothing has been chosen yet, and the newest is where to start.
+       * Whatever is in the box is what is asked about, listed or not. A name
+       * typed in and not among the suggestions is a name the reader knows and
+       * this app does not, and the way to find out which is to try it.
        */
-      const want = settledOn()
-      const one =
-        want === undefined ? reachable.value[0] : reachable.value.find((each) => each.id === want)
-
-      if (one === undefined) {
-        setSaid(t("ai.notThere", { model: named()?.label ?? want ?? "" }))
-        return
-      }
+      const want = picking()
+      const one = reachable.value.find((each) => each.id === want) ?? { id: want, label: want }
       setPicked(one.id)
       setSaid(t("ai.sounding", { model: one.label }))
 
@@ -322,18 +314,23 @@ export function AiKeyPanel(): JSX.Element {
         </a>
       </p>
 
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-1" for="ai-model">
         <span class="text-xs text-muted-foreground">{t("ai.model")}</span>
-        <select
-          ref={box}
-          class="h-8 rounded-md border border-border bg-transparent px-2 text-sm"
+        <Suggesting
+          id="ai-model"
+          value={picking()}
+          onInput={setPicked}
+          options={choices().map((one) => ({ value: one.id, label: one.label }))}
           disabled={busy()}
-          onChange={(event) => setPicked(event.currentTarget.value)}
-        >
-          <For each={choices()}>{(one) => <option value={one.id}>{one.label}</option>}</For>
-        </select>
+          placeholder={talker().defaultModel}
+        />
       </label>
-      <p class="text-xs text-muted-foreground">{t("ai.modelHint")}</p>
+      <p class="text-xs text-muted-foreground">
+        {t("ai.modelHint")}{" "}
+        <a class="underline" href={talker().modelsFrom} target="_blank" rel="noreferrer">
+          {t("ai.everyModel", { provider: talker().label })}
+        </a>
+      </p>
 
       <div class="flex flex-wrap items-center gap-2">
         <Button

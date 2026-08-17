@@ -162,8 +162,12 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   sent none — and a field the listing does not answer is left unwritten rather
   than recorded as a no. Google and OpenAI answer nothing, so `gemini.ts` and
   `openai.ts` decide on the names, name what they set aside in the console, and
-  err towards leaving a model out. All three listings say how much a model will
-  write, and no turn asks for more than that.
+  err towards leaving a model out — which is safe because the settings panel
+  offers what they find as suggestions in a box you type in
+  (`lib/ui/suggesting.tsx`), not as the whole of what can be said. A name missing
+  from the list is an inconvenience, never a wall, and each talker carries a
+  `modelsFrom` link to where its provider publishes the real answer. All three
+  listings say how much a model will write, and no turn asks for more than that.
 - **Attachments are read before they are sent.** A photograph is scaled to
   1568px and re-encoded (`ai/photo.ts`) — a phone writes 4000px and every model
   charges by area. A statement is parsed by `lib/csv.ts` only to know it is a

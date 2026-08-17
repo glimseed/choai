@@ -114,7 +114,7 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
   const kept = answering.filter(talkable)
 
   if (kept.length < answering.length) {
-    console.debug(
+    console.info(
       `choai — set aside ${answering.length - kept.length} of OpenAI's models as not for talking to: ${answering
         .filter((one) => !talkable(one))
         .join(", ")}`,
@@ -223,6 +223,7 @@ export const openai: Talker = {
   id: "openai",
   label: "ChatGPT",
   host: "api.openai.com",
+  modelsFrom: "https://platform.openai.com/docs/models",
   keysFrom: "https://platform.openai.com/api-keys",
   defaultModel: "gpt-5",
   models,

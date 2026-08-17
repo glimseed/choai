@@ -423,7 +423,7 @@ test("what a model takes is what it is sent, and both are offered", async ({ pag
   // The picker is filled by the press that proves the key, not by saving.
   await page.getByRole("button", { name: "Check the connection" }).click()
   await expect(page.getByText("answered")).toBeVisible()
-  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+  await expect(page.locator("#ai-model-suggestions option")).toHaveText([
     "Claude Opus 5",
     "Claude Sonnet 4.5",
   ])
@@ -444,7 +444,7 @@ test("what a model takes is what it is sent, and both are offered", async ({ pag
   // The same conversation, to a model that would refuse every one of those. The
   // picker still holds them on the way back, without another request for it.
   await page.goto("/settings")
-  await page.getByLabel("Model").selectOption("claude-sonnet-4-5")
+  await page.getByLabel("Model").fill("claude-sonnet-4-5")
   await page.getByRole("button", { name: "Save", exact: true }).click()
   await expect(page.getByText("Claude Sonnet 4.5").last()).toBeVisible()
 
@@ -486,7 +486,7 @@ test("a check that goes wrong gives the panel back", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Save", exact: true })).toBeEnabled()
 
   // And the models it did reach are in the picker, since that part worked.
-  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+  await expect(page.locator("#ai-model-suggestions option")).toHaveText([
     "Claude Opus 5",
     "Claude Sonnet 4.5",
   ])
@@ -508,7 +508,7 @@ test("the model saved is the model shown after a reload", async ({ page }) => {
   await page.getByRole("button", { name: "Check the connection" }).click()
   await expect(page.getByText("answered")).toBeVisible()
 
-  await page.getByLabel("Model").selectOption("claude-sonnet-4-5")
+  await page.getByLabel("Model").fill("claude-sonnet-4-5")
   await page.getByRole("button", { name: "Save", exact: true }).click()
   await expect(page.getByText("Claude Sonnet 4.5").last()).toBeVisible()
 
@@ -536,7 +536,7 @@ test("checking straight away does not overwrite the model saved", async ({ page 
   await connect(page, CLAUDE)
   await page.getByRole("button", { name: "Check the connection" }).click()
   await expect(page.getByText("answered")).toBeVisible()
-  await page.getByLabel("Model").selectOption("claude-sonnet-4-5")
+  await page.getByLabel("Model").fill("claude-sonnet-4-5")
   await page.getByRole("button", { name: "Save", exact: true }).click()
   await expect(page.getByText("Claude Sonnet 4.5").last()).toBeVisible()
 
@@ -575,16 +575,24 @@ test("a model the listing says nothing about is sent the newest shape", async ({
   expect(sent.output_config).toEqual({ effort: "medium" })
 })
 
-/** A chosen model that has gone is said, not replaced. */
-test("a chosen model the key no longer reaches is not swapped for another", async ({ page }) => {
-  // Flipped when the test is ready for the model to have gone, rather than
-  // counted: saving lists too, so how many times it is asked is not the test's
-  // to know.
+/**
+ * A name the listing does not have is still a name.
+ *
+ * The suggestions are a listing filtered by rules read off somebody else's
+ * naming, so being absent from them is weak evidence of anything. What is typed
+ * is what gets asked about — which is the whole reason this is a box to type in
+ * rather than a list to choose from.
+ */
+test("a model the suggestions do not have is still what gets asked about", async ({ page }) => {
+  const asked: unknown[] = []
   const account = { has: true }
   const whole = CLAUDE.models as { data: readonly { id: string }[] }
 
   await page.route(CLAUDE.host, (route) => {
-    if (route.request().method() !== "GET") return asJson(route, CLAUDE.answers)
+    if (route.request().method() !== "GET") {
+      asked.push(route.request().postDataJSON())
+      return asJson(route, CLAUDE.answers)
+    }
     return asJson(
       route,
       account.has ? whole : { data: whole.data.filter((one) => one.id !== "claude-sonnet-4-5") },
@@ -592,15 +600,17 @@ test("a chosen model the key no longer reaches is not swapped for another", asyn
   })
 
   await connect(page, CLAUDE)
-  await page.getByLabel("Model").selectOption("claude-sonnet-4-5")
+  await page.getByLabel("Model").fill("claude-sonnet-4-5")
   await page.getByRole("button", { name: "Save", exact: true }).click()
   await expect(page.getByText("Claude Sonnet 4.5").last()).toBeVisible()
 
-  // And now it has gone from the account.
+  // And now it has gone from what the listing offers.
   account.has = false
   await page.getByRole("button", { name: "Check the connection" }).click()
-  await expect(page.getByText("no longer reaches")).toBeVisible()
+  await expect(page.getByText("answered")).toBeVisible()
+
   await expect(page.getByLabel("Model")).toHaveValue("claude-sonnet-4-5")
+  expect((asked.at(-1) as { model: string }).model).toBe("claude-sonnet-4-5")
 })
 
 /**
@@ -650,7 +660,7 @@ test("Gemini: only the models for talking to are offered", async ({ page }) => {
   await page.getByRole("button", { name: "Check the connection" }).click()
   await expect(page.getByText("answered")).toBeVisible()
 
-  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+  await expect(page.locator("#ai-model-suggestions option")).toHaveText([
     "Gemini 3.7 Flash",
     "Gemini 3.1 Pro",
     "Gemini 2.5 Flash",
@@ -679,19 +689,20 @@ test("Gemini: a model is never asked for more room than it has", async ({ page }
   await page.getByRole("button", { name: "Check the connection" }).click()
   await expect(page.getByText("answered")).toBeVisible()
 
-  // The default is 2.5 Flash, which stops at 8192, so that is what it is asked
-  // for rather than the 32000 a turn would like.
-  const tight = asked.at(-1) as { generationConfig: { maxOutputTokens: number } }
-  expect(tight.generationConfig.maxOutputTokens).toBe(8192)
+  // The box opens on the newest, which has room to spare, so it is asked for
+  // what a turn actually wants.
+  const roomy = asked.at(-1) as { generationConfig: { maxOutputTokens: number } }
+  expect(roomy.generationConfig.maxOutputTokens).toBe(32000)
 
-  await page.getByLabel("Model").selectOption("gemini-3.7-flash")
+  await page.getByLabel("Model").fill("gemini-2.5-flash")
   await page.getByRole("button", { name: "Save", exact: true }).click()
   await page.getByRole("button", { name: "Check the connection" }).click()
   await expect(page.getByText("answered")).toBeVisible()
 
-  // And one with room to spare is asked for what a turn actually wants.
-  const roomy = asked.at(-1) as { generationConfig: { maxOutputTokens: number } }
-  expect(roomy.generationConfig.maxOutputTokens).toBe(32000)
+  // And one that stops at 8192 is asked for 8192 rather than the 32000 a turn
+  // would like, since more than a model's own ceiling is refused outright.
+  const tight = asked.at(-1) as { generationConfig: { maxOutputTokens: number } }
+  expect(tight.generationConfig.maxOutputTokens).toBe(8192)
 })
 
 /**
@@ -726,8 +737,8 @@ test("a model with little room is asked for little, and thinks less", async ({ p
     return asJson(route, CLAUDE.answers)
   })
 
-  // Saving lists what this key reaches, so the only model this account has is
-  // the one that ends up chosen — the default it never had is never kept.
+  // The box opens on something this account actually has, rather than on a
+  // default it does not.
   await connect(page, CLAUDE)
   await expect(page.getByLabel("Model")).toHaveValue("claude-tiny")
 
@@ -786,7 +797,7 @@ test("ChatGPT: only the models for talking to are offered", async ({ page }) => 
   await page.getByRole("button", { name: "Check the connection" }).click()
   await expect(page.getByText("answered")).toBeVisible()
 
-  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+  await expect(page.locator("#ai-model-suggestions option")).toHaveText([
     "o4-mini",
     "gpt-5-mini",
     "gpt-5",
@@ -831,7 +842,7 @@ test("ChatGPT: the models can be picked without checking first", async ({ page }
 
   await connect(page, OPENAI)
 
-  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+  await expect(page.locator("#ai-model-suggestions option")).toHaveText([
     "o4-mini",
     "gpt-5-mini",
     "gpt-5",
@@ -840,7 +851,7 @@ test("ChatGPT: the models can be picked without checking first", async ({ page }
 
   // And they are still there on the way back, without asking again.
   await page.reload()
-  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+  await expect(page.locator("#ai-model-suggestions option")).toHaveText([
     "o4-mini",
     "gpt-5-mini",
     "gpt-5",
@@ -874,12 +885,49 @@ test("ChatGPT: a key kept with no list gets one on arrival", async ({ page }) =>
   })
 
   await page.reload()
-  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+  await expect(page.locator("#ai-model-suggestions option")).toHaveText([
     "o4-mini",
     "gpt-5-mini",
     "gpt-5",
     "gpt-4.1",
   ])
+})
+
+/**
+ * A picker that will not fill says why.
+ *
+ * Left at its one placeholder it looks the same whether the key was refused,
+ * the network was out, or every model the account has is one this app cannot
+ * drive. None of those is a thing to work out from a screen that did not change,
+ * and the first of them was being swallowed on the way past.
+ */
+test("ChatGPT: a key that lists nothing says so rather than showing one model", async ({ page }) => {
+  await page.route(OPENAI.host, (route) =>
+    route.request().method() === "GET" ? asJson(route, {}, 401) : asJson(route, OPENAI.answers),
+  )
+
+  await page.goto("/settings")
+  await page.getByRole("button", { name: "ChatGPT", exact: true }).click()
+  await page.getByLabel("API key").fill(NOT_A_KEY)
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+
+  await expect(page.getByText("That key was not accepted")).toBeVisible()
+})
+
+/** And a key that reaches only models this app cannot drive says that instead. */
+test("ChatGPT: a key reaching nothing usable says which way it failed", async ({ page }) => {
+  await page.route(OPENAI.host, (route) =>
+    route.request().method() === "GET"
+      ? asJson(route, { data: [{ id: "dall-e-3" }, { id: "whisper-1" }] })
+      : asJson(route, OPENAI.answers),
+  )
+
+  await page.goto("/settings")
+  await page.getByRole("button", { name: "ChatGPT", exact: true }).click()
+  await page.getByLabel("API key").fill(NOT_A_KEY)
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+
+  await expect(page.getByText("none of the models it reaches")).toBeVisible()
 })
 
 for (const wire of [CLAUDE, GEMINI, OPENAI]) {

@@ -12,9 +12,16 @@ import { keptForGood } from "~/journal/kept"
 import { getOrUndefined } from "~/lib/monad"
 import { SCHEMES, scheme, setScheme } from "~/lib/theme"
 
+/**
+ * Everything set once and then left alone, one section at a time.
+ *
+ * The rule between them belongs to the container rather than being drawn
+ * between the sections by hand: written that way it follows whichever sections
+ * are actually there, and one that hides itself takes its line with it.
+ */
 export default function Settings(): JSX.Element {
   return (
-    <div class="flex max-w-md flex-col gap-6">
+    <div class="flex max-w-md flex-col gap-6 [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-6">
       <section class="flex flex-col gap-2">
         <h2 class="text-sm font-medium">{t("settings.language")}</h2>
         <div class="flex flex-wrap gap-2">

@@ -291,6 +291,7 @@ export const anthropic: Talker = {
   id: "anthropic",
   label: "Claude",
   host: "api.anthropic.com",
+  modelsFrom: "https://platform.claude.com/docs/en/about-claude/models/overview",
   keysFrom: "https://platform.claude.com/settings/keys",
   defaultModel: "claude-opus-5",
   models,
