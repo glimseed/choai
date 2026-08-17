@@ -2,7 +2,10 @@
  * The demo journal in English.
  *
  * Covers all five account types so that the balance sheet and the income
- * statement both have something to report.
+ * statement both have something to report. Each is declared once, on the name
+ * at the top of its branch, because a kind travels down to everything under it —
+ * hledger would infer these particular names on its own, and saying them is what
+ * makes this a journal worth copying rather than one that happens to work.
  *
  * The `D` directive gives the amounts their styling — symbol in front, thousands
  * grouped — and stands as the commodity for any amount written without one,
@@ -12,14 +15,11 @@ export const demoEn = `; a demo journal
 
 D $1,000.00
 
-account assets:bank:checking    ; type:A
-account assets:cash             ; type:A
-account liabilities:card        ; type:L
-account equity:opening          ; type:E
-account income:salary           ; type:R
-account expenses:rent           ; type:X
-account expenses:food           ; type:X
-account expenses:transport      ; type:X
+account assets                  ; type:A
+account liabilities             ; type:L
+account equity                  ; type:E
+account income                  ; type:R
+account expenses                ; type:X
 
 2026-01-01 opening balance
     assets:bank:checking      $4200.00
