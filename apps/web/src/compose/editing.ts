@@ -46,9 +46,23 @@ export const startEditingEntry = (transaction: Transaction): void => {
   setTrouble(None)
 }
 
+/**
+ * Let the entry go, and give the space back if it was being used to show it.
+ *
+ * The panel is not the editor. It draws whatever the dock is lent to, and the
+ * editor draws nothing without an entry — so letting go without handing the
+ * space back leaves the panel open over the journal with nothing in it, and
+ * saving, cancelling and removing all end that way.
+ *
+ * Only when the dock is still showing this. Something else taking the panel is
+ * what calls this in the first place: a proposal arriving takes the space, and
+ * closing what took it would put the reader back where they were rather than
+ * where they were being sent.
+ */
 export const stopEditingEntry = (): void => {
   setWhere(undefined)
   setTrouble(None)
+  if (dock.is("editing")) dock.close()
 }
 
 export const editEntry = (written: string): void => {
