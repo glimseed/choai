@@ -16,7 +16,8 @@ export const TALKERS: Readonly<Record<Which, Talker>> = {
   openai,
 }
 
-export const EVERYONE: readonly Talker[] = [anthropic, gemini, openai]
+/** In the order they are offered. */
+export const EVERYONE: readonly Talker[] = [openai, anthropic, gemini]
 
 /** Whoever is meant, or Claude, which is what this app is named after. */
 export const talkerFor = (which: string | undefined): Talker =>
