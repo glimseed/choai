@@ -16,7 +16,7 @@ import type { JsonSchema, Result } from "~/lib/monad"
  * would quietly drop the rest.
  */
 
-export type Which = "anthropic" | "gemini"
+export type Which = "anthropic" | "gemini" | "openai"
 
 /** One part of a turn, in whatever shape the provider that made it uses. */
 export type Block = Readonly<Record<string, unknown>>
@@ -147,6 +147,12 @@ export interface Talker {
   readonly label: string
   /** Where the reader goes to get a key. Shown beside the box asking for one. */
   readonly keysFrom: string
+  /**
+   * The one host a key typed here is ever sent to, said on the page beside the
+   * box. Here rather than on the screen because a third provider added without
+   * it would quietly claim to be sending somebody's key somewhere it is not.
+   */
+  readonly host: string
   readonly defaultModel: string
   /** Which models this key can reach — and, by answering at all, that it works. */
   readonly models: (key: string) => Promise<Result<readonly Model[], Failure>>

@@ -183,6 +183,58 @@ const GEMINI: Wire = {
   },
 }
 
+const OPENAI: Wire = {
+  label: "ChatGPT",
+  host: "**/api.openai.com/**",
+  toolNamesIn: (body: { tools: readonly { name: string }[] }) => body.tools.map((one) => one.name),
+  /**
+   * There are no roles at the top of an OpenAI conversation — it is one flat
+   * list of items — so the model's own turn is whatever came back from it:
+   * reasoning and calls, not the messages sent in.
+   */
+  returned: (body: { input: readonly Record<string, unknown>[] }) => ({
+    kinds: body.input
+      .filter((item) => item["type"] === "reasoning" || item["type"] === "function_call")
+      .map((item) => String(item["type"])),
+    result: String(body.input.at(-1)?.["output"] ?? ""),
+  }),
+  shownIn: (body: { input: readonly { content?: readonly Record<string, unknown>[] }[] }) => {
+    const url = String(body.input[0]?.content?.[0]?.["image_url"] ?? "")
+    const [head = "", data = ""] = url.split(";base64,")
+    return { mediaType: head.replace(/^data:/, ""), bytes: data.length }
+  },
+  models: { data: [{ id: "gpt-5" }, { id: "gpt-image-1" }, { id: "text-embedding-3-large" }] },
+  wantsTool: {
+    model: "gpt-5",
+    status: "completed",
+    output: [
+      { type: "reasoning", id: "rs_1", encrypted_content: "opaque", summary: [] },
+      {
+        type: "function_call",
+        id: "fc_1",
+        call_id: "call_1",
+        name: "report__incomeStatement",
+        arguments: '{"query":""}',
+      },
+    ],
+  },
+  answers: {
+    model: "gpt-5",
+    status: "completed",
+    output: [{ type: "message", role: "assistant", content: [{ type: "output_text", text: SAID }] }],
+    // The prompt counted whole, cached part included, with the cached part named
+    // separately — a third way of saying the same exchange.
+    usage: { input_tokens: 1000, output_tokens: 50, input_tokens_details: { cached_tokens: 900 } },
+  },
+  refuses: {
+    model: "gpt-5",
+    status: "completed",
+    output: [
+      { type: "message", role: "assistant", content: [{ type: "refusal", refusal: "no" }] },
+    ],
+  },
+}
+
 const asJson = (route: Route, body: unknown, status = 200): Promise<void> =>
   route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) })
 
@@ -697,7 +749,78 @@ test("a model with little room is asked for little, and thinks less", async ({ p
   expect(sent.thinking.budget_tokens).toBeGreaterThanOrEqual(1024)
 })
 
-for (const wire of [CLAUDE, GEMINI]) {
+/**
+ * OpenAI publishes an id, a date and an owner, and nothing else — no
+ * modalities, no word about tools, no way to tell a language model from a
+ * voice. So the names decide, as they do for Google, and this is the fixture
+ * that says which names.
+ */
+const OPENAI_LISTS = {
+  data: [
+    { id: "gpt-5" },
+    { id: "gpt-5-mini" },
+    { id: "o4-mini" },
+    { id: "gpt-4.1" },
+    // Not for talking to.
+    { id: "gpt-image-1" },
+    { id: "gpt-4o-audio-preview" },
+    { id: "gpt-4o-realtime-preview" },
+    { id: "gpt-4o-transcribe" },
+    { id: "gpt-4o-mini-tts" },
+    { id: "gpt-4o-search-preview" },
+    { id: "text-embedding-3-large" },
+    { id: "omni-moderation-latest" },
+    { id: "dall-e-3" },
+    { id: "whisper-1" },
+    { id: "sora-2" },
+    { id: "codex-mini-latest" },
+    { id: "chatgpt-4o-latest" },
+    // Old enough to be listed and fail at the first thing asked of it.
+    { id: "gpt-3.5-turbo" },
+    { id: "o1-mini" },
+    { id: "davinci-002" },
+  ],
+}
+
+test("ChatGPT: only the models for talking to are offered", async ({ page }) => {
+  await page.route(OPENAI.host, (route) =>
+    route.request().method() === "GET" ? asJson(route, OPENAI_LISTS) : asJson(route, OPENAI.answers),
+  )
+
+  await connect(page, OPENAI)
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+
+  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+    "o4-mini",
+    "gpt-5-mini",
+    "gpt-5",
+    "gpt-4.1",
+  ])
+})
+
+/**
+ * Nothing of these books is left at the other end.
+ *
+ * `store` defaults to true, which would keep a copy of whatever was asked on a
+ * server this app otherwise never uses — and what is asked here is somebody's
+ * journal. It is the one field in the request that is about them rather than
+ * about the answer, so it is worth a test that would notice it going missing.
+ */
+test("ChatGPT: the conversation is not kept at the other end", async ({ page }) => {
+  const asked = await answerWith(page, OPENAI, (route) => asJson(route, OPENAI.answers))
+
+  await connect(page, OPENAI)
+  await openTheDemo(page)
+  await askThat(page, "how did the year go")
+  await expect(page.getByText(SAID)).toBeVisible()
+
+  const sent = asked[0] as { store: boolean; reasoning: { effort: string } }
+  expect(sent.store).toBe(false)
+  expect(sent.reasoning).toEqual({ effort: "medium" })
+})
+
+for (const wire of [CLAUDE, GEMINI, OPENAI]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,
   }) => {

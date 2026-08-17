@@ -261,6 +261,7 @@ const calledIn = (blocks: readonly Block[]): readonly Called[] =>
 export const gemini: Talker = {
   id: "gemini",
   label: "Gemini",
+  host: "generativelanguage.googleapis.com",
   keysFrom: "https://aistudio.google.com/apikey",
   defaultModel: "gemini-2.5-flash",
   models,

@@ -235,7 +235,7 @@ export function AiKeyPanel(): JSX.Element {
   return (
     <section class="flex flex-col gap-2">
       <h2 class="text-sm font-medium">{t("ai.title")}</h2>
-      <p class="text-xs text-muted-foreground">{t("ai.lead", { host: hostOf(talker()) })}</p>
+      <p class="text-xs text-muted-foreground">{t("ai.lead", { host: talker().host })}</p>
 
       <span class="text-xs text-muted-foreground">{t("ai.provider")}</span>
       <div class="flex flex-wrap gap-2">
@@ -316,9 +316,6 @@ export function AiKeyPanel(): JSX.Element {
     </section>
   )
 }
-
-const hostOf = (talker: Talker): string =>
-  talker.id === "gemini" ? "generativelanguage.googleapis.com" : "api.anthropic.com"
 
 /** Every case said in the reader's language, since none of them is a model's own words. */
 export const wording = (failure: Failure): string => {

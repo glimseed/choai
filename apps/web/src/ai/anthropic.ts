@@ -290,6 +290,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
 export const anthropic: Talker = {
   id: "anthropic",
   label: "Claude",
+  host: "api.anthropic.com",
   keysFrom: "https://platform.claude.com/settings/keys",
   defaultModel: "claude-opus-5",
   models,

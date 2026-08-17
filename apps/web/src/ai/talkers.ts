@@ -1,5 +1,6 @@
 import { anthropic } from "./anthropic"
 import { gemini } from "./gemini"
+import { openai } from "./openai"
 import type { Talker, Which } from "./talker"
 
 /**
@@ -12,9 +13,10 @@ import type { Talker, Which } from "./talker"
 export const TALKERS: Readonly<Record<Which, Talker>> = {
   anthropic,
   gemini,
+  openai,
 }
 
-export const EVERYONE: readonly Talker[] = [anthropic, gemini]
+export const EVERYONE: readonly Talker[] = [anthropic, gemini, openai]
 
 /** Whoever is meant, or Claude, which is what this app is named after. */
 export const talkerFor = (which: string | undefined): Talker =>
