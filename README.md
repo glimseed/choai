@@ -120,8 +120,13 @@ exports its functions to JavaScript, in `wasm/hledger-wasm/src/Bindings.hs`.
 - **`choai.dev`** — the app itself, from `apps/web/dist`.
 - **`docs.choai.dev`** — the page that explains it, from `docs/dist`:
   a separate Astro project, English at the root and Japanese at `/ja/`. It loads
-  no fonts, runs no scripts and tracks nobody, which is the same claim it makes
-  on the app's behalf.
+  no fonts and ships no script of its own.
+
+Both names are counted by the host as it serves them, rather than by anything
+written into either site: page views, and where they were reached from. Nothing
+is kept on the device to recognise a return by, so there is no monthly total and
+nobody is followed from one name to the next — which is the counting the privacy
+page describes, on the app's behalf as well as its own.
 
 `scripts/build-site.sh` builds both locally.
 

@@ -19,6 +19,10 @@ bun run build   # -> dist, served at the root of docs.choai.dev
 ```
 
 `PUBLIC_APP` in `.env` says where the app is, so a page built here links to the
-published app and a page run here links to the one on this machine.
-`PUBLIC_CF_BEACON` is the Cloudflare Web Analytics token; with it unset, no
-counter is written into the page at all.
+published app and a page run here links to the one on this machine. It is the
+only setting there is.
+
+Visits are counted by Cloudflare Web Analytics, which is set up against the name
+and injects its own counter as it serves. Nothing here is configured for it and
+nothing in the built output reports anything, which is also why a counter must
+not be written back into the pages: it would be the same visit counted twice.

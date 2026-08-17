@@ -3,10 +3,11 @@
  * Everything every page here has: the head, the look, the way to the other
  * language, and the footer.
  *
- * Styles are inline and there are no fonts to fetch. The one thing that leaves
- * the page is Cloudflare's counter, and only once a token has been set for it —
- * a page that tells the reader what it collects should not have a script
- * waiting on a blank to be filled in.
+ * Styles are inline, there are no fonts to fetch, and nothing written here
+ * reaches off the page at all. Visits are counted by the host on the way out,
+ * which puts its own counter into a name it is already serving — so a counter
+ * written in here as well would be the same visit counted twice, and there is
+ * nothing in this file to keep in step with it.
  */
 import type { Words } from "./words"
 import "./site.css"
@@ -18,7 +19,6 @@ interface Props {
 }
 
 const { words, heading } = Astro.props
-const BEACON = import.meta.env.PUBLIC_CF_BEACON ?? ""
 
 /** Where all of this is, app and site together, for anyone who wants to read it
  * or run their own. */
@@ -50,15 +50,6 @@ const other = ja ? inEnglish : `/ja${inEnglish}`
     <meta property="og:type" content="website" />
     <link rel="alternate" hreflang="en" href={inEnglish} />
     <link rel="alternate" hreflang="ja" href={`/ja${inEnglish}`.replace(/\/$/, "/")} />
-    {
-      BEACON !== "" && (
-        <script
-          defer
-          src="https://static.cloudflareinsights.com/beacon.min.js"
-          data-cf-beacon={`{"token": "${BEACON}"}`}
-        />
-      )
-    }
   </head>
   <body>
     <main>
