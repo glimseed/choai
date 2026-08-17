@@ -62,6 +62,11 @@ export const ja: Dictionary = {
   },
   propose: {
     title: "書かれた、まだ入れていない仕訳",
+    all: "すべて",
+    none: "解除",
+    chosen: "{{ total }} 件中 {{ count }} 件を選択",
+    keepMarking: "{{ count }} 件に印を付けて全部残す",
+    marking: "要確認のものは {{ tag }} タグを付けて記帳します。あとから検索で見つけられるので、保留にしなくて済みます。",
     counted: "自信あり {{ sure }} 件、要確認 {{ unsure }} 件",
     worthALook: "要確認",
     taken: "これは帳簿から取り除かれます。",

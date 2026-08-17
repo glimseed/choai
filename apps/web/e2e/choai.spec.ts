@@ -255,3 +255,119 @@ test("a payee asked about twice is asked about once", async ({ page }) => {
   expect(answered.ok).toBe(true)
   if (answered.ok) expect(answered.value.map((one) => one.to)).toEqual(["Grocer", "Cafe"])
 })
+
+/**
+ * A statement too long to write out in one reply is still one decision.
+ *
+ * Offering in parts is the fallback for a small output window, and the thing it
+ * must not cost is the review: eight proposals would be eight times somebody is
+ * asked, about a statement they think of as one.
+ */
+test("a proposal offered in parts arrives as one proposal", async ({ page }) => {
+  await openTheDemo(page)
+
+  const built = await page.evaluate(async () => {
+    const chunk = (from: number) =>
+      Array.from({ length: 3 }, (_, at) => ({
+        date: `2026-07-${String(from + at).padStart(2, "0")}`,
+        payee: `Shop ${from + at}`,
+        postings: [
+          { account: "expenses:food", amount: "$5.00" },
+          { account: "assets:bank:checking" },
+        ],
+      }))
+
+    const first = await window.choai.transaction.propose({ transactions: chunk(1) })
+    if (!first.ok) return { failed: JSON.stringify(first.error) }
+
+    const second = await window.choai.transaction.propose({ transactions: chunk(4), into: first.value.id })
+    if (!second.ok) return { failed: JSON.stringify(second.error) }
+
+    const all = await window.choai.proposal.list({})
+    return {
+      sameId: second.value.id === first.value.id,
+      items: second.value.items.length,
+      reads: second.value.reads,
+      outstanding: all.ok ? all.value.length : -1,
+    }
+  })
+
+  expect(built).toEqual({ sameId: true, items: 6, reads: true, outstanding: 1 })
+})
+
+/** Adding to a proposal that is gone is refused rather than quietly started afresh. */
+test("adding to a proposal that has gone says so", async ({ page }) => {
+  await openTheDemo(page)
+
+  const refused = await page.evaluate(() =>
+    window.choai.transaction.propose({
+      transactions: [
+        {
+          date: "2026-07-01",
+          payee: "Shop",
+          postings: [
+            { account: "expenses:food", amount: "$5.00" },
+            { account: "assets:bank:checking" },
+          ],
+        },
+      ],
+      into: "no-such-id",
+    }),
+  )
+
+  expect(refused.ok).toBe(false)
+  if (!refused.ok) expect(refused.error.at).toBe("no-such-proposal")
+})
+
+/**
+ * The doubt written into the journal rather than held in a panel.
+ *
+ * A proposal is gone in half an hour and gone on reload; a tag is in the text,
+ * and hledger finds it again on its own. What is checked here is that last part
+ * — that the tag is hledger's, answering hledger's own query, and not a string
+ * that merely looks like one.
+ */
+test("keeping everything marks the guesses, and hledger finds them again", async ({ page }) => {
+  await openTheDemo(page)
+
+  const kept = await page.evaluate(async () => {
+    const made = await window.choai.transaction.propose({
+      transactions: [
+        {
+          date: "2026-07-01",
+          payee: "Known Grocer",
+          confidence: 1,
+          postings: [
+            { account: "expenses:food", amount: "$12.00" },
+            { account: "assets:bank:checking" },
+          ],
+        },
+        {
+          date: "2026-07-02",
+          payee: "Mystery Charge",
+          confidence: 0.4,
+          why: "no idea what this is",
+          postings: [
+            { account: "expenses:food", amount: "$40.00" },
+            { account: "assets:bank:checking" },
+          ],
+        },
+      ],
+    })
+    if (!made.ok) return { failed: JSON.stringify(made.error) }
+
+    const done = await window.choai.proposal.apply({ id: made.value.id, markUnsure: true })
+    if (!done.ok) return { failed: JSON.stringify(done.error) }
+
+    const flagged = await window.choai.report.entries({ query: "tag:needs-checking" })
+    const everything = await window.choai.journal.summary({})
+    return {
+      kept: done.value.kept,
+      now: everything.ok ? everything.value.transactions : -1,
+      found: flagged.ok ? flagged.value.items.map((one) => one.description) : ["failed"],
+    }
+  })
+
+  // Both went in; only the guess carries the tag.
+  expect(kept).toEqual({ kept: 2, now: 11, found: ["Mystery Charge"] })
+})

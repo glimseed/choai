@@ -30,11 +30,15 @@ export interface Applied {
 export const apply = async (args: {
   readonly id: string
   readonly only?: readonly number[]
+  readonly markUnsure?: boolean
 }): Promise<Result<Applied, Hitch>> => {
   const found = show(args.id)
   if (found === undefined) return Err({ at: "no-such-proposal", id: args.id })
 
-  const done = await applyProposal(args.id, args.only)
+  const done = await applyProposal(args.id, {
+    ...(args.only === undefined ? {} : { only: args.only }),
+    ...(args.markUnsure === undefined ? {} : { marking: args.markUnsure }),
+  })
   return done.ok
     ? Ok({
         kept: args.only === undefined ? found.items.length : args.only.length,

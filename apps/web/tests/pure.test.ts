@@ -5,6 +5,7 @@ import { emptyDraft, isWritable, whatIsMissing } from "~/compose/draft"
 import { digits, fields, listOf, nothing, oneOf, spare, text } from "~/lib/monad/shape"
 import { looksTabular, rowsOf } from "~/lib/csv"
 import { textOf } from "~/lib/text"
+import { allOf, anchorAfter, noneOf, tickedBy } from "~/journal/ticking"
 import { narrowed } from "~/reports/ask"
 import { PERIODS, TERMS, periodByTerm } from "~/reports/periods"
 
@@ -192,5 +193,44 @@ describe("reading a file's bytes", () => {
 
   test("UTF-8 is tried first, since plenty of it is decodable as Shift_JIS into nonsense", () => {
     expect(textOf(utf8("スターバックス"))).toBe("スターバックス")
+  })
+})
+
+describe("ticking a run of them", () => {
+  const set = (...of: number[]) => new Set(of)
+  const sorted = (of: ReadonlySet<number>) => [...of].sort((a, b) => a - b)
+
+  test("a plain click toggles the one clicked", () => {
+    expect(sorted(tickedBy(set(), undefined, 3, false))).toEqual([3])
+    expect(sorted(tickedBy(set(1, 3), 1, 3, false))).toEqual([1])
+  })
+
+  test("a shifted click ticks everything back to where the run started", () => {
+    expect(sorted(tickedBy(set(2), 2, 5, true))).toEqual([2, 3, 4, 5])
+  })
+
+  test("it reaches backwards as readily as forwards", () => {
+    expect(sorted(tickedBy(set(5), 5, 2, true))).toEqual([2, 3, 4, 5])
+  })
+
+  test("started from an unticked one, the run unticks", () => {
+    expect(sorted(tickedBy(set(0, 1, 2, 3), undefined, 1, false))).toEqual([0, 2, 3])
+    expect(sorted(tickedBy(set(0, 2, 3), 1, 3, true))).toEqual([0])
+  })
+
+  test("the run's start stays put, so a second shifted click narrows the same run", () => {
+    expect(anchorAfter(undefined, 4, false)).toBe(4)
+    expect(anchorAfter(4, 9, true)).toBe(4)
+    expect(sorted(tickedBy(tickedBy(set(4), 4, 9, true), 4, 6, true))).toEqual([4, 5, 6, 7, 8, 9])
+  })
+
+  test("a shifted click with no run started behaves as a plain one", () => {
+    expect(sorted(tickedBy(set(), undefined, 7, true))).toEqual([7])
+  })
+
+  test("all and none", () => {
+    expect(sorted(allOf(3))).toEqual([0, 1, 2])
+    expect(sorted(allOf(0))).toEqual([])
+    expect(noneOf().size).toBe(0)
   })
 })

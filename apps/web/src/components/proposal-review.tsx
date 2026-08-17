@@ -4,6 +4,7 @@ import { TroubleNote } from "~/components/trouble-note"
 import { Button } from "~/components/ui/button"
 import {
   SURE,
+  UNSETTLED,
   apply,
   drop,
   sureIn,
@@ -12,6 +13,7 @@ import {
   type Proposal,
   type Refusal,
 } from "~/journal/proposals"
+import { allOf, anchorAfter, noneOf, tickedBy } from "~/journal/ticking"
 import { t } from "~/i18n"
 
 /**
@@ -21,6 +23,11 @@ import { t } from "~/i18n"
  * a hundred entries with three worth arguing about is one glance and one press,
  * with the three still there afterwards. Nothing is kept until the press: what
  * is on this screen is the text, exactly as it would be written.
+ *
+ * At a statement's length the tick itself becomes the work, which is what the
+ * run of them above the list is for — and what the second way of pressing is
+ * for. Keeping everything and marking the guesses puts the doubt in the journal
+ * rather than in a panel that will not outlive the afternoon.
  */
 export function ProposalReview(): JSX.Element {
   return (
@@ -29,38 +36,49 @@ export function ProposalReview(): JSX.Element {
 }
 
 function One(props: { proposal: Proposal }): JSX.Element {
-  const [ticked, setTicked] = createSignal<readonly number[]>([])
+  const [ticked, setTicked] = createSignal<ReadonlySet<number>>(new Set())
+  const [anchor, setAnchor] = createSignal<number | undefined>(undefined)
   const [busy, setBusy] = createSignal(false)
   const [refused, setRefused] = createSignal<Refusal | undefined>(undefined)
 
-  /** A rebased proposal is a different one; what was ticked on the last is not this. */
+  /**
+   * A proposal rebased is a different one, and a proposal added to is a longer
+   * one; either way what was ticked was ticked about something else. Watching
+   * the object rather than its id catches both, since each is made afresh.
+   */
   createEffect(
     on(
-      () => props.proposal.id,
+      () => props.proposal,
       () => {
-        setTicked(sureIn(props.proposal))
+        setTicked(new Set(sureIn(props.proposal)))
+        setAnchor(undefined)
         setRefused(undefined)
       },
     ),
   )
 
+  const total = (): number => props.proposal.items.length
   const sure = (): number => sureIn(props.proposal).length
-  const unsure = (): number => props.proposal.items.length - sure()
+  const unsure = (): number => total() - sure()
   const reads = (): boolean => props.proposal.reads.ok
 
-  const toggle = (at: number): void => {
-    setTicked((was) => (was.includes(at) ? was.filter((one) => one !== at) : [...was, at]))
+  const pick = (at: number, asRun: boolean): void => {
+    setTicked((was) => tickedBy(was, anchor(), at, asRun))
+    setAnchor((was) => anchorAfter(was, at, asRun))
+  }
+
+  const decide = async (how: { only?: readonly number[]; marking?: boolean }): Promise<void> => {
+    setBusy(true)
+    setRefused(undefined)
+    const done = await apply(props.proposal.id, how)
+    setBusy(false)
+    if (!done.ok) setRefused(done.error)
   }
 
   const keep = async (): Promise<void> => {
-    const only = ticked()
+    const only = [...ticked()].sort((a, b) => a - b)
     if (only.length === 0) return
-    setBusy(true)
-    setRefused(undefined)
-    const all = only.length === props.proposal.items.length
-    const done = await apply(props.proposal.id, all ? undefined : only)
-    setBusy(false)
-    if (!done.ok) setRefused(done.error)
+    await decide(only.length === total() ? {} : { only })
   }
 
   return (
@@ -84,14 +102,42 @@ function One(props: { proposal: Proposal }): JSX.Element {
             {(why) => <p class="text-xs text-destructive">{wording(why())}</p>}
           </Show>
 
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="text-muted-foreground">
+              {t("propose.chosen", { count: ticked().size, total: total() })}
+            </span>
+            <Button size="sm" variant="ghost" disabled={busy()} onClick={() => setTicked(allOf(total()))}>
+              {t("propose.all")}
+            </Button>
+            <Button size="sm" variant="ghost" disabled={busy()} onClick={() => setTicked(noneOf())}>
+              {t("propose.none")}
+            </Button>
+            <Show when={unsure() > 0}>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy()}
+                onClick={() => setTicked(new Set(sureIn(props.proposal)))}
+              >
+                {t("propose.onlySure")}
+              </Button>
+            </Show>
+          </div>
+
           <For each={props.proposal.items}>
             {(item, at) => (
-              <label class="flex cursor-pointer items-start gap-2 rounded-md border border-border p-2">
+              <label class="flex cursor-pointer select-none items-start gap-2 rounded-md border border-border p-2">
                 <input
                   type="checkbox"
                   class="mt-1"
-                  checked={ticked().includes(at())}
-                  onChange={() => toggle(at())}
+                  checked={ticked().has(at())}
+                  /* The tick is ours to decide, so the browser's own is stopped
+                     and the box follows the signal — which is what lets a
+                     shifted click set forty of them at once. */
+                  onClick={(event) => {
+                    event.preventDefault()
+                    pick(at(), event.shiftKey)
+                  }}
                 />
                 <span class="flex min-w-0 flex-1 flex-col gap-1">
                   {/* A removal is shown as the lines that would go, struck
@@ -118,25 +164,32 @@ function One(props: { proposal: Proposal }): JSX.Element {
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2 border-t p-3">
-        <Button
-          size="sm"
-          disabled={busy() || !reads() || ticked().length === 0}
-          onClick={() => void keep()}
-        >
-          {t("propose.keep", { count: ticked().length })}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={busy()}
-          onClick={() => setTicked(sureIn(props.proposal))}
-        >
-          {t("propose.onlySure")}
-        </Button>
-        <Button size="sm" variant="ghost" disabled={busy()} onClick={() => drop(props.proposal.id)}>
-          {t("propose.discard")}
-        </Button>
+      <div class="flex flex-col gap-2 border-t p-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            disabled={busy() || !reads() || ticked().size === 0}
+            onClick={() => void keep()}
+          >
+            {t("propose.keep", { count: ticked().size })}
+          </Button>
+          <Show when={unsure() > 0}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy() || !reads()}
+              onClick={() => void decide({ marking: true })}
+            >
+              {t("propose.keepMarking", { count: unsure() })}
+            </Button>
+          </Show>
+          <Button size="sm" variant="ghost" disabled={busy()} onClick={() => drop(props.proposal.id)}>
+            {t("propose.discard")}
+          </Button>
+        </div>
+        <Show when={unsure() > 0}>
+          <p class="text-xs text-muted-foreground">{t("propose.marking", { tag: UNSETTLED })}</p>
+        </Show>
       </div>
     </div>
   )

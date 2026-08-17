@@ -162,6 +162,7 @@ const removalsFor = (
 export const offer = (args: {
   readonly transactions?: readonly Suggested[]
   readonly remove?: readonly Dropped[]
+  readonly into?: string
 }): Promise<Result<OfferedAll, Hitch>> =>
   withJournal(async (open) => {
     const dropped = args.remove ?? []
@@ -181,6 +182,6 @@ export const offer = (args: {
       })),
     ]
 
-    const made = await propose(items)
+    const made = await propose(items, args.into)
     return made.ok ? Ok(shapeOf(made.value)) : Err(fromRefusal(made.error))
   })

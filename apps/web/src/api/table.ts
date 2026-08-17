@@ -1,4 +1,4 @@
-import { digits, fields, listOf, nothing, spare, text, type Result, type Shape } from "~/lib/monad"
+import { digits, fields, flag, listOf, nothing, spare, text, type Result, type Shape } from "~/lib/monad"
 import * as book from "./capabilities/journal"
 import * as proposal from "./capabilities/proposal"
 import * as remote from "./capabilities/remote"
@@ -170,7 +170,7 @@ export const CAPABILITIES = {
 
   "transaction.propose": {
     summary:
-      "Offer changes to the journal without making them, and find out whether hledger reads the result. This is how to write an entry and how to take one out: offer it, see what comes back, then call proposal.apply. Offer everything you mean to change in one call rather than one at a time — the whole journal is re-read per call, so a hundred calls is a hundred re-reads. Say how sure you are of each with confidence, so the doubtful ones can be picked out. To correct an entry, remove it and add the corrected one in the same call: both are shown together and kept together.",
+      "Offer changes to the journal without making them, and find out whether hledger reads the result. This is how to write an entry and how to take one out: offer it, see what comes back, then call proposal.apply. Offer everything you mean to change in one call rather than one at a time — the whole journal is re-read per call, so a hundred calls is a hundred re-reads. Say how sure you are of each with confidence, so the doubtful ones can be picked out. To correct an entry, remove it and add the corrected one in the same call: both are shown together and kept together. If a statement is longer than you can write out in one reply, offer what fits and then give `into` on the calls after it: they add to the same proposal rather than making more of them, and the reader is asked once about the lot.",
     takes: fields({
       transactions: spare(listOf("Transactions to write, in the order they should appear.", fields(SUGGESTED))),
       remove: spare(
@@ -181,6 +181,11 @@ export const CAPABILITIES = {
             confidence: spare(digits("How sure you are, from 0 to 1.")),
             why: spare(text("Why it should go, in a phrase.")),
           }),
+        ),
+      ),
+      into: spare(
+        text(
+          "The id of a proposal to add these to, from an earlier transaction.propose. Leave it out to start a new one. Use it only to finish something too long to write in one reply — everything meant together belongs in one call.",
         ),
       ),
     }),
@@ -218,6 +223,11 @@ export const CAPABILITIES = {
     takes: fields({
       id: text("The proposal's id."),
       only: spare(listOf("Which entries to keep, by their `at` number. All of them if left out.", digits("An entry's `at` number."))),
+      markUnsure: spare(
+        flag(
+          "Tag the doubtful ones `needs-checking` as they go in, instead of holding them back. Use this when the reader would rather have the whole statement in the journal now and settle the guesses later — they are found again with the query tag:needs-checking. Entries you were sure of are left unmarked.",
+        ),
+      ),
     }),
     writes: true,
     needsJournal: true,

@@ -69,6 +69,11 @@ export const en = {
   },
   propose: {
     title: "Written, not yet kept",
+    all: "All",
+    none: "None",
+    chosen: "{{ count }} of {{ total }} chosen",
+    keepMarking: "Keep all, marking {{ count }}",
+    marking: "The doubtful ones go in tagged {{ tag }}, so they can be found again with a query instead of being held back.",
     counted: "{{ sure }} ready, {{ unsure }} worth a look",
     worthALook: "Worth a look",
     taken: "This one would be taken out.",
