@@ -6,6 +6,10 @@
  * share this — they are the same thing on paper, and giving each its own
  * renderer would only mean three places to fix a heading.
  *
+ * Where else to go is not here: the list beside every page is on the screen
+ * already, so a second one at the foot of each reading would only be the same
+ * list twice.
+ *
  * The date is shown where there is one. The terms carry one because somebody
  * checking them is checking whether they changed; a page about how the app
  * works does not, since it is either true or wrong and a date on it only
@@ -13,22 +17,14 @@
  */
 import Shell from "./Shell.astro"
 import type { Document } from "./document"
-import { READINGS, same } from "./paths"
 import type { Words } from "./words"
 
 interface Props {
   words: Words
   document: Document
-  /** Without the language on the front, so this page can leave itself out below. */
-  here: string
 }
 
-const { words, document, here } = Astro.props
-const ja = words.lang === "ja"
-const at = (path: string): string => (ja ? `/ja${path}` : path)
-
-/** Everywhere else worth going, this page excepted. */
-const onwards = READINGS.filter((reading) => !same(reading.path, here))
+const { words, document } = Astro.props
 ---
 
 <Shell words={words} heading={document.title}>
@@ -56,12 +52,5 @@ const onwards = READINGS.filter((reading) => !same(reading.path, here))
       ))
     }
 
-    {/* Every other page, from the one table, so a page added is a page linked
-        from everywhere without anybody remembering to. */}
-    <nav class="more">
-      {onwards.map((reading) => (
-        <a href={at(reading.path)}>{(ja ? reading.ja : reading.en).title} →</a>
-      ))}
-    </nav>
   </article>
 </Shell>

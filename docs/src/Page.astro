@@ -8,7 +8,6 @@
  * top of the screen where somebody deciding can reach it.
  */
 import Shell from "./Shell.astro"
-import { GUIDES } from "./paths"
 import type { Words } from "./words"
 
 const { words } = Astro.props as { words: Words }
@@ -23,8 +22,7 @@ const APP =
   (import.meta.env.DEV ? "http://localhost:8396" : "https://choai.dev")
 
 const ja = words.lang === "ja"
-const at = (path: string): string =>
-  path.startsWith("/") && ja ? `/ja${path}` : path
+const at = (path: string): string => (path.startsWith("/") && ja ? `/ja${path}` : path)
 ---
 
 <Shell words={words}>
@@ -52,17 +50,4 @@ const at = (path: string): string =>
     }
   </ul>
 
-  <section class="readings">
-    <h2>{words.readingsHeading}</h2>
-    <ul>
-      {
-        GUIDES.map((reading) => (
-          <li>
-            <a href={at(reading.path)}>{(ja ? reading.ja : reading.en).title}</a>
-            <p>{ja ? reading.blurb.ja : reading.blurb.en}</p>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
 </Shell>

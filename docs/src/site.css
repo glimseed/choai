@@ -33,11 +33,40 @@ body {
     "Noto Sans JP", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-main { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+/*
+ * Header across the top, the list of pages down one side, the reading beside
+ * it, and the footer under both.
+ *
+ * One column until there is room for two. The list is short — six entries — so
+ * above the reading it costs a screen's worth of thumb and no more, which is
+ * cheaper than hiding it behind something that would need a script to open.
+ */
+.page { max-width: 54rem; margin: 0 auto; padding: 3rem 1.25rem 4rem;
+  display: grid; gap: 2rem; }
+main { min-width: 0; }
+@media (min-width: 48rem) {
+  .page { grid-template-columns: 13rem 1fr; column-gap: 3rem; align-items: start; }
+  .page > header, .page > footer { grid-column: 1 / -1; }
+  .pages { position: sticky; top: 3rem; }
+}
+
+/*
+ * The list of pages. Quiet until it is the page you are on — the one that is
+ * lit is the only thing here that has to be found at a glance.
+ */
+.pages { display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.925rem; }
+.pages a { color: var(--quiet); text-decoration: none; padding: 0.2rem 0;
+  border-left: 2px solid transparent; padding-left: 0.75rem; margin-left: -0.75rem; }
+.pages a:hover { color: var(--ink); }
+.pages a[aria-current="page"] { color: var(--ink); font-weight: 600;
+  border-left-color: var(--bright); }
+.pages p { margin: 1.25rem 0 0.35rem; font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em; color: var(--quiet); }
 header { display: flex; align-items: center; gap: 0.75rem; }
+header img { flex: none; }
 header img { width: 3.5rem; height: 3.5rem; }
 header a.home { color: inherit; text-decoration: none; }
-h1 { font-size: 1.9rem; line-height: 1.25; margin: 1.75rem 0 0; letter-spacing: -0.01em; }
+h1 { font-size: 1.9rem; line-height: 1.25; margin: 0; letter-spacing: -0.01em; }
 h1, h2 { text-wrap: balance; }
 .lead { color: var(--quiet); font-size: 1.05rem; margin: 0.75rem 0 0; max-width: 33rem; }
 .ways { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 2rem 0 0; }
@@ -65,7 +94,7 @@ ul.points p { margin: 0; color: var(--quiet); font-size: 0.925rem; }
  * around it stays 46rem so the cards on the front keep their two columns; the
  * text simply does not use all of it.
  */
-article { margin-top: 2.5rem; max-width: 33rem; }
+article { max-width: 33rem; }
 article h1 { margin-top: 0; font-size: 1.75rem; }
 article h2 { margin: 2.5rem 0 0.5rem; }
 /* Body text at full ink, and the date the grey one. It was the other way
@@ -75,7 +104,7 @@ article .updated { color: var(--quiet); font-size: 0.85rem; margin-top: 0.5rem; 
 article .intro { font-size: 1.05rem; }
 article .links { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.925rem;
   color: var(--quiet); margin: 0.25rem 0 1rem; }
-footer { margin: 3.5rem 0 0; padding-top: 1.5rem; border-top: 1px solid var(--line);
+footer { margin: 1.5rem 0 0; padding-top: 1.5rem; border-top: 1px solid var(--line);
   color: var(--quiet); font-size: 0.85rem; }
 footer p { margin: 0 0 0.5rem; }
 footer nav { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
@@ -102,9 +131,3 @@ html[lang="ja"] body { line-height: 1.85; }
 html[lang="ja"] article p { line-height: 1.9; line-break: strict; }
 
 ul.points a { display: inline-block; margin-top: 0.5rem; font-size: 0.9rem; color: var(--quiet); }
-.readings { margin: 3.5rem 0 0; }
-.readings ul { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 1.25rem; }
-.readings p { margin: 0.15rem 0 0; color: var(--quiet); font-size: 0.925rem; max-width: 33rem; }
-/* Every other page, at the foot of each one. Quiet: it is a way on, not the point. */
-.more { margin: 3rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--line);
-  display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.925rem; color: var(--quiet); }

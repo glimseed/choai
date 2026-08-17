@@ -1,7 +1,12 @@
 ---
 /**
- * Everything every page here has: the head, the look, the way to the other
- * language, and the footer.
+ * The frame every page here is in: the head, the look, the list of pages, the
+ * way to the other language, and the footer.
+ *
+ * The list of pages is beside the reading on a window with room for it and
+ * above it on one without, and it is on every page including the front. This is
+ * documentation: what else there is to read belongs on the screen at all times,
+ * not at the end of what you happen to be reading.
  *
  * Styles are inline, there are no fonts to fetch, and nothing written here
  * reaches off the page at all. Visits are counted by the host on the way out,
@@ -10,6 +15,7 @@
  * nothing in this file to keep in step with it.
  */
 import type { Words } from "./words"
+import { GUIDES, LEGAL, same } from "./paths"
 import "./site.css"
 
 interface Props {
@@ -39,6 +45,7 @@ const inEnglish = here.replace(/^\/ja(?=\/|$)/, "") || "/"
 
 /** Said as a whole address, which is what anything cataloguing a page expects. */
 const absolute = (path: string): string => new URL(path, Astro.site).href
+
 const title = heading === undefined ? words.title : `${heading} — choai`
 const at = (path: string): string => (ja ? `/ja${path}` : path)
 
@@ -47,6 +54,12 @@ const at = (path: string): string => (ja ? `/ja${path}` : path)
  * reading the terms who switches wants the terms, not to start again.
  */
 const other = ja ? inEnglish : `/ja${inEnglish}`
+
+/** The two runs of pages, as they are listed. */
+const runs = [
+  { heading: words.readingsHeading, pages: GUIDES },
+  { heading: words.legalHeading, pages: LEGAL },
+]
 ---
 
 <!doctype html>
@@ -70,14 +83,37 @@ const other = ja ? inEnglish : `/ja${inEnglish}`
     <link rel="alternate" hreflang="x-default" href={absolute(inEnglish)} />
   </head>
   <body>
-    <main>
+    <div class="page">
+      {/* Outside main, so that the banner is a banner and the reading is the
+          reading — a screen reader is told which is which by where they are. */}
       <header>
         <img src="/favicon.svg" alt="" width="56" height="56" />
         <a class="home" href={at("/")}><strong>choai</strong></a>
         <a class="switch" href={other}>{words.other.label}</a>
       </header>
 
-      <slot />
+      <nav class="pages" aria-label={words.readingsHeading}>
+        <a href={at("/")} aria-current={same(inEnglish, "/") ? "page" : undefined}>
+          {words.homeTitle}
+        </a>
+        {
+          runs.map((run) => (
+            <>
+              <p>{run.heading}</p>
+              {run.pages.map((reading) => (
+                <a
+                  href={at(reading.path)}
+                  aria-current={same(inEnglish, reading.path) ? "page" : undefined}
+                >
+                  {(ja ? reading.ja : reading.en).title}
+                </a>
+              ))}
+            </>
+          ))
+        }
+      </nav>
+
+      <main><slot /></main>
 
       <footer>
         <p><strong>{words.licenceHeading}</strong></p>
@@ -85,10 +121,8 @@ const other = ja ? inEnglish : `/ja${inEnglish}`
         <p>{words.builtWith}</p>
         <nav>
           <a href={SOURCE} rel="noreferrer">{words.sourceTitle}</a>
-          <a href={at("/terms/")}>{words.termsTitle}</a>
-          <a href={at("/privacy/")}>{words.privacyTitle}</a>
         </nav>
       </footer>
-    </main>
+    </div>
   </body>
 </html>
