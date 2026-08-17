@@ -1,4 +1,4 @@
-import { Err, Ok, type Result } from "~/lib/monad"
+import { Err, Ok, type JsonSchema, type Result } from "~/lib/monad"
 import {
   readJson,
   reach,
@@ -161,7 +161,7 @@ const calledIn = (blocks: readonly Block[]): readonly Called[] =>
       {
         id: String(item["call_id"] ?? item["id"] ?? item["name"]),
         name: String(item["name"] ?? ""),
-        input: typeof raw === "string" ? read(raw) : (raw ?? {}),
+        input: withoutNulls(typeof raw === "string" ? read(raw) : (raw ?? {})),
       },
     ]
   })
@@ -173,6 +173,53 @@ const read = (raw: string): unknown => {
   } catch {
     return { raw }
   }
+}
+
+/**
+ * A schema as strict mode here wants it.
+ *
+ * Strict means every key of `properties` must appear in `required`: there is no
+ * such thing as a field that may be left out. What is spare everywhere else is
+ * said here as a field always asked for that may be null — so that is what it
+ * becomes on the way out, and the nulls are dropped again on the way back in.
+ *
+ * The alternative is to stop asking for strict, and strict is the only thing
+ * keeping a model from inventing an argument or quietly omitting one. This is
+ * the same arrangement `gemini.ts` has with `additionalProperties`: the schema
+ * is written once and spelled each provider's way at the edge.
+ */
+const strictly = (schema: JsonSchema, spare = false): Readonly<Record<string, unknown>> => {
+  const { properties, items, required, type, ...rest } = schema
+  return {
+    ...rest,
+    type: spare ? [type, "null"] : type,
+    ...(items === undefined ? {} : { items: strictly(items) }),
+    ...(properties === undefined
+      ? {}
+      : {
+          properties: Object.fromEntries(
+            Object.entries(properties).map(([name, one]) => [
+              name,
+              strictly(one, !(required ?? []).includes(name)),
+            ]),
+          ),
+          required: Object.keys(properties),
+        }),
+  }
+}
+
+/**
+ * A null here is how strict mode says a spare field was left out, so that is
+ * what it is turned back into before it travels inward — absent, not null.
+ */
+const withoutNulls = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(withoutNulls)
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(
+    Object.entries(value as Readonly<Record<string, unknown>>)
+      .filter(([, one]) => one !== null)
+      .map(([name, one]) => [name, withoutNulls(one)]),
+  )
 }
 
 const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
@@ -193,7 +240,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
           type: "function",
           name: tool.name,
           description: tool.description,
-          parameters: tool.schema,
+          parameters: strictly(tool.schema),
           strict: true,
         })),
         max_output_tokens: room,

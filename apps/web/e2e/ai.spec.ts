@@ -1064,6 +1064,95 @@ test("ChatGPT: no effort is asked for, because not every model takes one", async
   expect(asked[0]).not.toHaveProperty("reasoning")
 })
 
+/**
+ * Strict mode here has no notion of a field that may be left out.
+ *
+ * Every key of `properties` must be in `required`, and a schema saying
+ * otherwise is refused outright — the whole request, not the one tool. What is
+ * spare everywhere else goes over as always-asked-for and nullable, and the
+ * nulls are dropped again coming back, so nothing inward ever sees one.
+ *
+ * Checked on the wire because a schema reads as correct right up until the
+ * provider disagrees.
+ */
+test("ChatGPT: every argument is required, and the spare ones may be null", async ({ page }) => {
+  const asked = await answerWith(page, OPENAI, (route) => asJson(route, OPENAI.answers))
+
+  await connect(page, OPENAI)
+  await openTheDemo(page)
+  await askThat(page, "how did the year go")
+  await expect(page.getByText(SAID)).toBeVisible()
+
+  type Schema = Readonly<Record<string, unknown>>
+  const sent = asked[0] as { tools: readonly { name: string; parameters: Schema }[] }
+
+  const propertiesOf = (schema: Schema): Readonly<Record<string, Schema>> | undefined =>
+    schema["properties"] as Readonly<Record<string, Schema>> | undefined
+
+  const everywhere = (schema: Schema): void => {
+    const properties = propertiesOf(schema)
+    if (properties === undefined) return
+    expect(schema["required"]).toEqual(Object.keys(properties))
+    Object.values(properties).forEach((one) => {
+      const items = one["items"] as Schema | undefined
+      if (items !== undefined) everywhere(items)
+      everywhere(one)
+    })
+  }
+
+  sent.tools.forEach((tool) => everywhere(tool.parameters))
+
+  // journal.similar is the one that was refused: descriptions is asked for and
+  // limit may be left out, so both are in required and only the second may be
+  // null.
+  const similar = sent.tools.find((one) => one.name === "journal__similar")
+  expect(similar).toBeDefined()
+  const asked_ = propertiesOf(similar!.parameters)!
+  expect(similar!.parameters["required"]).toEqual(["descriptions", "limit"])
+  expect(asked_["descriptions"]!["type"]).toBe("array")
+  expect(asked_["limit"]!["type"]).toEqual(["number", "null"])
+})
+
+/**
+ * A null coming back is how strict mode says "left out", and it stops at the
+ * edge. Nothing inward has ever had to know about one, and a capability handed
+ * `{limit: null}` would refuse it as not a number.
+ */
+test("ChatGPT: a null for a spare argument is an absent one by the time it runs", async ({
+  page,
+}) => {
+  await answerWith(page, OPENAI, (route, sofar) =>
+    asJson(
+      route,
+      sofar === 1
+        ? {
+            model: "gpt-5",
+            status: "completed",
+            output: [
+              {
+                type: "function_call",
+                id: "fc_1",
+                call_id: "call_1",
+                name: "journal__similar",
+                // Every key given, the spare one as null, which is the only way
+                // strict mode allows it to be left out.
+                arguments: '{"descriptions":["Grocer"],"limit":null}',
+              },
+            ],
+          }
+        : OPENAI.answers,
+    ),
+  )
+
+  await connect(page, OPENAI)
+  await openTheDemo(page)
+  await askThat(page, "what do I usually call the grocer")
+
+  // It ran, rather than coming back as an argument of the wrong type.
+  await expect(page.getByText("Looked at journal.similar")).toBeVisible()
+  await expect(page.getByText(SAID)).toBeVisible()
+})
+
 for (const wire of [CLAUDE, GEMINI, OPENAI]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,
