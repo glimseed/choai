@@ -1,4 +1,4 @@
-import { For, Show, createResource, createSignal, type JSX } from "solid-js"
+import { For, Show, createEffect, createResource, createSignal, type JSX } from "solid-js"
 
 import { soundOut } from "~/ai/check"
 import { forgetKey, keepKey, keepListed, keepModel, keepWhich, key, listed, model, which } from "~/ai/kept"
@@ -42,6 +42,8 @@ export function AiKeyPanel(): JSX.Element {
   const [said, setSaid] = createSignal<string | undefined>(undefined)
   const [failure, setFailure] = createSignal<Failure | undefined>(undefined)
 
+  let box: HTMLSelectElement | undefined
+
   const typing = (): string => typed() ?? saved() ?? ""
 
   /**
@@ -61,6 +63,22 @@ export function AiKeyPanel(): JSX.Element {
   }
 
   const picking = (): string => picked() ?? named()?.id ?? talker().defaultModel
+
+  /**
+   * The chosen one, said to the box after its options exist.
+   *
+   * What fills the picker and what selects within it are read from the database
+   * separately and do not arrive together. Bound as a `value` prop, the choice
+   * is applied whenever it changes — including while the list is still the one
+   * option it started with, where the browser has nothing to select and falls
+   * back to the first. Depending on the list as well as the choice, and writing
+   * it after the render that added them, is what makes the two agree.
+   */
+  createEffect(() => {
+    const want = picking()
+    const listed = choices()
+    if (box !== undefined && listed.some((one) => one.id === want)) box.value = want
+  })
 
   /**
    * Whatever happens, the panel comes back.
@@ -229,9 +247,9 @@ export function AiKeyPanel(): JSX.Element {
       <label class="flex flex-col gap-1">
         <span class="text-xs text-muted-foreground">{t("ai.model")}</span>
         <select
+          ref={box}
           class="h-8 rounded-md border border-border bg-transparent px-2 text-sm"
           disabled={busy()}
-          value={picking()}
           onChange={(event) => setPicked(event.currentTarget.value)}
         >
           <For each={choices()}>{(one) => <option value={one.id}>{one.label}</option>}</For>

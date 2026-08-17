@@ -440,6 +440,30 @@ test("a check that goes wrong gives the panel back", async ({ page }) => {
   ])
 })
 
+/**
+ * What was chosen is what is shown on the way back.
+ *
+ * The picker is filled from one place and set from another — the models a key
+ * last reached, and the model last saved — and they do not arrive together. A
+ * select whose value is set while its options are still the old ones quietly
+ * falls back to the first of them, which is how a saved choice becomes the
+ * newest model on every reload without anything having gone wrong.
+ */
+test("the model saved is the model shown after a reload", async ({ page }) => {
+  await answerWith(page, CLAUDE, (route) => asJson(route, CLAUDE.answers))
+
+  await connect(page, CLAUDE)
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+
+  await page.getByLabel("Model").selectOption("claude-sonnet-4-5")
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+  await expect(page.getByText("Claude Sonnet 4.5").last()).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByLabel("Model")).toHaveValue("claude-sonnet-4-5")
+})
+
 for (const wire of [CLAUDE, GEMINI]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,

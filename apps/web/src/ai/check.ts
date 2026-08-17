@@ -33,10 +33,15 @@ export interface Sounded {
 const ONE_WORD = "Reply with the single word OK, and call nothing."
 
 /**
- * Long enough for a model to think about nothing much, short enough that a
- * button which has stopped meaning anything says so.
+ * How long a hello is worth waiting for.
+ *
+ * Not the patience a question deserves — a question is worth minutes. This is
+ * somebody standing at a settings screen having pressed a button, and the
+ * answer they need is whether it works, which is spoiled by taking as long as
+ * the thing it is testing. What is being sent is one word's worth of answer, so
+ * anything past this is not slowness, it is something wrong.
  */
-const A_MINUTE = 60_000
+const LONG_ENOUGH = 20_000
 
 export const soundOut = async (
   talker: Talker,
@@ -48,8 +53,17 @@ export const soundOut = async (
     system: instructions(),
     turns: [talker.said(ONE_WORD)],
     tools: toolsOffered(),
+    /**
+     * The same room a real turn gets, though a word is all that is wanted.
+     *
+     * It is a ceiling and not a charge, so there is nothing to save by lowering
+     * it — and something to lose: a model that thinks against a fixed budget is
+     * sent one, and a budget above the ceiling is refused outright. Testing the
+     * shape of a request by sending a shape no real turn uses would be a poor
+     * sort of test.
+     */
     maxTokens: ROOM,
-    within: A_MINUTE,
+    within: LONG_ENOUGH,
   })
 
   return reply.ok ? Ok({ model: reply.value.model, spent: reply.value.spent }) : Err(reply.error)
