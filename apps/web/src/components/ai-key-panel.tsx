@@ -34,7 +34,29 @@ export function AiKeyPanel(): JSX.Element {
 
   const [saved, { refetch }] = createResource(talker, (one) => key(one.id))
   const [named, { refetch: refetchModel }] = createResource(talker, (one) => model(one.id))
-  const [before] = createResource(talker, (one) => listed(one.id))
+  const [before, { mutate: nowListed }] = createResource(talker, (one) => listed(one.id))
+
+  /**
+   * Filling the picker, which is not the same act as proving the key.
+   *
+   * Asking which models a key reaches is free and instant; saying something to
+   * one of them is neither. Only the second is worth a button of its own, so
+   * the first happens wherever a picker is about to be looked at — on saving,
+   * and on arriving with a key already kept and no list from last time. A
+   * picker with one thing in it is not a picker, and there is nothing on the
+   * screen to say that the one thing is a placeholder.
+   *
+   * A failure here is left unsaid on purpose. Nothing was asked for but a save,
+   * the save happened, and whether the key works is the other button's question.
+   */
+  const fill = async (key: string): Promise<readonly Model[]> => {
+    const reachable = await talker().models(key)
+    if (!reachable.ok || reachable.value.length === 0) return []
+    setOffered(reachable.value)
+    nowListed(reachable.value)
+    await keepListed(talker().id, reachable.value)
+    return reachable.value
+  }
   const [typed, setTyped] = createSignal<string | undefined>(undefined)
   const [offered, setOffered] = createSignal<readonly Model[]>([])
   const [picked, setPicked] = createSignal<string | undefined>(undefined)
@@ -106,6 +128,23 @@ export function AiKeyPanel(): JSX.Element {
    * with nothing said, which reads exactly like a request that never returned
    * — and is far harder to tell apart from one.
    */
+  /**
+   * Arriving with a key kept and nothing to choose from.
+   *
+   * Which is where anybody stands the first time after saving, and where every
+   * key saved before this panel kept a list stands for good. Listing is free,
+   * so it is done rather than waited to be asked for — and once, because what
+   * it finds is kept.
+   */
+  createEffect(() => {
+    const key = saved()
+    const kept = before()
+    if (key === undefined || key === "" || before.loading) return
+    if (kept !== undefined && kept.length > 0) return
+    if (offered().length > 0 || busy()) return
+    void fill(key)
+  })
+
   const run = async (work: () => Promise<void>): Promise<void> => {
     setBusy(true)
     setSaid(undefined)
@@ -151,7 +190,12 @@ export function AiKeyPanel(): JSX.Element {
    */
   const save = (): Promise<void> =>
     run(async () => {
-      const one = choices().find((each) => each.id === picking())
+      // Listed first, so what is kept about the chosen model is what the
+      // provider says of it — its ceiling, and what it will take — rather than
+      // a bare id standing in for one.
+      const fresh = await fill(typing())
+      const among = fresh.length > 0 ? fresh : choices()
+      const one = among.find((each) => each.id === picking())
       await keepWhich(talker().id)
       await keepKey(talker().id, typing())
       if (one !== undefined) await keepModel(talker().id, one)
@@ -180,6 +224,7 @@ export function AiKeyPanel(): JSX.Element {
       }
 
       setOffered(reachable.value)
+      nowListed(reachable.value)
       await keepListed(talker().id, reachable.value)
       if (reachable.value.length === 0) {
         // A key that works and reaches nothing this app can drive is not an

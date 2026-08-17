@@ -577,29 +577,27 @@ test("a model the listing says nothing about is sent the newest shape", async ({
 
 /** A chosen model that has gone is said, not replaced. */
 test("a chosen model the key no longer reaches is not swapped for another", async ({ page }) => {
-  const listings = { sofar: 0 }
+  // Flipped when the test is ready for the model to have gone, rather than
+  // counted: saving lists too, so how many times it is asked is not the test's
+  // to know.
+  const account = { has: true }
   const whole = CLAUDE.models as { data: readonly { id: string }[] }
 
   await page.route(CLAUDE.host, (route) => {
     if (route.request().method() !== "GET") return asJson(route, CLAUDE.answers)
-    listings.sofar += 1
-    // The second time, the one that was chosen has gone from the account.
     return asJson(
       route,
-      listings.sofar === 1
-        ? whole
-        : { data: whole.data.filter((one) => one.id !== "claude-sonnet-4-5") },
+      account.has ? whole : { data: whole.data.filter((one) => one.id !== "claude-sonnet-4-5") },
     )
   })
 
   await connect(page, CLAUDE)
-  await page.getByRole("button", { name: "Check the connection" }).click()
-  await expect(page.getByText("answered")).toBeVisible()
-
   await page.getByLabel("Model").selectOption("claude-sonnet-4-5")
   await page.getByRole("button", { name: "Save", exact: true }).click()
   await expect(page.getByText("Claude Sonnet 4.5").last()).toBeVisible()
 
+  // And now it has gone from the account.
+  account.has = false
   await page.getByRole("button", { name: "Check the connection" }).click()
   await expect(page.getByText("no longer reaches")).toBeVisible()
   await expect(page.getByLabel("Model")).toHaveValue("claude-sonnet-4-5")
@@ -728,14 +726,11 @@ test("a model with little room is asked for little, and thinks less", async ({ p
     return asJson(route, CLAUDE.answers)
   })
 
+  // Saving lists what this key reaches, so the only model this account has is
+  // the one that ends up chosen — the default it never had is never kept.
   await connect(page, CLAUDE)
+  await expect(page.getByLabel("Model")).toHaveValue("claude-tiny")
 
-  // The default this key was saved with is not one this account has, which is
-  // said rather than worked around; the small one is chosen instead.
-  await page.getByRole("button", { name: "Check the connection" }).click()
-  await expect(page.getByText("no longer reaches")).toBeVisible()
-  await page.getByLabel("Model").selectOption("claude-tiny")
-  await page.getByRole("button", { name: "Save", exact: true }).click()
   await page.getByRole("button", { name: "Check the connection" }).click()
   await expect(page.getByText("answered")).toBeVisible()
 
@@ -818,6 +813,73 @@ test("ChatGPT: the conversation is not kept at the other end", async ({ page }) 
   const sent = asked[0] as { store: boolean; reasoning: { effort: string } }
   expect(sent.store).toBe(false)
   expect(sent.reasoning).toEqual({ effort: "medium" })
+})
+
+/**
+ * The picker is filled by saving, not only by checking.
+ *
+ * Asking which models a key reaches is free and instant; saying something to
+ * one of them is neither, and only the second is worth its own button. Left
+ * behind that button, the picker held a single entry — the default, standing in
+ * for a choice, with nothing on screen to say it was a placeholder — and the
+ * one model anybody could pick was the one they were already on.
+ */
+test("ChatGPT: the models can be picked without checking first", async ({ page }) => {
+  await page.route(OPENAI.host, (route) =>
+    route.request().method() === "GET" ? asJson(route, OPENAI_LISTS) : asJson(route, OPENAI.answers),
+  )
+
+  await connect(page, OPENAI)
+
+  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+    "o4-mini",
+    "gpt-5-mini",
+    "gpt-5",
+    "gpt-4.1",
+  ])
+
+  // And they are still there on the way back, without asking again.
+  await page.reload()
+  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+    "o4-mini",
+    "gpt-5-mini",
+    "gpt-5",
+    "gpt-4.1",
+  ])
+})
+
+/**
+ * A key saved before this panel kept a list has nothing to show, and nobody
+ * would think to press a button to find out why. Arriving is enough.
+ */
+test("ChatGPT: a key kept with no list gets one on arrival", async ({ page }) => {
+  await page.route(OPENAI.host, (route) =>
+    route.request().method() === "GET" ? asJson(route, OPENAI_LISTS) : asJson(route, OPENAI.answers),
+  )
+
+  await connect(page, OPENAI)
+
+  // As it would have been kept before the list was ever kept alongside it.
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((ok) => {
+      const asked = indexedDB.open("choai")
+      asked.onsuccess = () => ok(asked.result)
+    })
+    await new Promise<void>((ok) => {
+      const change = db.transaction(["keys"], "readwrite")
+      change.objectStore("keys").put({ id: "openai", key: "not-a-real-key" })
+      change.oncomplete = () => ok()
+    })
+    db.close()
+  })
+
+  await page.reload()
+  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+    "o4-mini",
+    "gpt-5-mini",
+    "gpt-5",
+    "gpt-4.1",
+  ])
 })
 
 for (const wire of [CLAUDE, GEMINI, OPENAI]) {
