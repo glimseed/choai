@@ -85,3 +85,87 @@ export const directives = (chosen: ReadonlyMap<string, Kind>): string =>
  */
 export const declaring = (file: string, block: string): string =>
   block === "" ? file : `${block}\n\n${file.replace(/^\n+/, "")}`
+
+/**
+ * The accounts of a journal, in the order a chart of accounts is read.
+ *
+ * hledger hands them over sorted by name, because the list it builds them in is
+ * a set. In English that reads as assets, equity, expenses, income,
+ * liabilities — plausible enough to pass for an order while being none — and in
+ * Japanese it is 収益, 負債, 費用, 資本, 資産, which is the order of the
+ * codepoints and nothing else. The order that means something is the one every
+ * statement is laid out in and the one anybody was taught: what is owned, what
+ * is owed, what is left over, what came in, what went out.
+ *
+ * Which branch is which is hledger's to say. Nothing here reads a name — a list
+ * of words would be a second, worse answer to a question the reader has already
+ * settled in their own file, with `account` directives hledger parses. See
+ * `declarations.ts` for how those get written.
+ *
+ * Only the top of each branch is sorted, and within one the order arrives
+ * untouched: hledger's name sort already puts a parent directly above its
+ * children, which is the whole of what the tree beside it needs.
+ */
+export const inChartOrder = (
+  accounts: readonly string[],
+  types: Readonly<Record<string, AccountType>>,
+): readonly string[] => {
+  const rank = ranks(accounts, types)
+  return [...accounts].sort((a, b) => (rank.get(topOf(a)) ?? LAST) - (rank.get(topOf(b)) ?? LAST))
+}
+
+/**
+ * A branch hledger cannot place keeps its place at the end.
+ *
+ * Not hidden and not guessed at: it is a real branch of somebody's books that
+ * no statement will show, and the screens that offer to declare it are how it
+ * stops being one.
+ */
+const LAST = KINDS.length
+
+const ranks = (
+  accounts: readonly string[],
+  types: Readonly<Record<string, AccountType>>,
+): ReadonlyMap<string, number> =>
+  new Map(
+    [...new Set(accounts.map(topOf))].flatMap((top) => {
+      const kind = kindOfBranch(top, accounts, types)
+      return kind === undefined ? [] : [[top, KINDS.indexOf(kind)] as const]
+    }),
+  )
+
+/**
+ * What kind of thing a branch holds.
+ *
+ * Read off the branch rather than off its top name, because a kind declared on
+ * a leaf — `資産:銀行:普通預金` and not `資産` — leaves the top with none of its
+ * own while everything under it has one. The same reason `unplaced` looks at the
+ * whole branch.
+ */
+const kindOfBranch = (
+  top: string,
+  accounts: readonly string[],
+  types: Readonly<Record<string, AccountType>>,
+): Kind | undefined => {
+  const found = accounts
+    .filter((account) => topOf(account) === top)
+    .map((account) => types[account])
+    .find((type) => type !== undefined && NARROWS[type] !== undefined)
+  return found === undefined ? undefined : NARROWS[found]
+}
+
+/**
+ * hledger's seven kinds against the five a chart is read in.
+ *
+ * Cash and Conversion narrow Asset and Equity rather than standing beside them,
+ * so they sort where the thing they narrow sorts.
+ */
+const NARROWS: Readonly<Partial<Record<AccountType, Kind>>> = {
+  Asset: "Asset",
+  Cash: "Asset",
+  Liability: "Liability",
+  Equity: "Equity",
+  Conversion: "Equity",
+  Revenue: "Revenue",
+  Expense: "Expense",
+}

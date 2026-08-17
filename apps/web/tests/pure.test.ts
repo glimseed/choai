@@ -9,6 +9,7 @@ import { allOf, anchorAfter, noneOf, tickedBy } from "~/journal/ticking"
 import { saidIn } from "~/ai/talker"
 import { narrowed } from "~/reports/ask"
 import { PERIODS, TERMS, periodByTerm } from "~/reports/periods"
+import { inChartOrder } from "~/journal/declarations"
 
 /**
  * The parts that are only functions, checked as functions.
@@ -271,5 +272,62 @@ describe("what a provider said when it refused", () => {
   test("nothing said is nothing to say", () => {
     expect(saidIn("")).toBeUndefined()
     expect(saidIn("   ")).toBeUndefined()
+  })
+})
+
+describe("a chart of accounts", () => {
+  /**
+   * hledger hands the names over sorted, because the list it builds them in is a
+   * set. These are the Japanese demo's, in the order that arrives.
+   */
+  const ARRIVED = [
+    "収益", "収益:給与",
+    "負債", "負債:クレジットカード",
+    "費用", "費用:交通費", "費用:家賃", "費用:食費",
+    "資本", "資本:開始残高",
+    "資産", "資産:現金", "資産:銀行", "資産:銀行:普通預金",
+  ]
+
+  const DECLARED = {
+    収益: "Revenue", 負債: "Liability", 費用: "Expense", 資本: "Equity", 資産: "Asset",
+  } as const
+
+  test("reads what is owned, owed, left over, came in and went out, in that order", () => {
+    expect(inChartOrder(ARRIVED, DECLARED).map((account) => account.split(":")[0])).toEqual([
+      "資産", "資産", "資産", "資産",
+      "負債", "負債",
+      "資本", "資本",
+      "収益", "収益",
+      "費用", "費用", "費用", "費用",
+    ])
+  })
+
+  test("a parent stays directly above its own children", () => {
+    expect(inChartOrder(ARRIVED, DECLARED).slice(0, 4)).toEqual([
+      "資産", "資産:現金", "資産:銀行", "資産:銀行:普通預金",
+    ])
+  })
+
+  /** A kind travels down, so a journal that declares its leaves is the same journal. */
+  test("a kind declared on a leaf orders the branch it is in", () => {
+    const onLeaves = { "資産:銀行:普通預金": "Asset", "費用:食費": "Expense" } as const
+    expect(inChartOrder(["費用", "費用:食費", "資産", "資産:銀行:普通預金"], onLeaves)).toEqual([
+      "資産", "資産:銀行:普通預金", "費用", "費用:食費",
+    ])
+  })
+
+  /** Cash and Conversion narrow Asset and Equity rather than standing beside them. */
+  test("the kinds that narrow another sort where that other one does", () => {
+    const narrowed = { "b": "Cash", "a": "Expense", "c": "Conversion" } as const
+    expect(inChartOrder(["a", "b", "c"], narrowed)).toEqual(["b", "c", "a"])
+  })
+
+  /** Not hidden and not guessed at: it is somebody's real branch, waiting to be said. */
+  test("a branch hledger cannot place keeps its place at the end", () => {
+    expect(inChartOrder(["謎", "費用", "資産"], DECLARED)).toEqual(["資産", "費用", "謎"])
+  })
+
+  test("nothing known about anything leaves the order it arrived in", () => {
+    expect(inChartOrder(ARRIVED, {})).toEqual(ARRIVED)
   })
 })

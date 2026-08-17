@@ -2,6 +2,7 @@ import { For, Show, type JSX } from "solid-js"
 
 import { journal } from "~/journal/store"
 import { accountQuery, useQuery } from "~/journal/query"
+import { inChartOrderNow } from "~/journal/chart"
 import { getOrUndefined } from "~/lib/monad"
 import { t } from "~/i18n"
 
@@ -47,7 +48,7 @@ export function BalanceSheetExplorer(props: {
           >
             {t("accounts.all")}
           </button>
-          <For each={open().summary.accounts}>
+          <For each={inChartOrderNow(open().summary.accounts)}>
             {(account) => (
               <button
                 type="button"
