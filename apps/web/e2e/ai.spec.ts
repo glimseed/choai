@@ -415,6 +415,31 @@ test("what a model takes is what it is sent, and both are offered", async ({ pag
   expect(older.tools.every((one) => one.strict === true)).toBe(true)
 })
 
+/**
+ * A check that fails hands the panel back.
+ *
+ * Everything here is one press away from another, so the state that matters is
+ * the one left behind: a panel still disabled after a request has finished is
+ * indistinguishable, on a screen, from a request that never finished at all.
+ */
+test("a check that goes wrong gives the panel back", async ({ page }) => {
+  // The listing answers; saying anything to a model does not.
+  await answerWith(page, CLAUDE, (route) => asJson(route, {}, 500))
+
+  await connect(page, CLAUDE)
+  await page.getByRole("button", { name: "Check the connection" }).click()
+
+  await expect(page.getByText("having trouble", { exact: false }).or(page.getByText("refused"))).toBeVisible()
+  await expect(page.getByRole("button", { name: "Check the connection" })).toBeEnabled()
+  await expect(page.getByRole("button", { name: "Save", exact: true })).toBeEnabled()
+
+  // And the models it did reach are in the picker, since that part worked.
+  await expect(page.getByLabel("Model").locator("option")).toHaveText([
+    "Claude Opus 5",
+    "Claude Sonnet 4.5",
+  ])
+})
+
 for (const wire of [CLAUDE, GEMINI]) {
   test(`${wire.label}: what it asks for is run, and its answer is built from the result`, async ({
     page,

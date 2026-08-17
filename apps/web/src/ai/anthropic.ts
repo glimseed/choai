@@ -28,6 +28,9 @@ import {
  * apart.
  */
 
+/** Listing is a small question; an answer that never comes is a fault, not patience. */
+const LISTING = 30_000
+
 const ROOT = "https://api.anthropic.com"
 
 const headers = (key: string): HeadersInit => ({
@@ -144,7 +147,7 @@ const drives = (can: Capabilities | undefined): boolean =>
 const BUDGET = 8000
 
 const models = async (key: string): Promise<Result<readonly Model[], Failure>> => {
-  const reached = await reach(`${ROOT}/v1/models?limit=1000`, { method: "GET", headers: headers(key) })
+  const reached = await reach(`${ROOT}/v1/models?limit=1000`, { method: "GET", headers: headers(key) }, LISTING)
   if (!reached.ok) return reached
   if (!reached.value.ok) return Err(await failureOf(reached.value))
 
@@ -217,7 +220,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
       thinking: takes.adaptive ? { type: "adaptive" } : { type: "enabled", budget_tokens: BUDGET },
       ...(takes.effort ? { output_config: { effort: "medium" } } : {}),
     }),
-  })
+  }, ask.within)
   if (!reached.ok) return reached
   if (!reached.value.ok) return Err(await failureOf(reached.value))
 

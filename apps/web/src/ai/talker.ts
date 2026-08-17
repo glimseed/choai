@@ -81,6 +81,12 @@ export interface Ask {
   readonly tools: readonly Tool[]
   /** Room for thinking and answer together, where the provider counts them as one. */
   readonly maxTokens: number
+  /**
+   * How long to wait before giving up, where waiting forever is the wrong
+   * answer. Absent for a turn of a conversation, which may legitimately take
+   * minutes.
+   */
+  readonly within?: number
 }
 
 /**
@@ -128,6 +134,7 @@ export interface Reply {
 
 export type Failure =
   | { readonly kind: "offline"; readonly detail: string }
+  | { readonly kind: "timed-out"; readonly after: number }
   | { readonly kind: "unauthorised" }
   | { readonly kind: "rate-limited"; readonly retryAfter?: number }
   | { readonly kind: "overloaded" }
@@ -163,14 +170,28 @@ export interface Talker {
  * Shared because both of them are a `fetch` against somebody else's host, and
  * neither has anything of its own to say about not arriving.
  */
+/**
+ * A request, and the one way it can fail that fetch does not report.
+ *
+ * `within` is for the questions that are supposed to be quick. A turn of a
+ * conversation is deliberately left without one — a couple of hundred entries
+ * being thought about and written out is minutes of legitimate silence, and
+ * cutting that off would be a worse fault than the one being guarded against.
+ * A request with no answer and no deadline waits forever, which on a screen is
+ * indistinguishable from a button that does nothing.
+ */
 export const reach = async (
   url: string,
   init: RequestInit,
+  within?: number,
 ): Promise<Result<Response, Failure>> => {
   try {
-    return { ok: true, value: await fetch(url, init) }
+    const value = await fetch(url, within === undefined ? init : { ...init, signal: AbortSignal.timeout(within) })
+    return { ok: true, value }
   } catch (cause) {
-    return { ok: false, error: { kind: "offline", detail: String(cause) } }
+    return cause instanceof DOMException && cause.name === "TimeoutError"
+      ? { ok: false, error: { kind: "timed-out", after: within ?? 0 } }
+      : { ok: false, error: { kind: "offline", detail: String(cause) } }
   }
 }
 

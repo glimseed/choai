@@ -30,6 +30,9 @@ import {
  * field rather than for a tag.
  */
 
+/** Listing is a small question; an answer that never comes is a fault, not patience. */
+const LISTING = 30_000
+
 const ROOT = "https://generativelanguage.googleapis.com/v1beta"
 
 const headers = (key: string): HeadersInit => ({
@@ -111,7 +114,7 @@ const spentOn = (usage: {
 }
 
 const models = async (key: string): Promise<Result<readonly Model[], Failure>> => {
-  const reached = await reach(`${ROOT}/models?pageSize=200`, { method: "GET", headers: headers(key) })
+  const reached = await reach(`${ROOT}/models?pageSize=200`, { method: "GET", headers: headers(key) }, LISTING)
   if (!reached.ok) return reached
   if (!reached.value.ok) return Err(await failureOf(reached.value))
 
@@ -158,7 +161,7 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
             ],
       generationConfig: { maxOutputTokens: ask.maxTokens },
     }),
-  })
+  }, ask.within)
   if (!reached.ok) return reached
   if (!reached.value.ok) return Err(await failureOf(reached.value))
 

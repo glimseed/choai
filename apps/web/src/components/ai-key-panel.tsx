@@ -62,12 +62,24 @@ export function AiKeyPanel(): JSX.Element {
 
   const picking = (): string => picked() ?? named()?.id ?? talker().defaultModel
 
+  /**
+   * Whatever happens, the panel comes back.
+   *
+   * Without the `finally` a throw anywhere in here leaves every box disabled
+   * with nothing said, which reads exactly like a request that never returned
+   * — and is far harder to tell apart from one.
+   */
   const run = async (work: () => Promise<void>): Promise<void> => {
     setBusy(true)
     setSaid(undefined)
     setFailure(undefined)
-    await work()
-    setBusy(false)
+    try {
+      await work()
+    } catch (cause) {
+      setFailure({ kind: "unreadable", detail: String(cause) })
+    } finally {
+      setBusy(false)
+    }
   }
 
   /**
@@ -123,6 +135,7 @@ export function AiKeyPanel(): JSX.Element {
    */
   const check = (): Promise<void> =>
     run(async () => {
+      setSaid(t("ai.listing"))
       const reachable = await talker().models(typing())
       if (!reachable.ok) {
         setFailure(reachable.error)
@@ -142,6 +155,7 @@ export function AiKeyPanel(): JSX.Element {
       const one = reachable.value.find((each) => each.id === picking()) ?? reachable.value[0]
       if (one === undefined) return
       setPicked(one.id)
+      setSaid(t("ai.sounding", { model: one.label }))
 
       const sounded = await soundOut(talker(), typing(), one)
       if (!sounded.ok) {
@@ -260,6 +274,8 @@ export const wording = (failure: Failure): string => {
   switch (failure.kind) {
     case "offline":
       return t("ai.offline")
+    case "timed-out":
+      return t("ai.timedOut", { seconds: Math.round(failure.after / 1000) })
     case "unauthorised":
       return t("ai.unauthorised")
     case "rate-limited":

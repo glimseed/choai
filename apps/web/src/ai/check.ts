@@ -32,6 +32,12 @@ export interface Sounded {
  */
 const ONE_WORD = "Reply with the single word OK, and call nothing."
 
+/**
+ * Long enough for a model to think about nothing much, short enough that a
+ * button which has stopped meaning anything says so.
+ */
+const A_MINUTE = 60_000
+
 export const soundOut = async (
   talker: Talker,
   key: string,
@@ -43,6 +49,7 @@ export const soundOut = async (
     turns: [talker.said(ONE_WORD)],
     tools: toolsOffered(),
     maxTokens: ROOM,
+    within: A_MINUTE,
   })
 
   return reply.ok ? Ok({ model: reply.value.model, spent: reply.value.spent }) : Err(reply.error)
