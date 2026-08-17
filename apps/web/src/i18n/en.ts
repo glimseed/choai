@@ -95,6 +95,7 @@ export const en = {
     connect: "Save and check the key",
     disconnect: "Disconnect and forget the key",
     ready: "Ready — {{ count }} models available",
+    noneUsable: "That key works, but none of the models it reaches take what this app sends. It needs one that supports adaptive thinking, effort, strict tool schemas and images.",
     model: "Model",
     modelHint: "The most capable one is the default. A smaller one costs less and answers sooner.",
     dock: "Ask",

@@ -88,6 +88,7 @@ export const ja: Dictionary = {
     connect: "キーを保存して確認",
     disconnect: "接続を解除してキーを削除",
     ready: "準備できました — {{ count }} 個のモデルが使えます",
+    noneUsable: "鍵は通りましたが、このアプリが送る形を受け取れるモデルが一つもありません。adaptive thinking・effort・strict なツール定義・画像入力に対応したモデルが必要です。",
     model: "モデル",
     modelHint: "既定は最も高性能なものです。小さいモデルは安く、速く答えます。",
     dock: "尋ねる",

@@ -83,14 +83,60 @@ const spentOn = (usage: {
   }
 }
 
+/** One thing the listing says of a model, as it says it. */
+interface Takes {
+  readonly supported?: boolean
+}
+
+/** What a model will take, in the parts every turn from here depends on. */
+interface Capabilities {
+  readonly thinking?: { readonly types?: { readonly adaptive?: Takes } }
+  readonly effort?: { readonly medium?: Takes }
+  readonly structured_outputs?: Takes
+  readonly image_input?: Takes
+}
+
+/**
+ * Whether a model takes what is sent to it here.
+ *
+ * Not a judgement about the model. Every request carries adaptive thinking, an
+ * effort, strict tool schemas, and — the moment somebody photographs a receipt
+ * — an image; a model without one of those does not answer more plainly, it
+ * answers 400. Sonnet 4.5, Opus 4.5 and Haiku 4.5 are the near miss: current,
+ * capable, and without adaptive thinking, which they reject outright.
+ *
+ * Asked of the listing rather than kept here as a list of names. A list of
+ * names is wrong the week after it is written, and this is the question
+ * actually worth asking — not whether a model is one we have heard of, but
+ * whether it takes what we send. Each line below is here because the request
+ * builder above sends the thing it names, so the two cannot drift apart
+ * without the model list going quiet, which is the loud way round.
+ */
+const drives = (can: Capabilities | undefined): boolean =>
+  can?.thinking?.types?.adaptive?.supported === true &&
+  can.effort?.medium?.supported === true &&
+  can.structured_outputs?.supported === true &&
+  can.image_input?.supported === true
+
 const models = async (key: string): Promise<Result<readonly Model[], Failure>> => {
-  const reached = await reach(`${ROOT}/v1/models?limit=20`, { method: "GET", headers: headers(key) })
+  const reached = await reach(`${ROOT}/v1/models?limit=1000`, { method: "GET", headers: headers(key) })
   if (!reached.ok) return reached
   if (!reached.value.ok) return Err(await failureOf(reached.value))
 
-  const body = await readJson<{ data?: readonly { id: string; display_name?: string }[] }>(reached.value)
+  const body = await readJson<{
+    data?: readonly {
+      id: string
+      display_name?: string
+      capabilities?: Capabilities | null
+    }[]
+  }>(reached.value)
+
   return body.ok
-    ? Ok((body.value.data ?? []).map((one) => ({ id: one.id, label: one.display_name ?? one.id })))
+    ? Ok(
+        (body.value.data ?? [])
+          .filter((one) => drives(one.capabilities ?? undefined))
+          .map((one) => ({ id: one.id, label: one.display_name ?? one.id })),
+      )
     : body
 }
 

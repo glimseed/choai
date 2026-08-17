@@ -65,7 +65,36 @@ const CLAUDE: Wire = {
       | undefined
     return { mediaType: source?.media_type ?? "", bytes: (source?.data ?? "").length }
   },
-  models: { data: [{ id: "claude-opus-5", display_name: "Claude Opus 5" }] },
+  /**
+   * As the listing gives it, capabilities and all — with one model the app
+   * cannot drive, because the filtering is only worth having if something is
+   * actually filtered. Sonnet 4.5 is the real case: current and capable, and it
+   * rejects the adaptive thinking every request from here carries.
+   */
+  models: {
+    data: [
+      {
+        id: "claude-opus-5",
+        display_name: "Claude Opus 5",
+        capabilities: {
+          thinking: { supported: true, types: { adaptive: { supported: true }, enabled: { supported: false } } },
+          effort: { supported: true, medium: { supported: true } },
+          structured_outputs: { supported: true },
+          image_input: { supported: true },
+        },
+      },
+      {
+        id: "claude-sonnet-4-5",
+        display_name: "Claude Sonnet 4.5",
+        capabilities: {
+          thinking: { supported: true, types: { adaptive: { supported: false }, enabled: { supported: true } } },
+          effort: { supported: false, medium: { supported: false } },
+          structured_outputs: { supported: true },
+          image_input: { supported: true },
+        },
+      },
+    ],
+  },
   wantsTool: {
     model: "claude-opus-5",
     stop_reason: "tool_use",
@@ -302,6 +331,26 @@ test("proposals made along the way do not open the dock; the one it stops on doe
   // it finished: a proposal takes the dock from the conversation that made it.
   held.let_go()
   await expect(page.getByText("Written, not yet kept")).toBeVisible()
+})
+
+/**
+ * A model that rejects what every request carries is not offered.
+ *
+ * Sonnet 4.5, Opus 4.5 and Haiku 4.5 all answer 400 to `thinking: adaptive`,
+ * and the listing says as much before anything is sent — so the choice is
+ * narrowed to what works rather than left to be discovered one failed question
+ * at a time.
+ */
+test("only models that take what is sent are offered", async ({ page }) => {
+  await answerWith(page, CLAUDE, (route) => asJson(route, CLAUDE.answers))
+
+  await page.goto("/settings")
+  await page.getByRole("button", { name: "Claude", exact: true }).click()
+  await page.getByLabel("API key").fill(NOT_A_KEY)
+  await page.getByRole("button", { name: "Save and check the key" }).click()
+
+  await expect(page.getByText("models available")).toBeVisible()
+  await expect(page.getByLabel("Model").locator("option")).toHaveText(["Claude Opus 5"])
 })
 
 for (const wire of [CLAUDE, GEMINI]) {

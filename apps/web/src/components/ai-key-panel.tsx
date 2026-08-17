@@ -72,7 +72,14 @@ export function AiKeyPanel(): JSX.Element {
       setOffered(reachable.value)
       setTyped(undefined)
       await refetch()
-      setSaid(t("ai.ready", { count: reachable.value.length }))
+      // A key that works and reaches nothing this app can drive is not an error
+      // — it is a fact about the account, and saying "0 available" would leave
+      // somebody looking for a fault in the key they just typed correctly.
+      setSaid(
+        reachable.value.length === 0
+          ? t("ai.noneUsable")
+          : t("ai.ready", { count: reachable.value.length }),
+      )
     })
 
   const drop = (): Promise<void> =>
