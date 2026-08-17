@@ -821,9 +821,8 @@ test("ChatGPT: the conversation is not kept at the other end", async ({ page }) 
   await askThat(page, "how did the year go")
   await expect(page.getByText(SAID)).toBeVisible()
 
-  const sent = asked[0] as { store: boolean; reasoning: { effort: string } }
+  const sent = asked[0] as { store: boolean }
   expect(sent.store).toBe(false)
-  expect(sent.reasoning).toEqual({ effort: "medium" })
 })
 
 /**
@@ -944,6 +943,12 @@ test("ChatGPT: clearing the model box leaves it cleared", async ({ page }) => {
     route.request().method() === "GET" ? asJson(route, OPENAI_LISTS) : asJson(route, OPENAI.answers),
   )
 
+  // Empty before anything has been saved: an unasked-for name in the box reads
+  // as a decision, and what would be used instead is in the placeholder.
+  await page.goto("/settings")
+  await page.getByRole("button", { name: "ChatGPT", exact: true }).click()
+  await expect(page.getByLabel("Model")).toHaveValue("")
+
   await connect(page, OPENAI)
   const box = page.getByLabel("Model")
   await expect(box).not.toHaveValue("")
@@ -1014,6 +1019,49 @@ test("ChatGPT: a check that answers keeps the setting", async ({ page }) => {
   await page.reload()
   await expect(page.getByLabel("Model")).toHaveValue("gpt-4.1")
   await expect(page.getByRole("button", { name: "Disconnect and forget the key" })).toBeVisible()
+})
+
+/**
+ * A refusal says what was refused, in the provider's own words.
+ *
+ * Two of these three publish nothing about what their models take, so every
+ * field of a request is a guess that can come back 400 — and the one place the
+ * answer ever appears is the body of that 400. Reduced to a status code, as it
+ * was, "gpt-4o will not take an effort" becomes a week of guessing; carried
+ * through, it is a sentence on the screen and a one-line fix.
+ */
+test("ChatGPT: a refusal carries what the provider said about it", async ({ page }) => {
+  await page.route(OPENAI.host, (route) =>
+    route.request().method() === "GET"
+      ? asJson(route, OPENAI_LISTS)
+      : asJson(
+          route,
+          {
+            error: {
+              message: "Unsupported parameter: 'reasoning.effort' is not supported with this model.",
+              type: "invalid_request_error",
+            },
+          },
+          400,
+        ),
+  )
+
+  await connect(page, OPENAI)
+  await page.getByRole("button", { name: "Check the connection" }).click()
+
+  await expect(page.getByText("is not supported with this model")).toBeVisible()
+})
+
+/** And no effort is asked for, since only some of them take one. */
+test("ChatGPT: no effort is asked for, because not every model takes one", async ({ page }) => {
+  const asked = await answerWith(page, OPENAI, (route) => asJson(route, OPENAI.answers))
+
+  await connect(page, OPENAI)
+  await openTheDemo(page)
+  await askThat(page, "how did the year go")
+  await expect(page.getByText(SAID)).toBeVisible()
+
+  expect(asked[0]).not.toHaveProperty("reasoning")
 })
 
 for (const wire of [CLAUDE, GEMINI, OPENAI]) {

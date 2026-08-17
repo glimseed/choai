@@ -208,6 +208,32 @@ export const reach = async (
   }
 }
 
+/**
+ * The sentence a provider put in the body of a refusal.
+ *
+ * All three nest it the same way, under `error.message`, and it is the only
+ * part of a refusal worth reading: "Unsupported parameter: 'reasoning.effort'
+ * is not supported with this model" says in one line what a status code and a
+ * week of guessing do not. Two of these providers publish nothing about what
+ * their models take, so being told at the moment of failing is the only way
+ * anyone finds out — and throwing it away, as this did, is what turns a
+ * one-line fix into a hunt.
+ *
+ * Anything that is not their JSON comes back as itself, cut short: whatever it
+ * is, it is more than the number was.
+ */
+export const saidIn = (detail: string): string | undefined => {
+  const trimmed = detail.trim()
+  if (trimmed === "") return undefined
+  try {
+    const body = JSON.parse(trimmed) as { error?: { message?: unknown } }
+    const said = body.error?.message
+    return typeof said === "string" && said.trim() !== "" ? said : trimmed.slice(0, 300)
+  } catch {
+    return trimmed.slice(0, 300)
+  }
+}
+
 export const readJson = async <T,>(response: Response): Promise<Result<T, Failure>> => {
   try {
     return { ok: true, value: (await response.json()) as T }

@@ -6,6 +6,7 @@ import { digits, fields, listOf, nothing, oneOf, spare, text } from "~/lib/monad
 import { looksTabular, rowsOf } from "~/lib/csv"
 import { textOf } from "~/lib/text"
 import { allOf, anchorAfter, noneOf, tickedBy } from "~/journal/ticking"
+import { saidIn } from "~/ai/talker"
 import { narrowed } from "~/reports/ask"
 import { PERIODS, TERMS, periodByTerm } from "~/reports/periods"
 
@@ -232,5 +233,24 @@ describe("ticking a run of them", () => {
     expect(sorted(allOf(3))).toEqual([0, 1, 2])
     expect(sorted(allOf(0))).toEqual([])
     expect(noneOf().size).toBe(0)
+  })
+})
+
+describe("what a provider said when it refused", () => {
+  test("the sentence out of their JSON, which is where all three put it", () => {
+    expect(
+      saidIn('{"error":{"message":"Unsupported parameter: \'reasoning.effort\' is not supported with this model.","type":"invalid_request_error"}}'),
+    ).toBe("Unsupported parameter: 'reasoning.effort' is not supported with this model.")
+  })
+
+  test("anything else comes back as itself, cut short", () => {
+    expect(saidIn("<html>502 Bad Gateway</html>")).toBe("<html>502 Bad Gateway</html>")
+    expect(saidIn('{"error":{}}')).toBe('{"error":{}}')
+    expect(saidIn("x".repeat(500))?.length).toBe(300)
+  })
+
+  test("nothing said is nothing to say", () => {
+    expect(saidIn("")).toBeUndefined()
+    expect(saidIn("   ")).toBeUndefined()
   })
 })

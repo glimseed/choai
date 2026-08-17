@@ -119,7 +119,7 @@ export const ja: Dictionary = {
     unauthorised: "キーが受け付けられませんでした。設定で確認してください。",
     rateLimited: "リクエストが多すぎます。少し待ってからお試しください。",
     overloaded: "モデルが混み合っています。少し待ってからお試しください。",
-    refused: "リクエストが拒否されました（{{ status }}）。",
+    refused: "リクエストが拒否されました（{{ status }}）。{{ said }}",
     unreadable: "答えを読み取れませんでした。",
     needsKey: "ここで尋ねるには、設定で API キーを保存してください。",
     spent: "送信 {{ sent }} / 応答 {{ back }} トークン",

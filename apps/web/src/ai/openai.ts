@@ -30,6 +30,12 @@ import {
  * items, each already saying what it is, so a turn's blocks are those items and
  * the roles this app keeps are flattened away on the send.
  *
+ * No effort is asked for. It is a parameter only the reasoning models take, and
+ * the listing does not say which those are: sent to a gpt-4o the whole request
+ * comes back refused, over a field that was asking for the default anyway. Left
+ * out, a model that reasons reasons as it would, and one that does not is not
+ * refused for being asked.
+ *
  * Nothing is kept at their end. `store` defaults to true, which would leave a
  * copy of somebody's books on a server this app otherwise never uses; it is set
  * false, and in that mode reasoning items come back carrying their own
@@ -190,7 +196,6 @@ const send = async (key: string, ask: Ask): Promise<Result<Reply, Failure>> => {
           parameters: tool.schema,
           strict: true,
         })),
-        reasoning: { effort: "medium" },
         max_output_tokens: room,
         // Nothing of these books is left at the other end.
         store: false,

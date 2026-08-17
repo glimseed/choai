@@ -3,7 +3,7 @@ import { For, Show, createEffect, createResource, createSignal, type JSX } from 
 import { soundOut } from "~/ai/check"
 import { forgetKey, keepKey, keepListed, keepModel, keepWhich, key, listed, model, which } from "~/ai/kept"
 import { forgetChat } from "~/ai/store"
-import type { Failure, Model, Talker } from "~/ai/talker"
+import { saidIn, type Failure, type Model, type Talker } from "~/ai/talker"
 import { EVERYONE, talkerFor } from "~/ai/talkers"
 import { Button } from "~/components/ui/button"
 import { Suggesting } from "~/lib/ui/suggesting"
@@ -101,11 +101,12 @@ export function AiKeyPanel(): JSX.Element {
    * Exactly what was typed, once anybody has typed — including nothing. A box
    * that puts something back the moment it is emptied cannot be edited from the
    * middle, and reads as though it is arguing. Until then it shows what was
-   * saved, or something this account actually has, since the provider's default
-   * is no use to somebody whose account does not carry it.
+   * saved, and before anything has been saved it is empty: a name sitting there
+   * unasked for looks like a decision somebody made, and this one would not even
+   * be ours. What would be used instead is in the placeholder, where a
+   * suggestion belongs.
    */
-  const inTheBox = (): string =>
-    picked() ?? named()?.id ?? choices()[0]?.id ?? talker().defaultModel
+  const inTheBox = (): string => picked() ?? named()?.id ?? ""
 
   /**
    * What an action would use.
@@ -341,7 +342,7 @@ export function AiKeyPanel(): JSX.Element {
           onInput={setPicked}
           options={choices().map((one) => ({ value: one.id, label: one.label }))}
           disabled={busy()}
-          placeholder={talker().defaultModel}
+          placeholder={chosenNow()}
         />
       </label>
       <p class="text-xs text-muted-foreground">
@@ -392,7 +393,7 @@ export const wording = (failure: Failure): string => {
     case "overloaded":
       return t("ai.overloaded")
     case "refused":
-      return t("ai.refused", { status: failure.status })
+      return t("ai.refused", { status: failure.status, said: saidIn(failure.detail) ?? "" })
     case "unreadable":
       return t("ai.unreadable")
   }
