@@ -150,6 +150,41 @@ test("a refusal says which case it was and what would have fitted", async ({ pag
   expect(wrong.error.wanted.required).toEqual(["descriptions"])
 })
 
+/**
+ * The manifest says `additionalProperties: false`, and this is that sentence
+ * being kept rather than only published.
+ *
+ * A name that was never asked for is a misspelling far more often than it is a
+ * spare thought, and dropping it quietly is the one treatment that cannot be
+ * recovered from: `query` written `qeury` answers about the whole journal, and
+ * whoever asked reads it as the narrowed answer they wanted. Checked against
+ * every capability at once, because the fault would be in what they all share.
+ */
+test("a name that was never asked for is refused, whichever capability it is given to", async ({
+  page,
+}) => {
+  await openTheDemo(page)
+
+  const manifest = await page.evaluate(() => window.choai.describe())
+
+  // Refused before it is run, so the three that write are safe to ask: the
+  // check on the arguments comes first and nothing reaches the journal.
+  const refused = await page.evaluate(
+    (all) =>
+      Promise.all(
+        all.map(async (name) => {
+          const answer = await window.choai.call(name as never, { neverAskedFor: 1 } as never)
+          return { name, at: answer.ok ? "answered" : answer.error.at }
+        }),
+      ),
+    Object.keys(manifest.capabilities),
+  )
+
+  // Nothing answered, and nothing failed for some other reason on the way.
+  expect(refused.length).toBe(Object.keys(manifest.capabilities).length)
+  expect(refused.filter((one) => one.at !== "bad-arguments")).toEqual([])
+})
+
 test("what the agent looked at can be put in the title bar, and the screens follow", async ({
   page,
 }) => {

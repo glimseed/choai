@@ -129,7 +129,13 @@ export const fields = <S extends Record<string, Shape<unknown>>,>(members: S): S
 
       const read = named.map(([name, member]) => ({ name, taken: take(name, member, given[name]) }))
 
-      const wrong = read.flatMap(({ taken }) => (taken.ok ? [] : taken.error))
+      const wrong = [
+        ...read.flatMap(({ taken }) => (taken.ok ? [] : taken.error)),
+        ...unasked(
+          Object.keys(given),
+          named.map(([name]) => name),
+        ),
+      ]
       if (wrong.length > 0) return Err(wrong)
 
       const kept = read.flatMap(({ name, taken }) =>
@@ -150,13 +156,36 @@ export const fields = <S extends Record<string, Shape<unknown>>,>(members: S): S
 
 /** Takes nothing, and says so as an object, because arguments always are one. */
 export const nothing: Shape<Record<string, never>> = {
-  of: (u) =>
-    u === undefined || u === null || isRecord(u)
-      ? Ok({})
-      : Err([{ path: "", wanted: "an object, or nothing at all" }]),
+  of: (u) => {
+    const given = u === undefined || u === null ? {} : u
+    if (!isRecord(given)) return Err([{ path: "", wanted: "an object, or nothing at all" }])
+
+    const wrong = unasked(Object.keys(given), [])
+    return wrong.length > 0 ? Err(wrong) : Ok({})
+  },
   schema: { type: "object", properties: {}, required: [], additionalProperties: false },
   spare: false,
 }
+
+/**
+ * The names that were given and were not asked for.
+ *
+ * The schema has always said `additionalProperties: false`; this is that
+ * sentence being kept rather than only published. Dropping one quietly is the
+ * worst of the ways to treat it: `query` written `qeury` is then a question
+ * about the whole journal answered as though it were the narrowed one, and
+ * nothing anywhere says otherwise.
+ *
+ * What is taken is named in the fault, so a misspelling carries its own
+ * correction and the second attempt needs no further asking.
+ */
+const unasked = (given: readonly string[], asked: readonly string[]): readonly Wrong[] =>
+  given
+    .filter((name) => !asked.includes(name))
+    .map((name) => ({
+      path: name,
+      wanted: asked.length === 0 ? "not to be given: this takes nothing" : `not to be given: this takes ${asked.join(", ")}`,
+    }))
 
 /** One named field: what it read to, nothing where a spare one was left out, or how it failed. */
 const take = (

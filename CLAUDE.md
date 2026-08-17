@@ -181,6 +181,13 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   survive, so it still parses, and the payees quietly become replacement
   characters. UTF-8 is tried strictly first because plenty of it decodes as
   Shift_JIS into nonsense, while almost no Shift_JIS is accidentally valid UTF-8.
+- **What `describe()` promises, `lib/monad/shape.ts` keeps.** A name that was
+  never asked for is refused rather than dropped, because the schema has always
+  said `additionalProperties: false` and because a misspelling dropped quietly
+  is unrecoverable: `query` written `qeury` answers about the whole journal and
+  reads as the narrowed answer that was wanted. The fault names what the
+  capability does take, so the second attempt needs no further asking. An e2e
+  gives every capability a name it never asked for.
 - **The trial balance is a check, so nothing here does its arithmetic.** It is
   the balance report asked for flat and with the empty accounts kept (`Listing`
   in `Bindings.hs`) — a parent counted beside its own children would be counted

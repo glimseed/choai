@@ -84,9 +84,28 @@ describe("shape", () => {
     postings: listOf("postings", posting),
   })
 
-  test("reads a value in and keeps only what was asked for", () => {
-    const read = entry.of({ date: "2026-08-16", payee: "Shop", postings: [{ account: "a" }], extra: 1 })
+  test("reads a value in, and a spare one left out stays left out", () => {
+    const read = entry.of({ date: "2026-08-16", payee: "Shop", postings: [{ account: "a" }] })
     expect(read).toEqual({ ok: true, value: { date: "2026-08-16", payee: "Shop", postings: [{ account: "a" }] } })
+  })
+
+  /**
+   * The schema says `additionalProperties: false`, so this is what that sentence
+   * costs to keep. Dropping the field quietly reads as having understood it:
+   * `payee` written `payer` would leave an entry with no payee and nothing said.
+   */
+  test("refuses what it was not asked for, and names what it takes instead", () => {
+    const read = entry.of({ date: "2026-08-16", payee: "Shop", postings: [], payer: "Shop" })
+    expect(read.ok).toBe(false)
+    expect(read.ok ? [] : read.error).toEqual([
+      { path: "payer", wanted: "not to be given: this takes date, payee, postings" },
+    ])
+  })
+
+  test("something that takes nothing takes nothing, rather than ignoring it", () => {
+    expect(nothing.of({}).ok).toBe(true)
+    expect(nothing.of(undefined).ok).toBe(true)
+    expect(nothing.of({ query: "" }).ok).toBe(false)
   })
 
   test("says every way it did not fit at once, with a path into it", () => {
