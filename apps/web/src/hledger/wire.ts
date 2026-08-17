@@ -77,6 +77,21 @@ export interface BalanceReport {
   readonly prTotals: ReportRow
 }
 
+/**
+ * A trial balance: the report, and what each of its two columns comes to.
+ *
+ * The only answer here not shaped by hledger's own `ToJSON`, because a trial
+ * balance is not one of hledger's reports — it is one of them read as two
+ * columns. What the columns come to is still hledger's arithmetic: the two
+ * agreeing is the whole of what the report is for, so the figures being checked
+ * cannot be added up by the screen doing the checking.
+ */
+export interface TrialBalance {
+  readonly report: BalanceReport
+  readonly debits: MixedAmount
+  readonly credits: MixedAmount
+}
+
 /** A window onto a report with many rows, and how many rows there were in all. */
 export interface Page<T> {
   readonly items: readonly T[]
@@ -97,6 +112,7 @@ export type Request =
   | { readonly kind: "balance"; readonly query: string }
   | { readonly kind: "balancesheet"; readonly query: string }
   | { readonly kind: "incomestatement"; readonly query: string }
+  | { readonly kind: "trialbalance"; readonly query: string }
   | { readonly kind: "accounts" }
   | { readonly kind: "accountTypes" }
   | { readonly kind: "similar"; readonly description: string; readonly limit: number }
@@ -117,6 +133,12 @@ export interface Answer {
   balance: BalanceReport
   balancesheet: BalanceReport
   incomestatement: BalanceReport
+  /**
+   * Every account flat and in full, the ones that came to nothing included, so
+   * the two columns it is read as can be added up without counting a parent
+   * beside its own children.
+   */
+  trialbalance: TrialBalance
   accounts: readonly string[]
   /**
    * What hledger takes each account to be. Accounts it cannot place are absent,

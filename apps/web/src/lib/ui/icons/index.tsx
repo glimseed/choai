@@ -2,7 +2,7 @@ import type { JSX } from 'solid-js'
 import receiptSvg from './receipt.svg?raw'
 import scaleSvg from './scale.svg?raw'
 import trendingUpSvg from './trending-up.svg?raw'
-import walletSvg from './wallet.svg?raw'
+import columns2Svg from './columns-2.svg?raw'
 import settingsSvg from './settings.svg?raw'
 import panelLeftSvg from './panel-left.svg?raw'
 import plusSvg from './plus.svg?raw'
@@ -40,8 +40,8 @@ export const ReceiptIcon = icon(receiptSvg)
 export const ScaleIcon = icon(scaleSvg)
 /** The income statement — change over a period. */
 export const TrendingUpIcon = icon(trendingUpSvg)
-/** Accounts and their balances. */
-export const WalletIcon = icon(walletSvg)
+/** The trial balance: two columns, which is the whole of what it checks. */
+export const Columns2Icon = icon(columns2Svg)
 /** Settings. */
 export const SettingsIcon = icon(settingsSvg)
 /** Fold or unfold the side panel. */

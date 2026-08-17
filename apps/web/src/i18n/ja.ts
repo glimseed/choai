@@ -10,7 +10,7 @@ export const ja: Dictionary = {
     journal: "仕訳帳",
     balanceSheet: "貸借対照表",
     incomeStatement: "損益計算書",
-    accounts: "勘定科目",
+    trialBalance: "試算表",
     settings: "設定",
     showPanels: "サイドバーを表示",
     hidePanels: "サイドバーを隠す",
@@ -53,11 +53,16 @@ export const ja: Dictionary = {
     allTime: "全期間",
   },
   accounts: {
-    lead: "帳簿にあるすべての勘定科目と、その残高。",
-    empty: "まだ勘定科目がありません。",
     all: "すべての勘定科目",
     noJournal: "帳簿が開かれていません。",
     panelTitle: "勘定科目",
+  },
+  trialBalance: {
+    lead: "帳簿にあるすべての勘定科目を、借方と貸方に分けて並べたもの。両方の合計が一致していれば、仕訳の貸借は合っています。",
+    empty: "まだ勘定科目がありません。",
+    account: "勘定科目",
+    debit: "借方",
+    credit: "貸方",
   },
   report: {
     total: "合計",

@@ -24,7 +24,8 @@ export const linesOf = (rows: readonly ReportRow[]): readonly Line[] => {
 }
 
 /** The totals row carries no account, which arrives as an empty array. */
-const accountOf = (row: ReportRow): string => (typeof row.prrName === "string" ? row.prrName : "")
+export const accountOf = (row: ReportRow): string =>
+  typeof row.prrName === "string" ? row.prrName : ""
 
 const lineFor = (account: string, amount: MixedAmount, accounts: ReadonlySet<string>): Line => {
   const parent = nearestAncestor(account, accounts)

@@ -157,6 +157,17 @@ export const CAPABILITIES = {
     run: report.incomeStatement,
   },
 
+  "report.trialBalance": {
+    summary:
+      "Every account the books have, flat and in full, each balance in the debit or the credit column by its sign — accounts that came to nothing included. Answers with what each column comes to: they agree when the books balance, and this is the report to reach for when they do not.",
+    takes: fields({ query: QUERY }),
+    writes: false,
+    needsJournal: true,
+    leaves: false,
+    offered: true,
+    run: report.trialBalance,
+  },
+
   "transaction.create": {
     summary:
       "Write one transaction straight into the journal. Not offered to a model — anything that cannot be seen before it is kept goes through transaction.propose instead.",

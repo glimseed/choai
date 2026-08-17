@@ -18,7 +18,7 @@ import { Layout } from "~/app"
 import Journal from "~/routes/journal"
 import BalanceSheet from "~/routes/balance-sheet"
 import IncomeStatement from "~/routes/income-statement"
-import Accounts from "~/routes/accounts"
+import TrialBalance from "~/routes/trial-balance"
 import Settings from "~/routes/settings"
 import Licenses from "~/routes/licenses"
 import Source from "~/routes/source"
@@ -30,7 +30,7 @@ render(
       <Route path="/" component={Journal} />
       <Route path="/balance-sheet" component={BalanceSheet} />
       <Route path="/income-statement" component={IncomeStatement} />
-      <Route path="/accounts" component={Accounts} />
+      <Route path="/trial-balance" component={TrialBalance} />
       <Route path="/settings" component={Settings} />
       <Route path="/licenses" component={Licenses} />
       <Route path="/source" component={Source} />

@@ -84,8 +84,11 @@ function Amount(props: { value: MixedAmount; class: string }): JSX.Element {
   return <td class={`text-right font-mono tabular-nums ${props.class}`}>{formatMixed(props.value)}</td>
 }
 
-const NeedsAJournal = (): JSX.Element => (
+/** Shared with the trial balance, which is a different report in the same two states. */
+export const NeedsAJournal = (): JSX.Element => (
   <p class="text-sm text-muted-foreground">{t("report.needsJournal")}</p>
 )
 
-const Waiting = (): JSX.Element => <p class="text-sm text-muted-foreground">{t("report.working")}</p>
+export const Waiting = (): JSX.Element => (
+  <p class="text-sm text-muted-foreground">{t("report.working")}</p>
+)

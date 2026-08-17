@@ -1,8 +1,8 @@
 import { ask, type Reply } from "~/hledger/client"
-import type { BalanceReport } from "~/hledger/wire"
+import type { BalanceReport, TrialBalance } from "~/hledger/wire"
 
 /**
- * Any of hledger's balance reports.
+ * Any of hledger's balance reports that come out as a tree.
  *
  * The balance sheet and the income statement are one report under a different
  * account-type filter and accumulation, which is how hledger's own commands are
@@ -21,6 +21,15 @@ export const askBalance = (kind: BalanceKind, query: string): Promise<Reply<Bala
       return ask({ kind, query })
   }
 }
+
+/**
+ * The trial balance, which is apart from the others because its answer is.
+ *
+ * It comes back flat and with its two totals beside it rather than as a tree, so
+ * there is nothing for it to share with them but the query.
+ */
+export const askTrialBalance = (query: string): Promise<Reply<TrialBalance>> =>
+  ask({ kind: "trialbalance", query })
 
 /**
  * Query terms put together the way hledger takes them.

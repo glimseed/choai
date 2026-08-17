@@ -1,7 +1,8 @@
 import { ask } from "~/hledger/client"
 import { Err, Ok, type Result } from "~/lib/monad"
-import { askBalance, type BalanceKind } from "~/reports/ask"
-import { linesOf } from "~/reports/tree"
+import { askBalance, askTrialBalance, type BalanceKind } from "~/reports/ask"
+import { creditsOf, debitsOf } from "~/reports/columns"
+import { accountOf, linesOf } from "~/reports/tree"
 import { entryOf, figureOf, type Entry, type Figure } from "../answered"
 import { fromHledger, type Hitch } from "../hitch"
 import { withJournal } from "./journal"
@@ -59,6 +60,39 @@ export const balanceSheet = (args: { readonly query?: string }): Promise<Result<
 
 export const incomeStatement = (args: { readonly query?: string }): Promise<Result<Balance, Hitch>> =>
   balanceOf("incomestatement", args.query)
+
+/** One account, in the column its balance falls in. The other column is zero. */
+export interface TrialRow {
+  readonly account: string
+  readonly debit: Figure
+  readonly credit: Figure
+}
+
+/**
+ * A trial balance, which is a flat list and two figures rather than a tree and
+ * one. The two are what it is read for: they agree when the books do.
+ */
+export interface Trial {
+  readonly rows: readonly TrialRow[]
+  readonly debits: Figure
+  readonly credits: Figure
+}
+
+export const trialBalance = (args: { readonly query?: string }): Promise<Result<Trial, Hitch>> =>
+  withJournal(async () => {
+    const reply = await askTrialBalance(args.query ?? "")
+    if (!reply.ok) return Err(fromHledger(reply.error))
+
+    return Ok({
+      rows: reply.value.report.prRows.map((row) => ({
+        account: accountOf(row),
+        debit: figureOf(debitsOf(row.prrTotal)),
+        credit: figureOf(creditsOf(row.prrTotal)),
+      })),
+      debits: figureOf(reply.value.debits),
+      credits: figureOf(reply.value.credits),
+    })
+  })
 
 export const entries = (args: {
   readonly query?: string

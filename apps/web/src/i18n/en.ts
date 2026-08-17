@@ -17,7 +17,7 @@ export const en = {
     journal: "Journal",
     balanceSheet: "Balance sheet",
     incomeStatement: "Income statement",
-    accounts: "Accounts",
+    trialBalance: "Trial balance",
     settings: "Settings",
     showPanels: "Show sidebars",
     hidePanels: "Hide sidebars",
@@ -60,11 +60,16 @@ export const en = {
     allTime: "All time",
   },
   accounts: {
-    lead: "Every account in the journal, with its balance.",
-    empty: "No accounts yet.",
     all: "All accounts",
     noJournal: "No journal open.",
     panelTitle: "Accounts",
+  },
+  trialBalance: {
+    lead: "Every account the books have, set out in the two columns they are checked in. The books balance when the two totals agree.",
+    empty: "No accounts yet.",
+    account: "Account",
+    debit: "Debit",
+    credit: "Credit",
   },
   report: {
     total: "Total",

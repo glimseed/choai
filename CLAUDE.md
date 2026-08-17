@@ -181,6 +181,14 @@ it. They meet only at the two files `sync-hledger.mjs` copies. `~` aliases `src/
   survive, so it still parses, and the payees quietly become replacement
   characters. UTF-8 is tried strictly first because plenty of it decodes as
   Shift_JIS into nonsense, while almost no Shift_JIS is accidentally valid UTF-8.
+- **The trial balance is a check, so nothing here does its arithmetic.** It is
+  the balance report asked for flat and with the empty accounts kept (`Listing`
+  in `Bindings.hs`) — a parent counted beside its own children would be counted
+  twice by a column that is added up — and what each column comes to is
+  hledger's, the one answer not shaped by hledger's own `ToJSON`. `columns.ts`
+  only splits what is on the page, by sign alone: an overdrawn asset is a credit
+  balance, and placing it by account type would hide the thing the report is run
+  to find.
 - **`hledger/wire.ts` mirrors `Bindings.hs`** — `Request`, `Answer`, `Trouble`
   against its `Request` parser and `Failure` type. A new report means editing
   both. Shapes are hledger's own `ToJSON`, so they follow upstream.

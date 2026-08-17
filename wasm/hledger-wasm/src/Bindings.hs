@@ -165,16 +165,20 @@ parseRequest = A.withObject "request" $ \o ->
 
 -- | Run the report a request names.
 --
--- The balance sheet and the income statement are the same report under a
--- different account-type filter and accumulation, which is how hledger's own
--- @balancesheet@ and @incomestatement@ commands are defined.
+-- The balance sheet, the income statement and the trial balance are the same
+-- report under a different account-type filter, accumulation and listing, which
+-- is how hledger's own @balancesheet@ and @incomestatement@ commands are
+-- defined.
 report :: Journal -> Request -> IO (Either Failure A.Value)
 report journal request = case reqKind request of
-  "entries" -> withSpec [] PerPeriod (\spec -> page request (entriesReport spec journal))
-  "register" -> withSpec [] PerPeriod (\spec -> page request (postingsReport spec journal))
-  "balance" -> withSpec [] PerPeriod (\spec -> A.toJSON (multiBalanceReport spec journal))
-  "balancesheet" -> withSpec ["type:ALE"] Historical (\spec -> A.toJSON (multiBalanceReport spec journal))
-  "incomestatement" -> withSpec ["type:RX"] PerPeriod (\spec -> A.toJSON (multiBalanceReport spec journal))
+  "entries" -> withSpec [] PerPeriod AsTree (\spec -> page request (entriesReport spec journal))
+  "register" -> withSpec [] PerPeriod AsTree (\spec -> page request (postingsReport spec journal))
+  "balance" -> withSpec [] PerPeriod AsTree (\spec -> A.toJSON (multiBalanceReport spec journal))
+  "balancesheet" -> withSpec ["type:ALE"] Historical AsTree (\spec -> A.toJSON (multiBalanceReport spec journal))
+  "incomestatement" -> withSpec ["type:RX"] PerPeriod AsTree (\spec -> A.toJSON (multiBalanceReport spec journal))
+  -- Every account the books have, over no filter at all: the report a set of
+  -- books is checked with rather than one of the statements they come to.
+  "trialbalance" -> withSpec [] PerPeriod AsFlatWithEmpty (\spec -> trialBalance (multiBalanceReport spec journal))
   "accounts" -> pure (Right (A.toJSON (journalAccountNames journal)))
   -- What hledger takes each account to be, whether declared with an @account@
   -- directive or inferred from its name. Accounts it cannot place are simply
@@ -184,8 +188,29 @@ report journal request = case reqKind request of
   "similar" -> pure (Right (similar journal request))
   other -> pure (Left (UnknownReport other))
   where
-    withSpec extra accumulation render =
-      fmap (fmap render) (specFor request extra accumulation)
+    withSpec extra accumulation listing render =
+      fmap (fmap render) (specFor request extra accumulation listing)
+
+-- | A trial balance: hledger's report, and the two columns it is read as.
+--
+-- A balance falls in one column or the other by its sign, and the whole of what
+-- the report is for is that the two come to the same figure. So hledger adds
+-- them up rather than whoever draws them: a total arrived at beside the books is
+-- not the check the books are being put through.
+--
+-- Taken per commodity rather than per account, so books kept in more than one
+-- currency put each of them in the column its own sign asks for.
+trialBalance :: MultiBalanceReport -> A.Value
+trialBalance found =
+  A.object
+    [ "report" .= A.toJSON found
+    , "debits" .= A.toJSON (column (> 0))
+    , "credits" .= A.toJSON (maNegate (column (< 0)))
+    ]
+  where
+    column :: (Quantity -> Bool) -> MixedAmount
+    column keep =
+      maSum [mixedAmount a | row <- prRows found, a <- amounts (prrTotal row), keep (aquantity a)]
 
 -- | Past transactions whose description resembles this one, most recent and
 -- most alike first.
@@ -213,9 +238,19 @@ similar journal request =
 similarityThreshold :: Double
 similarityThreshold = 0
 
+-- | How a balance report lists the accounts it found.
+--
+-- A statement is a tree: its accounts are read as branches, and a parent
+-- standing for everything beneath it is the point of one. A trial balance is a
+-- flat list of every account there was, because its columns are added up — a
+-- parent counted beside its own children would be counted twice — and because
+-- an account that came to nothing is still an account the books have, which is
+-- the sort of thing a check is run to see.
+data Listing = AsTree | AsFlatWithEmpty
+
 -- | Build the report specification, letting hledger parse the query.
-specFor :: Request -> [Text] -> BalanceAccumulation -> IO (Either Failure ReportSpec)
-specFor request extra accumulation = do
+specFor :: Request -> [Text] -> BalanceAccumulation -> Listing -> IO (Either Failure ReportSpec)
+specFor request extra accumulation listing = do
   today <- getCurrentDay
   pure $ case reportOptsToSpec today options of
     Left detail -> Left (MalformedRequest (T.pack detail))
@@ -225,8 +260,12 @@ specFor request extra accumulation = do
       defreportopts
         { querystring_ = extra <> terms
         , balanceaccum_ = accumulation
-        , accountlistmode_ = ALTree
+        , accountlistmode_ = mode
+        , empty_ = keepingEmpty
         }
+    (mode, keepingEmpty) = case listing of
+      AsTree -> (ALTree, False)
+      AsFlatWithEmpty -> (ALFlat, True)
     terms = map T.pack (words' (T.unpack (reqQuery request)))
 
 -- | Render a transaction back to journal syntax.

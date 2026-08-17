@@ -31,9 +31,9 @@ The journal is kept as the text file it is, and hledger itself -- compiled to
 WebAssembly and running in a worker -- reads it and answers every question the
 screens ask. Nothing is uploaded anywhere by the app.
 
-- **Read**: the daily journal, the balance sheet, the income statement, and
-  every account with its balance. One hledger query applies to whichever is
-  open.
+- **Read**: the daily journal, the balance sheet, the income statement, and a
+  trial balance -- every account the books have, in the two columns they are
+  checked in. One hledger query applies to whichever is open.
 - **Write**: entries are composed beside the journal, with accounts suggested
   from what the books already contain -- by the same code `hledger add` uses --
   and a posting left blank for hledger to work out. Text is appended, never
