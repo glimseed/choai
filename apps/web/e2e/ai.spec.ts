@@ -462,6 +462,95 @@ test("the model saved is the model shown after a reload", async ({ page }) => {
 
   await page.reload()
   await expect(page.getByLabel("Model")).toHaveValue("claude-sonnet-4-5")
+
+  // And checking does not quietly move it. It is asked about the model that is
+  // chosen; finding out that model is reachable is no reason to choose another.
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+  await expect(page.getByLabel("Model")).toHaveValue("claude-sonnet-4-5")
+})
+
+/**
+ * Pressed before the panel has finished reading what was saved.
+ *
+ * Every part of this screen comes out of a database a moment after the screen
+ * itself does, and until it arrives the panel has a default in its hands. A
+ * default is what to show, never what to decide with: acted on, it silently
+ * replaces the choice it was standing in for.
+ */
+test("checking straight away does not overwrite the model saved", async ({ page }) => {
+  await answerWith(page, CLAUDE, (route) => asJson(route, CLAUDE.answers))
+
+  await connect(page, CLAUDE)
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+  await page.getByLabel("Model").selectOption("claude-sonnet-4-5")
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+  await expect(page.getByText("Claude Sonnet 4.5").last()).toBeVisible()
+
+  await page.reload()
+  await page.getByRole("button", { name: "Check the connection" }).click({ force: true })
+  await expect(page.getByText("answered")).toBeVisible()
+  await expect(page.getByLabel("Model")).toHaveValue("claude-sonnet-4-5")
+})
+
+/**
+ * A listing that says nothing about a model is not a listing that says no.
+ *
+ * Read as a refusal, silence sends every model the shape meant for the ones
+ * that cannot take the newest — which is exactly backwards, and breaks the
+ * models that were working rather than fixing the ones that were not. It is a
+ * whole-account failure with no obvious cause, so it is worth a test of its own
+ * rather than trust that the field will always be there.
+ */
+test("a model the listing says nothing about is sent the newest shape", async ({ page }) => {
+  const asked = await answerWith(page, CLAUDE, (route, sofar) =>
+    sofar === 1
+      ? route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ data: [{ id: "claude-opus-5", display_name: "Claude Opus 5" }] }),
+        })
+      : asJson(route, CLAUDE.answers),
+  )
+
+  await connect(page, CLAUDE)
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+
+  const sent = asked.at(-1) as { thinking: { type: string }; output_config?: unknown }
+  expect(sent.thinking).toEqual({ type: "adaptive" })
+  expect(sent.output_config).toEqual({ effort: "medium" })
+})
+
+/** A chosen model that has gone is said, not replaced. */
+test("a chosen model the key no longer reaches is not swapped for another", async ({ page }) => {
+  const listings = { sofar: 0 }
+  const whole = CLAUDE.models as { data: readonly { id: string }[] }
+
+  await page.route(CLAUDE.host, (route) => {
+    if (route.request().method() !== "GET") return asJson(route, CLAUDE.answers)
+    listings.sofar += 1
+    // The second time, the one that was chosen has gone from the account.
+    return asJson(
+      route,
+      listings.sofar === 1
+        ? whole
+        : { data: whole.data.filter((one) => one.id !== "claude-sonnet-4-5") },
+    )
+  })
+
+  await connect(page, CLAUDE)
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("answered")).toBeVisible()
+
+  await page.getByLabel("Model").selectOption("claude-sonnet-4-5")
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+  await expect(page.getByText("Claude Sonnet 4.5").last()).toBeVisible()
+
+  await page.getByRole("button", { name: "Check the connection" }).click()
+  await expect(page.getByText("no longer reaches")).toBeVisible()
+  await expect(page.getByLabel("Model")).toHaveValue("claude-sonnet-4-5")
 })
 
 for (const wire of [CLAUDE, GEMINI]) {

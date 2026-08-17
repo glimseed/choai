@@ -115,11 +115,18 @@ interface Capabilities {
  * Each key is here because the request builder below sends the thing it names.
  * Neither can be changed alone without the other going obviously wrong.
  */
-const takenBy = (can: Capabilities | undefined): Readonly<Record<string, boolean>> => ({
-  adaptive: can?.thinking?.types?.adaptive?.supported === true,
-  effort: can?.effort?.medium?.supported === true,
-  strict: can?.structured_outputs?.supported === true,
-})
+const takenBy = (can: Capabilities | undefined): Readonly<Record<string, boolean>> | undefined => {
+  const told = {
+    ...(can?.thinking?.types?.adaptive?.supported === undefined
+      ? {}
+      : { adaptive: can.thinking.types.adaptive.supported }),
+    ...(can?.effort?.medium?.supported === undefined ? {} : { effort: can.effort.medium.supported }),
+    ...(can?.structured_outputs?.supported === undefined
+      ? {}
+      : { strict: can.structured_outputs.supported }),
+  }
+  return Object.keys(told).length === 0 ? undefined : told
+}
 
 /**
  * Whether a model is offered at all.
@@ -166,7 +173,14 @@ const models = async (key: string): Promise<Result<readonly Model[], Failure>> =
           .map((one) => ({
             id: one.id,
             label: one.display_name ?? one.id,
-            takes: takenBy(one.capabilities ?? undefined),
+            // Omitted where the listing said nothing, because a field that was
+            // not answered is not a field answered "no" — and read as "no" it
+            // would send every model the shape meant for the ones that cannot
+            // take the newest, which is exactly backwards.
+            ...(() => {
+              const takes = takenBy(one.capabilities ?? undefined)
+              return takes === undefined ? {} : { takes }
+            })(),
           })),
       )
     : body

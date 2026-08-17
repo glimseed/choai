@@ -54,15 +54,34 @@ export function AiKeyPanel(): JSX.Element {
    * than an empty box that looks broken.
    */
   const choices = (): readonly Model[] => {
-    const now = offered()
-    if (now.length > 0) return now
-    const last = before()
-    if (last !== undefined && last.length > 0) return last
+    const listed = offered().length > 0 ? offered() : (before() ?? [])
     const kept = named()
-    return [kept ?? { id: talker().defaultModel, label: talker().defaultModel }]
+    const shown =
+      listed.length > 0
+        ? listed
+        : [kept ?? { id: talker().defaultModel, label: talker().defaultModel }]
+
+    // Whatever is chosen stays in the list even when a fresh listing has
+    // dropped it. A box cannot show what it does not hold, so without this the
+    // one thing that must not happen silently — the choice changing — is what
+    // the browser does on its own the moment the options are replaced.
+    const want = settledOn()
+    return want === undefined || shown.some((one) => one.id === want)
+      ? shown
+      : [...shown, kept?.id === want ? kept : { id: want, label: want }]
   }
 
-  const picking = (): string => picked() ?? named()?.id ?? talker().defaultModel
+  /**
+   * What has actually been chosen — as opposed to what the box is showing for
+   * want of a choice.
+   *
+   * The difference is the whole of it. A default is what to put on the screen
+   * before the answer arrives; acted on, it is a choice nobody made, quietly
+   * replacing the one it was standing in for.
+   */
+  const settledOn = (): string | undefined => picked() ?? named()?.id
+
+  const picking = (): string => settledOn() ?? talker().defaultModel
 
   /**
    * The chosen one, said to the box after its options exist.
@@ -170,8 +189,22 @@ export function AiKeyPanel(): JSX.Element {
         return
       }
 
-      const one = reachable.value.find((each) => each.id === picking()) ?? reachable.value[0]
-      if (one === undefined) return
+      /**
+       * Checking asks about the model that is chosen. It does not choose.
+       *
+       * Finding out that some other model is reachable is no reason to move to
+       * it, and a chosen one that has gone from the account is worth saying
+       * rather than papering over. The one case where this does choose is the
+       * first: nothing has been chosen yet, and the newest is where to start.
+       */
+      const want = settledOn()
+      const one =
+        want === undefined ? reachable.value[0] : reachable.value.find((each) => each.id === want)
+
+      if (one === undefined) {
+        setSaid(t("ai.notThere", { model: named()?.label ?? want ?? "" }))
+        return
+      }
       setPicked(one.id)
       setSaid(t("ai.sounding", { model: one.label }))
 

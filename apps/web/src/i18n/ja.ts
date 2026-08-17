@@ -89,6 +89,7 @@ export const ja: Dictionary = {
     check: "接続確認",
     listing: "この鍵で使えるモデルを問い合わせています…",
     sounding: "{{ model }} に実際に話しかけています…",
+    notThere: "この鍵では {{ model }} に届かなくなっています。一覧を更新したので、別のモデルを選んでください。",
     saved: "保存しました — {{ provider }} / {{ model }}",
     answered: "{{ model }} が応答しました — 送信 {{ sent }} トークン、返答 {{ back }} トークン。",
     disconnect: "接続を解除してキーを削除",

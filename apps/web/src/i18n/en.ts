@@ -96,6 +96,7 @@ export const en = {
     check: "Check the connection",
     listing: "Asking which models this key reaches…",
     sounding: "Saying hello to {{ model }}…",
+    notThere: "This key no longer reaches {{ model }}. Pick another from the list, which has been refreshed.",
     saved: "Saved — {{ provider }}, {{ model }}.",
     answered: "{{ model }} answered — {{ sent }} tokens sent, {{ back }} back.",
     disconnect: "Disconnect and forget the key",
