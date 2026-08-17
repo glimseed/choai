@@ -48,13 +48,15 @@ const dockTitle = (showing: InTheDock | undefined): string => {
   }
 }
 
-// The daily journal comes first because that is what the app is opened for;
-// the statements are things you go and look at, not things you live in.
+// The order the work is done in: entries are written, they are gathered and
+// checked, and the two statements are what the check makes it safe to read. The
+// daily journal is first on both counts — it is where the books are kept and it
+// is what the app is opened for; the rest are things you go and look at.
 const NAV = [
   { href: "/", key: "nav.journal", Icon: ReceiptIcon, Explorer: JournalExplorer, writes: true },
+  { href: "/trial-balance", key: "nav.trialBalance", Icon: BookOpenIcon, Explorer: TrialBalanceExplorer, writes: false },
   { href: "/balance-sheet", key: "nav.balanceSheet", Icon: ScaleIcon, Explorer: BalanceSheetExplorer, writes: false },
   { href: "/income-statement", key: "nav.incomeStatement", Icon: TrendingUpIcon, Explorer: IncomeStatementExplorer, writes: false },
-  { href: "/trial-balance", key: "nav.trialBalance", Icon: BookOpenIcon, Explorer: TrialBalanceExplorer, writes: false },
 ] as const
 
 // Settings are not one of the books, so they sit at the foot of the rail, apart
